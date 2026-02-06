@@ -1,0 +1,14 @@
+/* components/Pages/Login/Login.css */
+.training-admin-login-card {
+  border: none;
+  border-radius: 0.5rem;
+}
+
+.training-admin-login-title {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.training-admin-login-subtitle {
+  font-size: 0.9rem;
+}

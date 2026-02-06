@@ -1,0 +1,139 @@
+/* Wrapper */
+.candidates-wrapper {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+/* Header */
+.candidates-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.candidates-header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.candidates-header p {
+  color: #6b7280;
+  margin: 4px 0 0;
+}
+
+.candidates-add-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+
+/* Filters */
+.candidates-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.candidates-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f3f4f6;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.candidates-search input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+}
+
+.candidates-filter-btn {
+  background: #f3f4f6;
+  border: none;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Table */
+.candidates-table-wrapper {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.candidates-table {
+  margin: 0;
+}
+
+.candidates-table thead {
+  background: #f9fafb;
+}
+
+.candidates-table th {
+  font-size: 13px;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.candidates-name {
+  font-weight: 600;
+}
+
+/* Level Badge */
+.candidates-level {
+  background: #e5edff;
+  color: #2563eb;
+  font-weight: 600;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Pills */
+.candidates-pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.candidates-pill.compliant {
+  background: #e7f7ee;
+  color: #16a34a;
+}
+
+.candidates-pill.pending {
+  background: #fff7ed;
+  color: #f97316;
+}
+
+.candidates-pill.noncompliant {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.candidates-pill.active {
+  background: #e7f7ee;
+  color: #16a34a;
+}
+
+.candidates-pill.blocked {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Actions */
+.candidates-action-icon {
+  cursor: pointer;
+  color: #6b7280;
+}
