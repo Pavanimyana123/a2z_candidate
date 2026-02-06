@@ -1,0 +1,137 @@
+/* Wrapper */
+.lm-wrapper {
+  background: #f7f9fc;
+  padding: 24px;
+}
+
+/* Header */
+.lm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.lm-header h2 {
+  font-weight: 700;
+}
+
+.lm-header p {
+  color: #6b7280;
+}
+
+.lm-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 8px;
+}
+
+/* Card */
+.lm-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.05);
+}
+
+/* Card Header */
+.lm-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.lm-title-wrap {
+  display: flex;
+  gap: 14px;
+}
+
+.lm-level-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #2f64b2;
+  color: #fff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.lm-title-wrap h5 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.lm-title-wrap p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  max-width: 520px;
+}
+
+/* Actions */
+.lm-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #6b7280;
+}
+
+.lm-card-actions svg {
+  cursor: pointer;
+}
+
+/* Candidate pill */
+.lm-candidate-pill {
+  background: #eef1f5;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Sections */
+.lm-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* Exposure */
+.lm-exposure {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+/* Lists */
+.lm-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.lm-list li {
+  position: relative;
+  padding-left: 16px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.lm-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  font-size: 20px;
+  line-height: 14px;
+}
+
+/* Color bullets */
+.lm-list.blue li::before { color: #2563eb; }
+.lm-list.green li::before { color: #16a34a; }
+.lm-list.orange li::before { color: #f59e0b; }

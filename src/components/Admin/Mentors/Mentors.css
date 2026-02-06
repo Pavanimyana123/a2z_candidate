@@ -1,0 +1,137 @@
+/* Wrapper */
+.mm-wrapper {
+  background: #f7f9fc;
+  padding: 24px;
+}
+
+/* Header */
+.mm-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mm-header h2 {
+  font-weight: 700;
+}
+
+.mm-header p {
+  color: #6b7280;
+}
+
+.mm-add-btn {
+  padding: 8px 18px;
+  border-radius: 8px;
+}
+
+/* Stats */
+.mm-stat-card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.05);
+}
+
+.mm-stat-card p {
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.mm-stat-card h3 {
+  font-weight: 700;
+}
+
+/* Search */
+.mm-search-box input {
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+/* Mentor Card */
+.mm-mentor-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.05);
+  height: 100%;
+}
+
+.mm-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mm-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #e0edff;
+  color: #2563eb;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mm-mentor-info h5 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.mm-mentor-info span {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* Body */
+.mm-card-body {
+  margin-top: 18px;
+}
+
+.mm-metric {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.mm-progress-wrap {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.mm-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: #e5e7eb;
+}
+
+.mm-progress .progress-bar {
+  background: #2563eb;
+  border-radius: 999px;
+}
+
+/* Footer */
+.mm-card-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mm-status {
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 999px;
+  text-transform: lowercase;
+}
+
+.mm-status.active {
+  background: #e7f8ee;
+  color: #16a34a;
+}

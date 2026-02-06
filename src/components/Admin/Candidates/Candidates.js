@@ -32,27 +32,30 @@ const Candidates = () => {
             </div>
 
             {/* Filters */}
-            <div className="candidates-filters">
-              <div className="candidates-search">
-                <FaSearch />
-                <input
-                  type="text"
-                  placeholder="Search candidates..."
-                />
-              </div>
+            {/* Filters */}
+<div className="candidates-filters-box">
+  <div className="candidates-filters">
 
-              <select className="form-select">
-                <option>All Levels</option>
-              </select>
+    <div className="candidates-search">
+      <FaSearch />
+      <input type="text" placeholder="Search candidates..." />
+    </div>
 
-              <select className="form-select">
-                <option>All Status</option>
-              </select>
+    <select className="candidates-select">
+      <option>All Levels</option>
+    </select>
 
-              <button className="candidates-filter-btn">
-                <FaFilter />
-              </button>
-            </div>
+    <select className="candidates-select">
+      <option>All Status</option>
+    </select>
+
+    <button className="candidates-filter-btn">
+      <FaFilter />
+    </button>
+
+  </div>
+</div>
+
 
             {/* Table */}
             <div className="candidates-table-wrapper">
