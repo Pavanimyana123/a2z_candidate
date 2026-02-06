@@ -13,6 +13,8 @@ import AuditLogs from "./components/Admin/AuditLogs/AuditLogs";
 import Certifications from "./components/Admin/Certificate/Certificate";
 import ReportsAnalytics from "./components/Admin/Reports/Reports";
 import SystemSettings from "./components/Admin/SystemSettings/SystemSettings";
+import CandidateLayout from "./components/Candidate/Layout/CandidateLayout";
+import MentorLayout from "./components/Mentor/Layout/MentorLayout";
 
 function App() {
   return (
@@ -30,6 +32,11 @@ function App() {
                <Route path="/report" element={<ReportsAnalytics />} />
             <Route path="/audit" element={<AuditLogs />} />
             <Route path="/system" element={<SystemSettings />} />
+
+
+             {/* <Route path="/candidate-layout" element={<CandidateLayout />} />
+             <Route path="/mentor-layout" element={<MentorLayout />} /> */}
+
       </Routes>
     </Router>
   );
