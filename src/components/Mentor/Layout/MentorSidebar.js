@@ -37,56 +37,56 @@ const MentorSidebar = () => {
           {/* No section title in image, but keeping structure similar */}
           <Link 
             to="/mentor-dashboard" 
-            className={`ta-menu-item ${isActive("/dashboard") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive("/mentor-dashboard") ? "active" : ""}`}
           >
             <FaThLarge /> Dashboard
           </Link>
 
           <Link 
             to="/mentor-candidates" 
-            className={`ta-menu-item ${isActive("/candidates") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive("/mentor-candidates") ? "active" : ""}`}
           >
             <FaUserGraduate /> Candidates
           </Link>
 
           <Link 
             to="/mentor-logbook" 
-            className={`ta-menu-item ${isActive("/logbook-approvals") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive("/mentor-logbook") ? "active" : ""}`}
           >
             <FaBook /> Logbook Approvals
           </Link>
 
           <Link 
             to="/mentor-evidence" 
-            className={`ta-menu-item ${isActive("/evidence-review") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive("/mentor-evidence") ? "active" : ""}`}
           >
             <FaEye /> Evidence Review
           </Link>
 
           <Link 
             to="/mentor-rotation" 
-            className={`ta-menu-item ${isActive("/rotation-tracking") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive("/mentor-rotation") ? "active" : ""}`}
           >
             <FaSyncAlt /> Rotation Tracking
           </Link>
 
           <Link 
             to="/mentor-compliance" 
-            className={`ta-menu-item ${isActive("/compliance") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive("/mentor-compliance") ? "active" : ""}`}
           >
             <FaShieldAlt /> Compliance
           </Link>
 
           <Link 
             to="/mentor-feedback" 
-            className={`ta-menu-item ${isActive("/feedback") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive("/mentor-feedback") ? "active" : ""}`}
           >
             <FaCommentAlt /> Feedback
           </Link>
 
           <Link 
             to="/mentor-reports" 
-            className={`ta-menu-item ${isActive("/reports") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive("/mentor-reports") ? "active" : ""}`}
           >
             <FaChartBar /> Reports
           </Link>
@@ -95,13 +95,28 @@ const MentorSidebar = () => {
 
       {/* Footer - Profile Link */}
       <div className="ta-sidebar-footer">
-        <div className="ta-avatar">
-          <FaUser />
-        </div>
-        <div className="ta-user-info">
-          <p className="ta-user-name">Profile</p>
-          {/* Email not shown in image, keeping minimal */}
-        </div>
+        <Link 
+          to="/mentor-profile" 
+          className="ta-menu-item"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            padding: "10px 14px",
+            borderRadius: "8px",
+            color: "#e5e7eb",
+            cursor: "pointer",
+            textDecoration: "none",
+            width: "100%"
+          }}
+        >
+          <div className="ta-avatar">
+            <FaUser />
+          </div>
+          <div className="ta-user-info">
+            <p className="ta-user-name" style={{ margin: 0, fontWeight: "500" }}>Profile</p>
+          </div>
+        </Link>
       </div>
     </aside>
   );
