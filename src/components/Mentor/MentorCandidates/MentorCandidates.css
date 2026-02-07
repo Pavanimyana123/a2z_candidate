@@ -1,0 +1,94 @@
+.ta-candidates-page {
+  padding: 10px;
+}
+
+/* Filters */
+.ta-candidates-search {
+  max-width: 300px;
+}
+
+.ta-candidates-select {
+  width: 160px;
+}
+
+.ta-candidates-export {
+  border: 1px solid #ddd;
+  background: white;
+}
+
+/* Stat Cards */
+.ta-candidates-stat {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  border: 1px solid #e6e6e6;
+  text-align: center;
+}
+
+.ta-candidates-stat h3 {
+  margin-bottom: 5px;
+}
+
+.ta-stat-green h3 {
+  color: #18a06a;
+}
+
+.ta-stat-orange h3 {
+  color: #d97706;
+}
+
+.ta-stat-blue h3 {
+  color: #2563eb;
+}
+
+/* Table Card */
+.ta-candidates-table-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e6e6e6;
+  overflow: hidden;
+}
+
+/* Candidate Cell */
+.ta-candidate-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Avatar */
+.ta-candidate-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+/* Level Badge */
+.ta-badge-level {
+  background: #dbeafe;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+/* Status */
+.ta-status {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.ta-status-green {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.ta-status-orange {
+  background: #fef3c7;
+  color: #b45309;
+}

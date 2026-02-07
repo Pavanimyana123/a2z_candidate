@@ -15,6 +15,15 @@ import ReportsAnalytics from "./components/Admin/Reports/Reports";
 import SystemSettings from "./components/Admin/SystemSettings/SystemSettings";
 import CandidateLayout from "./components/Candidate/Layout/CandidateLayout";
 import MentorLayout from "./components/Mentor/Layout/MentorLayout";
+import MentorDashboard from "./components/Mentor/MentorDashboard/MentorDashboard"
+import MentorCandidates from "./components/Mentor/MentorCandidates/MentorCandidates";
+import MentorLogBook from "./components/Mentor/MentorLogBook/MentorLogBook";
+import MentorEvidence from "./components/Mentor/MentorEvidence/MentorEvidence";
+import MentorRotation from "./components/Mentor/MentorRotation/MentorRotation";
+import MentorCompliance from "./components/Mentor/MentorCompliance/MentorCompliance";
+import MentorFeedback from "./components/Mentor/MentorFeedback/MentorFeedback";
+import MentorReports from "./components/Mentor/MentorReports/MentorReports";
+
 
 function App() {
   return (
@@ -36,6 +45,14 @@ function App() {
 
              {/* <Route path="/candidate-layout" element={<CandidateLayout />} />
              <Route path="/mentor-layout" element={<MentorLayout />} /> */}
+              <Route path="/mentor-dashboard" element={<MentorDashboard />} />
+              <Route path="/mentor-candidates" element={<MentorCandidates />} />
+              <Route path="/mentor-logbook" element={<MentorLogBook />} />
+              <Route path="/mentor-evidence" element={<MentorEvidence />} />
+              <Route path="/mentor-rotation" element={<MentorRotation />} />
+              <Route path="/mentor-compliance" element={<MentorCompliance />} />
+               <Route path="/mentor-feedback" element={<MentorFeedback />} />
+                <Route path="/mentor-reports" element={<MentorReports />} />
 
       </Routes>
     </Router>

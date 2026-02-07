@@ -36,56 +36,56 @@ const MentorSidebar = () => {
         <div className="ta-menu-section">
           {/* No section title in image, but keeping structure similar */}
           <Link 
-            to="/dashboard" 
+            to="/mentor-dashboard" 
             className={`ta-menu-item ${isActive("/dashboard") ? "active" : ""}`}
           >
             <FaThLarge /> Dashboard
           </Link>
 
           <Link 
-            to="/candidates" 
+            to="/mentor-candidates" 
             className={`ta-menu-item ${isActive("/candidates") ? "active" : ""}`}
           >
             <FaUserGraduate /> Candidates
           </Link>
 
           <Link 
-            to="/logbook-approvals" 
+            to="/mentor-logbook" 
             className={`ta-menu-item ${isActive("/logbook-approvals") ? "active" : ""}`}
           >
             <FaBook /> Logbook Approvals
           </Link>
 
           <Link 
-            to="/evidence-review" 
+            to="/mentor-evidence" 
             className={`ta-menu-item ${isActive("/evidence-review") ? "active" : ""}`}
           >
             <FaEye /> Evidence Review
           </Link>
 
           <Link 
-            to="/rotation-tracking" 
+            to="/mentor-rotation" 
             className={`ta-menu-item ${isActive("/rotation-tracking") ? "active" : ""}`}
           >
             <FaSyncAlt /> Rotation Tracking
           </Link>
 
           <Link 
-            to="/compliance" 
+            to="/mentor-compliance" 
             className={`ta-menu-item ${isActive("/compliance") ? "active" : ""}`}
           >
             <FaShieldAlt /> Compliance
           </Link>
 
           <Link 
-            to="/feedback" 
+            to="/mentor-feedback" 
             className={`ta-menu-item ${isActive("/feedback") ? "active" : ""}`}
           >
             <FaCommentAlt /> Feedback
           </Link>
 
           <Link 
-            to="/reports" 
+            to="/mentor-reports" 
             className={`ta-menu-item ${isActive("/reports") ? "active" : ""}`}
           >
             <FaChartBar /> Reports

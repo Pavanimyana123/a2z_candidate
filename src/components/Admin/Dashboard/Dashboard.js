@@ -58,7 +58,7 @@ const Dashboard = () => {
               {/* Candidates by Level */}
               <div className="col-lg-6">
                 <div className="dashboard-card">
-                  <h5 className="card-title">Candidates by Level</h5>
+                  <h5 className="card-title mb-3">Candidates by Level</h5>
 
                   {[
                     ["Level 0", 45, "level-gray"],
@@ -83,7 +83,7 @@ const Dashboard = () => {
               {/* Compliance Alerts */}
               <div className="col-lg-6">
                 <div className="dashboard-card">
-                  <h5 className="card-title">Compliance Alerts</h5>
+                  <h5 className="card-title mb-3">Compliance Alerts</h5>
 
                   <AlertItem icon={<FaMedical />} text="Medical Certificates Expiring" count="5" color="red" />
                   <AlertItem icon={<FaShieldAlt />} text="Safety Induction Due" count="8" color="orange" />

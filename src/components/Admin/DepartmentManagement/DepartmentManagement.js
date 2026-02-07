@@ -116,39 +116,53 @@ const DeptCard = ({ title, desc, min, hours, rotations, candidates }) => (
 
       <div className="dm-card-header">
         <div className="dm-icon">🏢</div>
+           <h5>{title}</h5>
         <FaEdit className="dm-edit" />
       </div>
 
-      <h5>{title}</h5>
       <p className="dm-desc">{desc}</p>
 
-      <div className="dm-info">
-        <div>
-          <FaClock />
-          <span>Min Duration</span>
-          <strong>{min}</strong>
-        </div>
+     <div className="dm-info">
 
-        <div>
-          <FaClock />
-          <span>Required Hours</span>
-          <strong>{hours}</strong>
-        </div>
-      </div>
+  <div className="dm-item">
+    <div className="dm-label">
+      <FaClock />
+      <span>Min Duration</span>
+    </div>
+    <strong>{min}</strong>
+  </div>
 
-      <div className="dm-info">
-        <div>
-          <FaUsers />
-          <span>Active Rotations</span>
-          <strong>{rotations}</strong>
-        </div>
+  <div className="dm-item">
+    <div className="dm-label">
+      <FaClock />
+      <span>Required Hours</span>
+    </div>
+    <strong>{hours}</strong>
+  </div>
 
-        <div>
-          <FaUsers />
-          <span>Total Candidates</span>
-          <strong>{candidates}</strong>
-        </div>
-      </div>
+</div>
+
+
+<div className="dm-info">
+
+  <div className="dm-item">
+    <div className="dm-label">
+      <FaUsers />
+      <span>Active Rotations</span>
+    </div>
+    <strong>{rotations}</strong>
+  </div>
+
+  <div className="dm-item">
+    <div className="dm-label">
+      <FaUsers />
+      <span>Total Candidates</span>
+    </div>
+    <strong>{candidates}</strong>
+  </div>
+
+</div>
+
 
     </div>
   </div>
