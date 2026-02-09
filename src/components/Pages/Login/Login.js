@@ -22,7 +22,10 @@ const Login = () => {
     } else if (email === "mentor@gmail.com" && password === "mentor@123") {
       // Mentor credentials - navigate to /mentor-dashboard
       navigate("/mentor-dashboard");
-    } else {
+    } else if (email === "candidate@gmail.com" && password === "candidate@123") {
+      navigate("/candidate-dashboard");
+    }
+      else {
       // Invalid credentials
       setError("Invalid email or password. Please try again.");
     }
