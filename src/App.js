@@ -31,6 +31,8 @@ import CandidateCompetency from "./components/Candidate/CandidateCompetency/Cand
 import CandidateRotation from "./components/Candidate/CandidateRotation/CandidateRotation"
 import CandidateCompliance from "./components/Candidate/CandidateCompliance/CandidateCompliance";
 import CandidateCertifications from "./components/Candidate/CandidateCertification/CartificationCertificate";
+import CandidateLearning from "./components/Candidate/CandidateLearning/CandidateLearning";
+import CandidateMentorship from "./components/Candidate/CandidateMentorship/CandidateMentorship";
 
 
 function App() {
@@ -70,6 +72,9 @@ function App() {
                <Route path="/candidate-rotation" element={<CandidateRotation />} />
                <Route path="/candidate-compliance" element={<CandidateCompliance />} />
                 <Route path="/candidate-certificate" element={<CandidateCertifications />} />
+                 <Route path="/candidate-learning" element={<CandidateLearning />} />
+                 <Route path="/candidate-mentorship" element={<CandidateMentorship />} />
+
 
 
 

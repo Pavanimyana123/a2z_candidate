@@ -95,15 +95,15 @@ const CandidateSidebar = () => {
           <p className="ta-menu-title">DEVELOPMENT</p>
 
           <Link 
-            to="/learning" 
-            className={`ta-menu-item ${isActive("/learning") ? "active" : ""}`}
+            to="/candidate-learning" 
+            className={`ta-menu-item ${isActive("/candidate-learning") ? "active" : ""}`}
           >
             <FaGraduationCap /> Learning
           </Link>
 
           <Link 
-            to="/mentorship" 
-            className={`ta-menu-item ${isActive("/mentorship") ? "active" : ""}`}
+            to="/candidate-mentorship" 
+            className={`ta-menu-item ${isActive("/candidate-mentorship") ? "active" : ""}`}
           >
             <FaUsers /> Mentorship
           </Link>
