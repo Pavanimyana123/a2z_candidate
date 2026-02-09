@@ -36,36 +36,36 @@ const CandidateSidebar = () => {
           <p className="ta-menu-title">MAIN</p>
 
           <Link 
-            to="/dashboard" 
-            className={`ta-menu-item ${isActive("/dashboard") ? "active" : ""}`}
+            to="/candidate-dashboard" 
+            className={`ta-menu-item ${isActive("/candidate-dashboard") ? "active" : ""}`}
           >
             <FaThLarge /> Dashboard
           </Link>
 
           <Link 
-            to="/professional-id" 
-            className={`ta-menu-item ${isActive("/professional-id") ? "active" : ""}`}
+            to="/candidate-professionality" 
+            className={`ta-menu-item ${isActive("/candidate-professionality") ? "active" : ""}`}
           >
             <FaIdCard /> Professional ID
           </Link>
 
           <Link 
-            to="/digital-logbook" 
-            className={`ta-menu-item ${isActive("/digital-logbook") ? "active" : ""}`}
+            to="/candidate-digital" 
+            className={`ta-menu-item ${isActive("/candidate-digital") ? "active" : ""}`}
           >
             <FaBook /> Digital Logbook
           </Link>
 
           <Link 
-            to="/competency" 
-            className={`ta-menu-item ${isActive("/competency") ? "active" : ""}`}
+            to="/candidate-competence" 
+            className={`ta-menu-item ${isActive("/candidate-competence") ? "active" : ""}`}
           >
             <FaCheckCircle /> Competency
           </Link>
 
           <Link 
-            to="/rotation-program" 
-            className={`ta-menu-item ${isActive("/rotation-program") ? "active" : ""}`}
+            to="/candidate-rotation" 
+            className={`ta-menu-item ${isActive("/candidate-rotation") ? "active" : ""}`}
           >
             <FaCertificate /> Rotation Program
           </Link>
@@ -76,15 +76,15 @@ const CandidateSidebar = () => {
           <p className="ta-menu-title">COMPLIANCE</p>
 
           <Link 
-            to="/compliance-safety" 
-            className={`ta-menu-item ${isActive("/compliance-safety") ? "active" : ""}`}
+            to="/candidate-compliance" 
+            className={`ta-menu-item ${isActive("/candidate-compliance") ? "active" : ""}`}
           >
             <FaShieldAlt /> Compliance & Safety
           </Link>
 
           <Link 
-            to="/certifications" 
-            className={`ta-menu-item ${isActive("/certifications") ? "active" : ""}`}
+            to="/candidate-certificate" 
+            className={`ta-menu-item ${isActive("/candidate-certificate") ? "active" : ""}`}
           >
             <FaCertificate /> Certifications
           </Link>

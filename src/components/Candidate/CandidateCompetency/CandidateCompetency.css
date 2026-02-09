@@ -1,0 +1,260 @@
+.cp-wrapper {
+  background: #f8fafc;
+  padding: 12px 12px 40px;
+}
+
+.cp-section {
+  margin-bottom: 36px;
+}
+
+.cp-page-title {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.cp-page-subtitle {
+  color: #64748b;
+  margin-bottom: 20px;
+}
+
+/* ================= IMAGE 1 ================= */
+.cp-current-card {
+  background: linear-gradient(90deg, #0f172a, #2c5f66);
+  color: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cp-current-level {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.cp-unlock-box {
+  margin-top: 18px;
+}
+
+.cp-unlocks {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cp-pill {
+  background: #14b8a6;
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.cp-pill.lock {
+  background: #e5e7eb;
+  color: #475569;
+}
+
+/* ================= IMAGE 2 ================= */
+.cp-progress-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.08);
+}
+
+.cp-progress-bar {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.cp-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0f172a, #14b8a6);
+}
+
+.cp-req {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cp-req.done {
+  background: #ecfdf5;
+}
+
+.cp-req-value {
+  font-weight: 600;
+}
+
+.cp-ok {
+  color: #16a34a;
+}
+
+.cp-warn {
+  color: #64748b;
+}
+
+.cp-unlock-next {
+  background: #f1f5f9;
+  border-radius: 14px;
+  padding: 16px;
+  margin-top: 18px;
+}
+
+/* ================= IMAGE 3 ================= */
+.cp-journey {
+  background: #fff;
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  border: 1px solid #e2e8f0;
+}
+
+.cp-journey.done {
+  background: #ecfdf5;
+}
+
+.cp-journey.current {
+  background: #f1f5f9;
+  border: 1px solid #94a3b8;
+}
+
+.cp-journey.locked {
+  opacity: 0.6;
+}
+
+.cp-journey-left {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.cp-journey-badge {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #0f172a;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cp-current-tag {
+  background: #0f172a;
+  color: #fff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.cp-muted {
+  color: #64748b;
+}
+
+
+/* ================================================= */
+/* IMAGE FROM PNG — ACTION CARDS */
+/* ================================================= */
+.cp-action-cards-wrapper {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.cp-action-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  border: 1px solid #e2e8f0;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cp-action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+}
+
+.cp-action-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cp-action-icon-inner {
+  font-size: 22px;
+  color: #0f172a;
+}
+
+.cp-action-content {
+  flex: 1;
+}
+
+.cp-action-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.cp-action-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.cp-action-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #0f172a;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cp-action-badge:hover {
+  background: #1e293b;
+}
+
+.cp-action-badge-text {
+  white-space: nowrap;
+}
+
+.cp-action-badge-arrow {
+  font-size: 12px;
+}
