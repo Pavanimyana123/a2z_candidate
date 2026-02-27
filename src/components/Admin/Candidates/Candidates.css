@@ -180,3 +180,164 @@
 .candidates-table-wrapper {
   background: #ffffff;
 }
+
+
+/* Loading and error states */
+.candidates-loading,
+.candidates-error {
+  text-align: center;
+  padding: 40px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin: 20px 0;
+}
+
+.candidates-error {
+  color: #dc2626;
+}
+
+.candidates-error button {
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.candidates-error button:hover {
+  background: #2563eb;
+}
+
+.text-center {
+  text-align: center;
+  padding: 30px;
+  color: #6b7280;
+}
+
+/* Action Icons */
+.action-icons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.candidates-action-icon {
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.2s ease;
+}
+
+.candidates-action-icon.edit-icon {
+  color: #4a6cf7;
+}
+
+.candidates-action-icon.edit-icon:hover {
+  color: #2b4cd7;
+  transform: scale(1.1);
+}
+
+.candidates-action-icon.delete-icon {
+  color: #dc3545;
+}
+
+.candidates-action-icon.delete-icon:hover {
+  color: #bb2d3b;
+  transform: scale(1.1);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.2s ease;
+}
+
+.modal-content h3 {
+  margin: 0 0 12px 0;
+  color: #333;
+  font-size: 20px;
+}
+
+.modal-content p {
+  margin: 0 0 24px 0;
+  color: #666;
+  font-size: 16px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.modal-actions .btn {
+  padding: 8px 20px;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.modal-actions .btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.modal-actions .btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+.modal-actions .btn-danger {
+  background-color: #dc3545;
+  color: white;
+}
+
+.modal-actions .btn-danger:hover {
+  background-color: #bb2d3b;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Disable text selection for icons */
+.candidates-action-icon {
+  user-select: none;
+}
