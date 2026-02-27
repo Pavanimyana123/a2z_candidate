@@ -4,6 +4,7 @@ import Sidebar from '../Layout/Sidebar';
 import Header from '../Layout/Header';
 import "./AddCandidate.css";
 import Swal from 'sweetalert2';
+import { BASE_URL } from "../../../ApiUrl";
 
 const AddCandidate = () => {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ const AddCandidate = () => {
   const fetchCandidateData = async () => {
     try {
       setFetchLoading(true);
-      const response = await fetch(`http://145.79.0.94:8000/candidates/${id}/`);
+      const response = await fetch(`${BASE_URL}/candidates/${id}/`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -221,8 +222,8 @@ const AddCandidate = () => {
     
     const method = isEditMode ? 'PUT' : 'POST';
     const url = isEditMode 
-      ? `http://145.79.0.94:8000/candidates/${id}/` 
-      : 'http://145.79.0.94:8000/candidates/';
+      ? `${BASE_URL}/candidates/${id}/` 
+      : `${BASE_URL}/candidates/`;
     
     console.log(`📍 API Endpoint: ${url}`);
     console.log(`📤 Sending ${method} request...`);

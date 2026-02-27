@@ -5,6 +5,7 @@ import Header from "../Layout/Header";
 import "./Mentors.css";
 import { FaEllipsisH, FaCheckCircle, FaEdit, FaTrash } from "react-icons/fa";
 import Swal from 'sweetalert2';
+import { BASE_URL } from "../../../ApiUrl";
 
 const Mentors = () => {
   const [mentors, setMentors] = useState([]);
@@ -22,7 +23,7 @@ const Mentors = () => {
   const fetchMentors = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://145.79.0.94:8000/mentors/');
+      const response = await fetch(`${BASE_URL}/mentors/`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -63,7 +64,7 @@ const Mentors = () => {
 
   const handleDelete = async (mentorId, mentorName) => {
     try {
-      const response = await fetch(`http://145.79.0.94:8000/mentors/${mentorId}/`, {
+      const response = await fetch(`${BASE_URL}/mentors/${mentorId}/`, {
         method: 'DELETE',
       });
 

@@ -5,6 +5,7 @@ import Header from "../Layout/Header";
 import "./Candidates.css";
 import { FaSearch, FaFilter, FaEdit, FaTrash, FaEllipsisH } from "react-icons/fa";
 import Swal from 'sweetalert2';
+import { BASE_URL } from "../../../ApiUrl";
 
 const Candidates = () => {
   const [candidates, setCandidates] = useState([]);
@@ -24,7 +25,7 @@ const Candidates = () => {
   const fetchCandidates = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://145.79.0.94:8000/candidates/');
+      const response = await fetch(`${BASE_URL}/candidates/`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -65,7 +66,7 @@ const Candidates = () => {
 
   const handleDelete = async (candidateId, candidateName) => {
     try {
-      const response = await fetch(`http://145.79.0.94:8000/candidates/${candidateId}/`, {
+      const response = await fetch(`${BASE_URL}/candidates/${candidateId}/`, {
         method: 'DELETE',
       });
 

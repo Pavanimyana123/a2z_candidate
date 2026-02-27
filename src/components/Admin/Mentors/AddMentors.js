@@ -4,6 +4,7 @@ import Sidebar from "../Layout/Sidebar";
 import Header from "../Layout/Header";
 import "./AddMentor.css";
 import Swal from 'sweetalert2';
+import { BASE_URL } from "../../../ApiUrl";
 
 const AddMentor = () => {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ const AddMentor = () => {
   const fetchMentorData = async () => {
     try {
       setFetchLoading(true);
-      const response = await fetch(`http://145.79.0.94:8000/mentors/${id}/`);
+      const response = await fetch(`${BASE_URL}/mentors/${id}/`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -178,8 +179,8 @@ const AddMentor = () => {
 
     const method = isEditMode ? 'PUT' : 'POST';
     const url = isEditMode 
-      ? `http://145.79.0.94:8000/mentors/${id}/` 
-      : 'http://145.79.0.94:8000/mentors/';
+      ? `${BASE_URL}/mentors/${id}/` 
+      : `${BASE_URL}/mentors/`;
 
     console.log(`📦 ${isEditMode ? 'Updating' : 'Submitting'} mentor data:`, payload);
     console.log(`📍 API Endpoint: ${url}`);
