@@ -278,7 +278,7 @@ const MentorCard = ({ mentor, initials, onEdit, onDelete }) => {
               onClick={() => onDelete(mentor)}
               title="Delete Mentor"
             />
-            <FaEllipsisH className="action-icon more-icon" />
+            {/* <FaEllipsisH className="action-icon more-icon" /> */}
           </div>
         </div>
 
