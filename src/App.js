@@ -8,7 +8,9 @@ import CandidateForm from "./components/Admin/Candidates/AddCandidate";
 import Mentors from "./components/Admin/Mentors/Mentors";
 import AddMentor from "./components/Admin/Mentors/AddMentors";
 import LevelsManagement from "./components/Admin/LevelManagement/LevelManagement";
+import AddLevel from "./components/Admin/LevelManagement/AddLevel";
 import DepartmentManagement from "./components/Admin/DepartmentManagement/DepartmentManagement";
+import AddDepartment from "./components/Admin/DepartmentManagement/AddDepartmentManagament";
 import RotationProgram from "./components/Admin/RotationProgram/RotationProgram";
 import ComplianceManagement from "./components/Admin/ComplianceManagement/ComplianceManagement";
 import AuditLogs from "./components/Admin/AuditLogs/AuditLogs";
@@ -50,7 +52,11 @@ function App() {
              <Route path="/add-mentor" element={<AddMentor />} />
                <Route path="/add-mentor/:id" element={<AddMentor />} />
             <Route path="/level" element={<LevelsManagement />} />
+            <Route path="/levels/add" element={<AddLevel />} />
+            <Route path="/levels/edit/:id" element={<AddLevel />} />
             <Route path="/department" element={<DepartmentManagement />} />
+            <Route path="/department/add" element={<AddDepartment />} />
+            <Route path="/department/edit/:id" element={<AddDepartment />} />
             <Route path="/rotation" element={<RotationProgram />} />
             <Route path="/compliance" element={<ComplianceManagement />} />
              <Route path="/certificate" element={<Certifications />} />
