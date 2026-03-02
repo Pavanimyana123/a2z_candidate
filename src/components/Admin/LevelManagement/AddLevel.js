@@ -183,7 +183,7 @@ const AddLevel = () => {
         showConfirmButton: false
       });
       
-      navigate('/levels');
+      navigate('/level');
     } catch (err) {
       setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} level. Please try again.`);
       
