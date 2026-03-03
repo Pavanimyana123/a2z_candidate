@@ -25,16 +25,18 @@ const Candidates = () => {
   const fetchCandidates = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${BASE_URL}/candidates/`);
+      const response = await fetch(`${BASE_URL}/api/candidate/candidates/`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const result = await response.json();
+      console.log('API Response:', result); // Debug log
       
       if (result.status && result.data) {
         setCandidates(result.data);
+        console.log('Candidates set:', result.data); // Debug log
       } else {
         throw new Error(result.message || 'Failed to fetch candidates');
       }
@@ -66,7 +68,7 @@ const Candidates = () => {
 
   const handleDelete = async (candidateId, candidateName) => {
     try {
-      const response = await fetch(`${BASE_URL}/candidates/${candidateId}/`, {
+      const response = await fetch(`${BASE_URL}/api/candidate/candidates/${candidateId}/`, {
         method: 'DELETE',
       });
 
@@ -77,7 +79,6 @@ const Candidates = () => {
       // Refresh the candidates list
       await fetchCandidates();
       
-      // Show success message
       Swal.fire({
         icon: 'success',
         title: 'Deleted!',
@@ -118,44 +119,39 @@ const Candidates = () => {
 
   // Filter candidates based on search and filters
   const filteredCandidates = candidates.filter(candidate => {
-    const matchesSearch = candidate.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         candidate.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         candidate.phone_number?.includes(searchTerm);
+    const matchesSearch = searchTerm === "" || 
+      (candidate.full_name && candidate.full_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (candidate.email && candidate.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (candidate.phone_number && candidate.phone_number.includes(searchTerm));
     
+    // For level filter, we need to handle UUIDs properly
     const matchesLevel = levelFilter === "All Levels" || 
-                        candidate.current_level.toString() === levelFilter;
+      (candidate.current_level && candidate.current_level.toString() === levelFilter);
     
     const candidateStatus = candidate.safety_induction_status ? "active" : "blocked";
     const matchesStatus = statusFilter === "All Status" || 
-                         candidateStatus === statusFilter.toLowerCase();
+      candidateStatus === statusFilter.toLowerCase();
     
     return matchesSearch && matchesLevel && matchesStatus;
   });
 
-  // Get unique levels for filter dropdown
-  const uniqueLevels = [...new Set(candidates.map(c => c.current_level))].sort();
+  // Get unique levels for filter dropdown - but since they're UUIDs, we might want to show something else
+  // For now, let's just show "Level 1", "Level 2", etc. based on index or we can fetch level names separately
+  const uniqueLevels = [...new Set(candidates.map(c => c.current_level))].filter(Boolean);
 
   return (
     <div className="ta-layout-wrapper">
-      {/* Sidebar */}
       <Sidebar />
-
-      {/* Main Area */}
       <div className="ta-main-wrapper">
-        {/* Header */}
         <Header />
-
-        {/* Content */}
         <div className="ta-content-area">
           <div className="candidates-wrapper">
-
             {/* Page Header */}
             <div className="candidates-header">
               <div>
                 <h2>Candidate Management</h2>
                 <p>View and manage all training candidates ({candidates.length} total)</p>
               </div>
-
               <button onClick={handleAddCandidate} className="btn btn-primary candidates-add-btn">
                 Add Candidate
               </button>
@@ -164,7 +160,6 @@ const Candidates = () => {
             {/* Filters */}
             <div className="candidates-filters-box">
               <div className="candidates-filters">
-
                 <div className="candidates-search">
                   <FaSearch />
                   <input 
@@ -180,9 +175,11 @@ const Candidates = () => {
                   value={levelFilter}
                   onChange={(e) => setLevelFilter(e.target.value)}
                 >
-                  <option>All Levels</option>
+                  <option value="All Levels">All Levels</option>
                   {uniqueLevels.map(level => (
-                    <option key={level} value={level}>Level {level}</option>
+                    <option key={level} value={level}>
+                      {level.substring(0, 8)}... {/* Show first 8 chars of UUID */}
+                    </option>
                   ))}
                 </select>
 
@@ -191,7 +188,7 @@ const Candidates = () => {
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                 >
-                  <option>All Status</option>
+                  <option value="All Status">All Status</option>
                   <option value="active">Active</option>
                   <option value="blocked">Blocked</option>
                 </select>
@@ -199,18 +196,18 @@ const Candidates = () => {
                 <button className="candidates-filter-btn" onClick={fetchCandidates}>
                   <FaFilter />
                 </button>
-
               </div>
             </div>
 
-            {/* Loading and Error States */}
+            {/* Loading State */}
             {loading && (
               <div className="candidates-loading">
                 <p>Loading candidates...</p>
               </div>
             )}
 
-            {error && (
+            {/* Error State */}
+            {error && !loading && (
               <div className="candidates-error">
                 <p>Error: {error}</p>
                 <button onClick={fetchCandidates} className="btn btn-secondary">
@@ -226,7 +223,7 @@ const Candidates = () => {
                   <thead>
                     <tr>
                       <th>Candidate Name</th>
-                      <th>Level</th>
+                      {/* <th>Level</th> */}
                       <th>Email</th>
                       <th>Phone</th>
                       <th>City</th>
@@ -236,7 +233,6 @@ const Candidates = () => {
                       <th>Actions</th>
                     </tr>
                   </thead>
-
                   <tbody>
                     {filteredCandidates.length > 0 ? (
                       filteredCandidates.map((candidate) => (
@@ -265,34 +261,54 @@ const Candidates = () => {
   );
 };
 
-/* ---- Row Component ---- */
+/* ---- Row Component (moved outside but kept in same file) ---- */
 const CandidateRow = ({ candidate, onEdit, onDelete }) => {
-  // Format date if needed
+  // Format date function
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (e) {
+      return dateString;
+    }
   };
 
-  // Determine status based on safety_induction_status
+  // Check if medical is expired
+  const isMedicalExpired = () => {
+    if (!candidate.medical_expiry_date) return false;
+    const expiryDate = new Date(candidate.medical_expiry_date);
+    const today = new Date();
+    return expiryDate < today;
+  };
+
   const status = candidate.safety_induction_status ? 'active' : 'blocked';
-  
-  // For compliance, you can use medical_expiry_date logic
-  const today = new Date();
-  const medicalExpiry = candidate.medical_expiry_date ? new Date(candidate.medical_expiry_date) : null;
-  const compliance = medicalExpiry && medicalExpiry > today ? 'compliant' : 'noncompliant';
+  const medicalExpired = isMedicalExpired();
 
   return (
     <tr>
-      <td className="candidates-name">{candidate.full_name}</td>
-      <td>
-        <span className="candidates-level">{candidate.current_level}</span>
+      <td className="candidates-name">
+        {candidate.full_name || 'N/A'}
       </td>
-      <td>{candidate.email}</td>
+      {/* <td>
+        <span className="candidates-level">
+          {candidate.current_level ? 'Level' : 'N/A'}
+        </span>
+      </td> */}
+      <td>{candidate.email || 'N/A'}</td>
       <td>{candidate.phone_number || 'N/A'}</td>
       <td>{candidate.city || 'N/A'}</td>
       <td>{candidate.blood_group || 'N/A'}</td>
-      <td>{formatDate(candidate.medical_expiry_date)}</td>
+      <td>
+        <span className={medicalExpired ? 'text-danger' : ''}>
+          {formatDate(candidate.medical_expiry_date)}
+          {medicalExpired && ' (Expired)'}
+        </span>
+      </td>
       <td>
         <span className={`candidates-pill ${status}`}>
           {status === 'active' ? 'Active' : 'Blocked'}
@@ -303,12 +319,14 @@ const CandidateRow = ({ candidate, onEdit, onDelete }) => {
           <FaEdit 
             className="candidates-action-icon edit-icon" 
             onClick={() => onEdit(candidate.candidate_id)}
-            title="Edit"
+            title="Edit Candidate"
+            style={{ cursor: 'pointer', marginRight: '10px' }}
           />
           <FaTrash 
             className="candidates-action-icon delete-icon" 
             onClick={() => onDelete(candidate)}
-            title="Delete"
+            title="Delete Candidate"
+            style={{ cursor: 'pointer', color: '#dc3545' }}
           />
         </div>
       </td>

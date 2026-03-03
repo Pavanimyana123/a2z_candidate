@@ -11,14 +11,16 @@ const AddMentor = () => {
   const { id } = useParams(); // Get ID from URL for edit mode
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
+  const [levelsLoading, setLevelsLoading] = useState(false);
   const [error, setError] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
+  const [levels, setLevels] = useState([]);
   
   const [formData, setFormData] = useState({
     full_name: "",
     phone_number: "",
     email: "",
-    mentor_level: 3,
+    mentor_level: "",
     specializations: "",
     current_company: "",
     years_of_experience: "",
@@ -31,6 +33,42 @@ const AddMentor = () => {
 
   const [errors, setErrors] = useState({});
 
+  // Fetch levels on component mount
+  useEffect(() => {
+    fetchLevels();
+  }, []);
+
+  const fetchLevels = async () => {
+    try {
+      setLevelsLoading(true);
+      const response = await fetch(`${BASE_URL}/api/admin/levels/`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.status && result.data) {
+        setLevels(result.data);
+        console.log('✅ Levels fetched successfully:', result.data);
+      } else {
+        throw new Error(result.message || 'Failed to fetch levels');
+      }
+    } catch (err) {
+      console.error('Error fetching levels:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Failed to Load Levels',
+        text: err.message || 'An error occurred while loading levels',
+        timer: 3000,
+        showConfirmButton: true
+      });
+    } finally {
+      setLevelsLoading(false);
+    }
+  };
+
   // Fetch mentor data if in edit mode
   useEffect(() => {
     if (id) {
@@ -42,7 +80,7 @@ const AddMentor = () => {
   const fetchMentorData = async () => {
     try {
       setFetchLoading(true);
-      const response = await fetch(`${BASE_URL}/mentors/${id}/`);
+      const response = await fetch(`${BASE_URL}/api/mentors/${id}/`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -56,7 +94,7 @@ const AddMentor = () => {
           full_name: mentorData.full_name || "",
           phone_number: mentorData.phone_number || "",
           email: mentorData.email || "",
-          mentor_level: mentorData.mentor_level || 3,
+          mentor_level: mentorData.mentor_level || "",
           specializations: mentorData.specializations || "",
           current_company: mentorData.current_company || "",
           years_of_experience: mentorData.years_of_experience || "",
@@ -117,8 +155,8 @@ const AddMentor = () => {
       newErrors.email = "Please enter a valid email address";
     }
 
-    if (!formData.mentor_level || formData.mentor_level < 1 || formData.mentor_level > 5) {
-      newErrors.mentor_level = "Mentor level must be between 1 and 5";
+    if (!formData.mentor_level) {
+      newErrors.mentor_level = "Mentor level is required";
     }
 
     if (!formData.specializations?.trim()) {
@@ -166,7 +204,7 @@ const AddMentor = () => {
       full_name: formData.full_name,
       phone_number: formData.phone_number,
       email: formData.email,
-      mentor_level: parseInt(formData.mentor_level),
+      mentor_level: formData.mentor_level, // This is now the level_id
       specializations: formData.specializations,
       current_company: formData.current_company || "",
       years_of_experience: parseFloat(formData.years_of_experience) || 0,
@@ -179,8 +217,8 @@ const AddMentor = () => {
 
     const method = isEditMode ? 'PUT' : 'POST';
     const url = isEditMode 
-      ? `${BASE_URL}/mentors/${id}/` 
-      : `${BASE_URL}/mentors/`;
+      ? `${BASE_URL}/api/mentors/${id}/` 
+      : `${BASE_URL}/api/mentors/`;
 
     console.log(`📦 ${isEditMode ? 'Updating' : 'Submitting'} mentor data:`, payload);
     console.log(`📍 API Endpoint: ${url}`);
@@ -254,7 +292,7 @@ const AddMentor = () => {
     navigate('/mentor');
   };
 
-  if (fetchLoading) {
+  if (fetchLoading || levelsLoading) {
     return (
       <div className="ta-layout-wrapper">
         <Sidebar />
@@ -265,7 +303,9 @@ const AddMentor = () => {
               <div className="spinner-border text-primary" role="status">
                 <span className="visually-hidden">Loading...</span>
               </div>
-              <p className="mt-2">Loading mentor data...</p>
+              <p className="mt-2">
+                {fetchLoading ? 'Loading mentor data...' : 'Loading levels...'}
+              </p>
             </div>
           </div>
         </div>
@@ -365,7 +405,7 @@ const AddMentor = () => {
                     )}
                   </div>
 
-                  {/* Mentor Level */}
+                  {/* Mentor Level - Dropdown from API */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Mentor Level *</label>
                     <select
@@ -373,13 +413,14 @@ const AddMentor = () => {
                       name="mentor_level"
                       value={formData.mentor_level}
                       onChange={handleChange}
-                      disabled={loading}
+                      disabled={loading || levelsLoading}
                     >
-                      <option value="1">Level 1 - Junior Mentor</option>
-                      <option value="2">Level 2 - Associate Mentor</option>
-                      <option value="3">Level 3 - Senior Mentor</option>
-                      <option value="4">Level 4 - Lead Mentor</option>
-                      <option value="5">Level 5 - Principal Mentor</option>
+                      <option value="">Select Mentor Level</option>
+                      {levels.map((level) => (
+                        <option key={level.level_id} value={level.level_id}>
+                          {level.name} (Level {level.number})
+                        </option>
+                      ))}
                     </select>
                     {errors.mentor_level && (
                       <div className="invalid-feedback">{errors.mentor_level}</div>

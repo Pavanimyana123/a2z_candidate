@@ -11,9 +11,11 @@ const AddCandidate = () => {
   const { id } = useParams(); // Get ID from URL for edit mode
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
+  const [levelsLoading, setLevelsLoading] = useState(false);
   const [error, setError] = useState('');
   const [errors, setErrors] = useState({});
   const [isEditMode, setIsEditMode] = useState(false);
+  const [levels, setLevels] = useState([]);
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -28,10 +30,46 @@ const AddCandidate = () => {
     pincode: '',
     emergency_contact_name: '',
     emergency_contact_phone: '',
-    current_level: 0,
+    current_level: '', // This will store the level_id
     blood_group: '',
     medical_expiry_date: '',
   });
+
+  // Fetch levels on component mount
+  useEffect(() => {
+    fetchLevels();
+  }, []);
+
+  const fetchLevels = async () => {
+    try {
+      setLevelsLoading(true);
+      const response = await fetch(`${BASE_URL}/api/admin/levels/`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.status && result.data) {
+        setLevels(result.data);
+        console.log('✅ Levels fetched successfully:', result.data);
+      } else {
+        throw new Error(result.message || 'Failed to fetch levels');
+      }
+    } catch (err) {
+      console.error('Error fetching levels:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Failed to Load Levels',
+        text: err.message || 'An error occurred while loading levels',
+        timer: 3000,
+        showConfirmButton: true
+      });
+    } finally {
+      setLevelsLoading(false);
+    }
+  };
 
   // Fetch candidate data if in edit mode
   useEffect(() => {
@@ -44,7 +82,7 @@ const AddCandidate = () => {
   const fetchCandidateData = async () => {
     try {
       setFetchLoading(true);
-      const response = await fetch(`${BASE_URL}/candidates/${id}/`);
+      const response = await fetch(`${BASE_URL}/api/candidate/candidates/${id}/`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -59,6 +97,7 @@ const AddCandidate = () => {
           ...candidateData,
           date_of_birth: candidateData.date_of_birth ? candidateData.date_of_birth.split('T')[0] : '',
           medical_expiry_date: candidateData.medical_expiry_date ? candidateData.medical_expiry_date.split('T')[0] : '',
+          current_level: candidateData.current_level || '',
         };
         setFormData(formattedData);
         console.log('✅ Candidate data loaded for edit:', formattedData);
@@ -87,7 +126,7 @@ const AddCandidate = () => {
     
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? parseInt(value) || '' : value
+      [name]: value
     }));
     
     // Clear error for this field
@@ -170,6 +209,11 @@ const AddCandidate = () => {
       console.log('Validation failed: Invalid emergency contact phone format');
     }
 
+    if (!formData.current_level) {
+      newErrors.current_level = "Current level is required";
+      console.log('Validation failed: Current level is empty');
+    }
+
     const isValid = Object.keys(newErrors).length === 0;
     console.log('Validation result:', isValid ? 'PASSED' : 'FAILED');
     if (!isValid) {
@@ -206,13 +250,27 @@ const AddCandidate = () => {
 
     // Prepare payload
     const payload = {
-      ...formData,
+      full_name: formData.full_name,
+      date_of_birth: formData.date_of_birth,
+      gender: formData.gender,
+      phone_number: formData.phone_number,
+      email: formData.email,
+      address: formData.address,
+      city: formData.city,
+      state: formData.state,
+      country: formData.country,
+      pincode: formData.pincode,
+      emergency_contact_name: formData.emergency_contact_name,
+      emergency_contact_phone: formData.emergency_contact_phone,
+      blood_group: formData.blood_group || '',
+      medical_expiry_date: formData.medical_expiry_date || '',
       safety_induction_status: true, // Always set to true for new candidates
+      current_level: formData.current_level // This is already the level_id from the dropdown
     };
 
-    // Remove any undefined or null values
+    // Remove any empty string values but keep valid falsy values like false
     Object.keys(payload).forEach(key => {
-      if (payload[key] === undefined || payload[key] === null) {
+      if (payload[key] === undefined || payload[key] === null || payload[key] === '') {
         delete payload[key];
       }
     });
@@ -222,8 +280,8 @@ const AddCandidate = () => {
     
     const method = isEditMode ? 'PUT' : 'POST';
     const url = isEditMode 
-      ? `${BASE_URL}/candidates/${id}/` 
-      : `${BASE_URL}/candidates/`;
+      ? `${BASE_URL}/api/candidate/candidates/${id}/` 
+      : `${BASE_URL}/api/candidate/candidates/`;
     
     console.log(`📍 API Endpoint: ${url}`);
     console.log(`📤 Sending ${method} request...`);
@@ -297,7 +355,7 @@ const AddCandidate = () => {
     };
   }, [isEditMode]);
 
-  if (fetchLoading) {
+  if (fetchLoading || levelsLoading) {
     return (
       <div className="ta-layout-wrapper">
         <Sidebar />
@@ -308,7 +366,9 @@ const AddCandidate = () => {
               <div className="spinner-border text-primary" role="status">
                 <span className="visually-hidden">Loading...</span>
               </div>
-              <p className="mt-2">Loading candidate data...</p>
+              <p className="mt-2">
+                {fetchLoading ? 'Loading candidate data...' : 'Loading levels...'}
+              </p>
             </div>
           </div>
         </div>
@@ -538,18 +598,22 @@ const AddCandidate = () => {
                     )}
                   </div>
 
-                  {/* Current Level */}
+                  {/* Current Level - Dropdown with level_id */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Current Level *</label>
-                    <input
-                      type="number"
-                      className={`form-control ${errors.current_level ? 'is-invalid' : ''}`}
+                    <select
+                      className={`form-select ${errors.current_level ? 'is-invalid' : ''}`}
                       name="current_level"
-                      value={formData.current_level || 0}
+                      value={formData.current_level || ''}
                       onChange={handleChange}
-                      placeholder="Enter current level"
-                      min="0"
-                    />
+                    >
+                      <option value="">Select Level</option>
+                      {levels.map((level) => (
+                        <option key={level.level_id} value={level.level_id}>
+                          {level.name} (Level {level.number})
+                        </option>
+                      ))}
+                    </select>
                     {errors.current_level && (
                       <div className="invalid-feedback">{errors.current_level}</div>
                     )}
