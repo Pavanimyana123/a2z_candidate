@@ -11,17 +11,20 @@ const AddMentor = () => {
   const { id } = useParams(); // Get ID from URL for edit mode
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
-  const [levelsLoading, setLevelsLoading] = useState(false);
   const [error, setError] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
+  
+  // State for dropdown options
   const [levels, setLevels] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
   
   const [formData, setFormData] = useState({
     full_name: "",
     phone_number: "",
     email: "",
-    mentor_level: "",
-    specializations: "",
+    mentor_level: "", // Will store level_id
+    specializations: [], // Will store array of department_ids
     current_company: "",
     years_of_experience: "",
     max_trainees: "",
@@ -33,41 +36,10 @@ const AddMentor = () => {
 
   const [errors, setErrors] = useState({});
 
-  // Fetch levels on component mount
+  // Fetch levels and departments on component mount
   useEffect(() => {
-    fetchLevels();
+    fetchOptions();
   }, []);
-
-  const fetchLevels = async () => {
-    try {
-      setLevelsLoading(true);
-      const response = await fetch(`${BASE_URL}/api/admin/levels/`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      
-      if (result.status && result.data) {
-        setLevels(result.data);
-        console.log('✅ Levels fetched successfully:', result.data);
-      } else {
-        throw new Error(result.message || 'Failed to fetch levels');
-      }
-    } catch (err) {
-      console.error('Error fetching levels:', err);
-      Swal.fire({
-        icon: 'error',
-        title: 'Failed to Load Levels',
-        text: err.message || 'An error occurred while loading levels',
-        timer: 3000,
-        showConfirmButton: true
-      });
-    } finally {
-      setLevelsLoading(false);
-    }
-  };
 
   // Fetch mentor data if in edit mode
   useEffect(() => {
@@ -77,10 +49,53 @@ const AddMentor = () => {
     }
   }, [id]);
 
+  const fetchOptions = async () => {
+    try {
+      setLoadingOptions(true);
+      
+      // Fetch levels
+      const levelsResponse = await fetch(`${BASE_URL}/api/admin/levels/`);
+      if (!levelsResponse.ok) {
+        throw new Error(`Failed to fetch levels: ${levelsResponse.status}`);
+      }
+      const levelsData = await levelsResponse.json();
+      console.log("✅ Levels fetched:", levelsData);
+      
+      // Fetch departments
+      const deptsResponse = await fetch(`${BASE_URL}/api/admin/departments/`);
+      if (!deptsResponse.ok) {
+        throw new Error(`Failed to fetch departments: ${deptsResponse.status}`);
+      }
+      const deptsData = await deptsResponse.json();
+      console.log("✅ Departments fetched:", deptsData);
+      
+      // Filter active levels and departments
+      const activeLevels = levelsData.data?.filter(level => level.is_active) || [];
+      const activeDepartments = deptsData.data?.filter(dept => dept.is_active) || [];
+      
+      setLevels(activeLevels);
+      setDepartments(activeDepartments);
+      
+    } catch (err) {
+      console.error("❌ Error fetching options:", err);
+      setError(err.message);
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Failed to Load Options',
+        text: err.message || 'Could not load levels and departments',
+        timer: 3000,
+        showConfirmButton: true
+      });
+    } finally {
+      setLoadingOptions(false);
+    }
+  };
+
   const fetchMentorData = async () => {
     try {
       setFetchLoading(true);
-      const response = await fetch(`${BASE_URL}/api/mentors/${id}/`);
+      const response = await fetch(`${BASE_URL}/api/mentor/mentors/${id}/`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -95,7 +110,7 @@ const AddMentor = () => {
           phone_number: mentorData.phone_number || "",
           email: mentorData.email || "",
           mentor_level: mentorData.mentor_level || "",
-          specializations: mentorData.specializations || "",
+          specializations: mentorData.specializations || [],
           current_company: mentorData.current_company || "",
           years_of_experience: mentorData.years_of_experience || "",
           max_trainees: mentorData.max_trainees || "",
@@ -125,15 +140,47 @@ const AddMentor = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value, type } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'number' ? value : value
-    }));
+    const { name, value, type, checked } = e.target;
+    
+    if (type === 'checkbox') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: checked
+      }));
+    } else if (name === 'specializations') {
+      // Handle multi-select for specializations
+      const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: selectedOptions
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'number' ? (value === '' ? '' : Number(value)) : value
+      }));
+    }
+    
     // Clear error for this field
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  // Remove a selected specialization
+  const removeSpecialization = (deptId) => {
+    setFormData(prev => ({
+      ...prev,
+      specializations: prev.specializations.filter(id => id !== deptId)
+    }));
+  };
+
+  // Clear selected mentor level
+  const clearMentorLevel = () => {
+    setFormData(prev => ({
+      ...prev,
+      mentor_level: ""
+    }));
   };
 
   const validateForm = () => {
@@ -159,17 +206,19 @@ const AddMentor = () => {
       newErrors.mentor_level = "Mentor level is required";
     }
 
-    if (!formData.specializations?.trim()) {
-      newErrors.specializations = "Specializations are required";
+    if (!formData.specializations || formData.specializations.length === 0) {
+      newErrors.specializations = "At least one specialization is required";
     }
 
-    if (!formData.years_of_experience) {
+    if (!formData.years_of_experience && formData.years_of_experience !== 0) {
       newErrors.years_of_experience = "Years of experience is required";
     } else if (formData.years_of_experience < 0 || formData.years_of_experience > 50) {
       newErrors.years_of_experience = "Years of experience must be between 0 and 50";
     }
 
-    if (!formData.max_trainees || formData.max_trainees < 1) {
+    if (!formData.max_trainees) {
+      newErrors.max_trainees = "Max trainees is required";
+    } else if (formData.max_trainees < 1) {
       newErrors.max_trainees = "Max trainees must be at least 1";
     }
 
@@ -190,109 +239,107 @@ const AddMentor = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-    
-    setLoading(true);
-    setError("");
+  e.preventDefault();
 
-    // Prepare payload according to the required format
-    const payload = {
-      full_name: formData.full_name,
-      phone_number: formData.phone_number,
-      email: formData.email,
-      mentor_level: formData.mentor_level, // This is now the level_id
-      specializations: formData.specializations,
-      current_company: formData.current_company || "",
-      years_of_experience: parseFloat(formData.years_of_experience) || 0,
-      max_trainees: parseInt(formData.max_trainees) || 0,
-      current_trainees: parseInt(formData.current_trainees) || 0,
-      mentorship_status: formData.mentorship_status,
-      background_verified: formData.background_verified,
-      mentorship_certified: formData.mentorship_certified
-    };
+  if (!validateForm()) return;
 
-    const method = isEditMode ? 'PUT' : 'POST';
-    const url = isEditMode 
-      ? `${BASE_URL}/api/mentors/${id}/` 
-      : `${BASE_URL}/api/mentors/`;
+  setLoading(true);
+  setError("");
 
-    console.log(`📦 ${isEditMode ? 'Updating' : 'Submitting'} mentor data:`, payload);
-    console.log(`📍 API Endpoint: ${url}`);
-
-    try {
-      const response = await fetch(url, {
-        method: method,
-        mode: 'cors',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-
-      console.log(`📥 Response status: ${response.status}`);
-
-      if (!response.ok) {
-        let errorMessage = `Failed to ${isEditMode ? 'update' : 'create'} mentor`;
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorData.error || JSON.stringify(errorData);
-        } catch (parseError) {
-          const errorText = await response.text();
-          errorMessage = errorText || `HTTP error ${response.status}`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      console.log(`✅ Mentor ${isEditMode ? 'updated' : 'created'} successfully:`, data);
-      
-      // Show success message
-      await Swal.fire({
-        icon: 'success',
-        title: isEditMode ? 'Updated!' : 'Created!',
-        text: `Mentor has been ${isEditMode ? 'updated' : 'created'} successfully.`,
-        timer: 2000,
-        showConfirmButton: false
-      });
-      
-      // Navigate back to mentors list
-      navigate('/mentor');
-    } catch (err) {
-      console.error(`❌ Error ${isEditMode ? 'updating' : 'creating'} mentor:`, err);
-      
-      // Handle specific error messages
-      let errorMessage = err.message || `Failed to ${isEditMode ? 'update' : 'create'} mentor. Please try again.`;
-      
-      if (err.message.includes('Failed to fetch')) {
-        errorMessage = 'Unable to connect to the server. Please check if the server is running and CORS is properly configured.';
-      } else if (err.message.includes('duplicate key') || err.message.includes('already exists')) {
-        errorMessage = 'A mentor with this email or phone number already exists.';
-      }
-      
-      setError(errorMessage);
-      
-      Swal.fire({
-        icon: 'error',
-        title: isEditMode ? 'Update Failed' : 'Creation Failed',
-        text: errorMessage,
-        timer: 3000,
-        showConfirmButton: true
-      });
-    } finally {
-      setLoading(false);
-    }
+  const payload = {
+    full_name: formData.full_name,
+    phone_number: formData.phone_number,
+    email: formData.email,
+    mentor_level: formData.mentor_level,
+    specializations: formData.specializations,
+    current_company: formData.current_company || "",
+    years_of_experience: Number(formData.years_of_experience),
+    max_trainees: Number(formData.max_trainees),
+    current_trainees: Number(formData.current_trainees || 0),
+    mentorship_status: formData.mentorship_status,
+    background_verified: formData.background_verified,
+    mentorship_certified: formData.mentorship_certified
   };
+
+  const url = isEditMode
+    ? `${BASE_URL}/api/mentor/mentors/${id}/`
+    : `${BASE_URL}/api/mentor/mentors/`;
+
+  try {
+    const response = await fetch(url, {
+      method: isEditMode ? "PUT" : "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}`;
+
+      try {
+        const errorData = await response.json();
+        errorMessage =
+          errorData.message ||
+          errorData.error ||
+          JSON.stringify(errorData);
+      } catch {}
+
+      throw new Error(errorMessage);
+    }
+
+    await Swal.fire({
+      icon: "success",
+      title: isEditMode ? "Updated!" : "Created!",
+      text: "Mentor saved successfully",
+      timer: 2000,
+      showConfirmButton: false
+    });
+
+    navigate("/mentor");
+
+  } catch (err) {
+    setError(err.message);
+
+    Swal.fire({
+      icon: "error",
+      title: "Save Failed",
+      text: err.message,
+      showConfirmButton: true
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleCancel = () => {
     navigate('/mentor');
   };
 
-  if (fetchLoading || levelsLoading) {
+  // Get level display name with number
+  const getLevelDisplay = (level) => {
+    return `${level.name} (${level.number})`;
+  };
+
+  // Get department display with code
+  const getDepartmentDisplay = (dept) => {
+    return `${dept.name} (${dept.code})`;
+  };
+
+  // Get level name by ID for display
+  const getLevelName = (levelId) => {
+    const level = levels.find(l => l.level_id === levelId);
+    return level ? getLevelDisplay(level) : 'Unknown Level';
+  };
+
+  // Get department name by ID for display
+  const getDepartmentName = (deptId) => {
+    const dept = departments.find(d => d.department_id === deptId);
+    return dept ? getDepartmentDisplay(dept) : 'Unknown Department';
+  };
+
+  if (fetchLoading || loadingOptions) {
     return (
       <div className="ta-layout-wrapper">
         <Sidebar />
@@ -304,7 +351,7 @@ const AddMentor = () => {
                 <span className="visually-hidden">Loading...</span>
               </div>
               <p className="mt-2">
-                {fetchLoading ? 'Loading mentor data...' : 'Loading levels...'}
+                {fetchLoading ? 'Loading mentor data...' : 'Loading levels and departments...'}
               </p>
             </div>
           </div>
@@ -337,7 +384,7 @@ const AddMentor = () => {
               </button>
             </div>
 
-            {/* Error Message - Optional, still show for additional context */}
+            {/* Error Message */}
             {error && (
               <div className="alert alert-danger alert-dismissible fade show" role="alert">
                 <strong>Error:</strong> {error}
@@ -405,44 +452,94 @@ const AddMentor = () => {
                     )}
                   </div>
 
-                  {/* Mentor Level - Dropdown from API */}
+                  {/* Mentor Level - Now showing name and number */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Mentor Level *</label>
-                    <select
-                      className={`form-select ${errors.mentor_level ? 'is-invalid' : ''}`}
-                      name="mentor_level"
-                      value={formData.mentor_level}
-                      onChange={handleChange}
-                      disabled={loading || levelsLoading}
-                    >
-                      <option value="">Select Mentor Level</option>
-                      {levels.map((level) => (
-                        <option key={level.level_id} value={level.level_id}>
-                          {level.name} (Level {level.number})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="position-relative">
+                      <select
+                        className={`form-select ${errors.mentor_level ? 'is-invalid' : ''} ${formData.mentor_level ? 'has-value' : ''}`}
+                        name="mentor_level"
+                        value={formData.mentor_level}
+                        onChange={handleChange}
+                        disabled={loading || levels.length === 0}
+                      >
+                        <option value="">Select Mentor Level</option>
+                        {levels.map(level => (
+                          <option key={level.level_id} value={level.level_id}>
+                            {getLevelDisplay(level)}
+                          </option>
+                        ))}
+                      </select>
+                      {formData.mentor_level && (
+                        <button
+                          type="button"
+                          className="btn-clear-selection"
+                          onClick={clearMentorLevel}
+                          title="Clear selection"
+                        >
+                          <i className="bi bi-x-circle-fill"></i> ×
+                        </button>
+                      )}
+                    </div>
                     {errors.mentor_level && (
                       <div className="invalid-feedback">{errors.mentor_level}</div>
                     )}
+                    {levels.length === 0 && (
+                      <small className="text-warning">No active levels available</small>
+                    )}
                   </div>
 
-                  {/* Specializations */}
+                  {/* Specializations - Multi-select showing name and code */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Specializations *</label>
-                    <input
-                      type="text"
-                      className={`form-control ${errors.specializations ? 'is-invalid' : ''}`}
+                    <select
+                      multiple
+                      className={`form-select ${errors.specializations ? 'is-invalid' : ''}`}
                       name="specializations"
                       value={formData.specializations}
                       onChange={handleChange}
-                      placeholder="e.g., Manufacturing, Quality Control, Testing"
-                      disabled={loading}
-                    />
+                      disabled={loading || departments.length === 0}
+                      size="4"
+                    >
+                      {departments.map(dept => (
+                        <option key={dept.department_id} value={dept.department_id}>
+                          {getDepartmentDisplay(dept)}
+                        </option>
+                      ))}
+                    </select>
                     {errors.specializations && (
                       <div className="invalid-feedback">{errors.specializations}</div>
                     )}
+                    {departments.length === 0 && (
+                      <small className="text-warning">No active departments available</small>
+                    )}
+                    <small className="text-muted">Hold Ctrl/Cmd to select multiple</small>
                   </div>
+
+                  {/* Selected Specializations Tags */}
+                  {formData.specializations.length > 0 && (
+                    <div className="col-12 mb-3">
+                      <label className="form-label">Selected Specializations:</label>
+                      <div className="selected-tags-container">
+                        {formData.specializations.map(deptId => {
+                          const dept = departments.find(d => d.department_id === deptId);
+                          return dept ? (
+                            <span key={deptId} className="selected-tag">
+                              {getDepartmentDisplay(dept)}
+                              <button
+                                type="button"
+                                className="tag-remove"
+                                onClick={() => removeSpecialization(deptId)}
+                                title="Remove"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Current Company */}
                   <div className="col-md-6 mb-3">
@@ -541,7 +638,7 @@ const AddMentor = () => {
                         className="form-check-input"
                         name="background_verified"
                         checked={formData.background_verified}
-                        onChange={(e) => setFormData(prev => ({ ...prev, background_verified: e.target.checked }))}
+                        onChange={handleChange}
                         disabled={loading}
                         id="backgroundVerified"
                       />
@@ -557,7 +654,7 @@ const AddMentor = () => {
                         className="form-check-input"
                         name="mentorship_certified"
                         checked={formData.mentorship_certified}
-                        onChange={(e) => setFormData(prev => ({ ...prev, mentorship_certified: e.target.checked }))}
+                        onChange={handleChange}
                         disabled={loading}
                         id="mentorshipCertified"
                       />

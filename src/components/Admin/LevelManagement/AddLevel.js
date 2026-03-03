@@ -18,7 +18,7 @@ const AddLevel = () => {
   const [formData, setFormData] = useState({
     name: '',
     code: '',
-    number: '',
+    number: '', // Start with empty string, but will accept 0
     description: '',
     is_active: true,
     min_score_required: '',
@@ -49,11 +49,12 @@ const AddLevel = () => {
         setFormData({
           name: levelData.name || '',
           code: levelData.code || '',
-          number: levelData.number || '',
+          // Handle number field properly - if it's 0, keep it as 0, not empty string
+          number: levelData.number !== undefined && levelData.number !== null ? levelData.number : '',
           description: levelData.description || '',
           is_active: levelData.is_active !== undefined ? levelData.is_active : true,
-          min_score_required: levelData.min_score_required || '',
-          max_score: levelData.max_score || ''
+          min_score_required: levelData.min_score_required !== undefined && levelData.min_score_required !== null ? levelData.min_score_required : '',
+          max_score: levelData.max_score !== undefined && levelData.max_score !== null ? levelData.max_score : ''
         });
         console.log('✅ Level data loaded for edit:', levelData);
       }
@@ -79,6 +80,7 @@ const AddLevel = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : 
               (name === 'number' || name === 'min_score_required' || name === 'max_score') ? 
+              // If value is empty string, keep it as empty string, otherwise convert to number
               (value === '' ? '' : Number(value)) : value
     }));
     
@@ -99,26 +101,29 @@ const AddLevel = () => {
       newErrors.code = "Level code is required";
     }
 
-    if (!formData.number && formData.number !== 0) {
+    // Check for number field - allow 0 as valid
+    if (formData.number === '' || formData.number === null || formData.number === undefined) {
       newErrors.number = "Level number is required";
     } else if (formData.number < 0) {
-      newErrors.number = "Level number must be a positive number";
+      newErrors.number = "Level number must be 0 or greater";
     }
 
-    if (!formData.min_score_required && formData.min_score_required !== 0) {
+    // Check for min_score_required - allow 0 as valid
+    if (formData.min_score_required === '' || formData.min_score_required === null || formData.min_score_required === undefined) {
       newErrors.min_score_required = "Minimum score required is required";
     } else if (formData.min_score_required < 0) {
-      newErrors.min_score_required = "Minimum score must be a positive number";
+      newErrors.min_score_required = "Minimum score must be 0 or greater";
     }
 
-    if (!formData.max_score && formData.max_score !== 0) {
+    // Check for max_score - allow 0 as valid
+    if (formData.max_score === '' || formData.max_score === null || formData.max_score === undefined) {
       newErrors.max_score = "Maximum score is required";
     } else if (formData.max_score < 0) {
-      newErrors.max_score = "Maximum score must be a positive number";
+      newErrors.max_score = "Maximum score must be 0 or greater";
     }
 
     // Validate that max_score is greater than min_score_required
-    if (formData.max_score && formData.min_score_required && 
+    if (formData.max_score !== '' && formData.min_score_required !== '' && 
         Number(formData.max_score) <= Number(formData.min_score_required)) {
       newErrors.max_score = "Maximum score must be greater than minimum score required";
     }
@@ -145,16 +150,18 @@ const AddLevel = () => {
     setLoading(true);
     setError('');
 
-    // Prepare payload
+    // Prepare payload - ensure numbers are properly converted
     const payload = {
       name: formData.name,
       code: formData.code,
-      number: Number(formData.number),
+      number: Number(formData.number), // This will work for 0 as well
       description: formData.description || '',
       is_active: formData.is_active,
       min_score_required: Number(formData.min_score_required),
       max_score: Number(formData.max_score)
     };
+
+    console.log('Submitting payload:', payload); // Debug log
 
     const method = isEditMode ? 'PUT' : 'POST';
     const url = isEditMode 
@@ -170,9 +177,10 @@ const AddLevel = () => {
         body: JSON.stringify(payload)
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to ${isEditMode ? 'update' : 'create'} level`);
+        throw new Error(responseData.message || `Failed to ${isEditMode ? 'update' : 'create'} level`);
       }
 
       await Swal.fire({
@@ -215,7 +223,7 @@ const AddLevel = () => {
     if (result.isConfirmed) {
       setLoading(true);
       try {
-        const response = await fetch(`${BASE_URL}/admin/levels/${id}/`, {
+        const response = await fetch(`${BASE_URL}/api/admin/levels/${id}/`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -287,6 +295,7 @@ const AddLevel = () => {
                 <h2>{isEditMode ? 'Edit Level' : 'Add New Level'}</h2>
                 <p>{isEditMode ? 'Update the level details below' : 'Fill in the level details below'}</p>
               </div>
+              {/* Uncomment if you want delete button */}
               {/* <div>
                 {isEditMode && (
                   <button 
@@ -356,12 +365,14 @@ const AddLevel = () => {
                       type="number"
                       className={`form-control ${errors.number ? 'is-invalid' : ''}`}
                       name="number"
-                      value={formData.number || ''}
+                      value={formData.number}
                       onChange={handleChange}
-                      placeholder="Enter level number (e.g., 0, 1, 2)"
+                      placeholder="Enter level number (0, 1, 2, etc.)"
                       min="0"
+                      step="1"
                       disabled={loading}
                     />
+                    <small className="text-muted">Level numbers start from 0</small>
                     {errors.number && (
                       <div className="invalid-feedback">{errors.number}</div>
                     )}
@@ -407,10 +418,11 @@ const AddLevel = () => {
                       type="number"
                       className={`form-control ${errors.min_score_required ? 'is-invalid' : ''}`}
                       name="min_score_required"
-                      value={formData.min_score_required || ''}
+                      value={formData.min_score_required}
                       onChange={handleChange}
                       placeholder="Enter minimum score required"
                       min="0"
+                      step="1"
                       disabled={loading}
                     />
                     {errors.min_score_required && (
@@ -425,10 +437,11 @@ const AddLevel = () => {
                       type="number"
                       className={`form-control ${errors.max_score ? 'is-invalid' : ''}`}
                       name="max_score"
-                      value={formData.max_score || ''}
+                      value={formData.max_score}
                       onChange={handleChange}
                       placeholder="Enter maximum score"
                       min="0"
+                      step="1"
                       disabled={loading}
                     />
                     {errors.max_score && (
@@ -440,7 +453,7 @@ const AddLevel = () => {
                 {/* Note */}
                 <div className="ac-note mb-4">
                   <small className="text-muted">
-                    Note: Fields marked with * are required.
+                    Note: Fields marked with * are required. Level numbers can start from 0.
                   </small>
                 </div>
 

@@ -9,43 +9,62 @@ import { BASE_URL } from "../../../ApiUrl";
 
 const Mentors = () => {
   const [mentors, setMentors] = useState([]);
+  const [levels, setLevels] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   
   const navigate = useNavigate();
 
-  // Fetch mentors data
+  // Fetch all data (mentors, levels, departments)
   useEffect(() => {
-    fetchMentors();
+    fetchAllData();
   }, []);
 
-  const fetchMentors = async () => {
+  const fetchAllData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${BASE_URL}/mentors/`);
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // Fetch mentors
+      const mentorsResponse = await fetch(`${BASE_URL}/api/mentor/mentors/`);
+      if (!mentorsResponse.ok) {
+        throw new Error(`Failed to fetch mentors: ${mentorsResponse.status}`);
+      }
+      const mentorsResult = await mentorsResponse.json();
+      
+      // Fetch levels for reference
+      const levelsResponse = await fetch(`${BASE_URL}/api/admin/levels/`);
+      const levelsResult = levelsResponse.ok ? await levelsResponse.json() : { data: [] };
+      
+      // Fetch departments for reference
+      const deptsResponse = await fetch(`${BASE_URL}/api/admin/departments/`);
+      const deptsResult = deptsResponse.ok ? await deptsResponse.json() : { data: [] };
+      
+      if (mentorsResult.status && mentorsResult.data) {
+        setMentors(mentorsResult.data);
+      } else {
+        throw new Error(mentorsResult.message || 'Failed to fetch mentors');
       }
       
-      const result = await response.json();
+      // Set levels and departments for reference
+      if (levelsResult.data) {
+        setLevels(levelsResult.data);
+      }
       
-      if (result.status && result.data) {
-        setMentors(result.data);
-      } else {
-        throw new Error(result.message || 'Failed to fetch mentors');
+      if (deptsResult.data) {
+        setDepartments(deptsResult.data);
       }
       
       setError(null);
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching mentors:', err);
+      console.error('Error fetching data:', err);
       
       Swal.fire({
         icon: 'error',
-        title: 'Failed to Load Mentors',
-        text: err.message || 'An error occurred while fetching mentors',
+        title: 'Failed to Load Data',
+        text: err.message || 'An error occurred while fetching data',
         timer: 3000,
         showConfirmButton: true
       });
@@ -64,7 +83,7 @@ const Mentors = () => {
 
   const handleDelete = async (mentorId, mentorName) => {
     try {
-      const response = await fetch(`${BASE_URL}/mentors/${mentorId}/`, {
+      const response = await fetch(`${BASE_URL}/api/mentor/mentors/${mentorId}/`, {
         method: 'DELETE',
       });
 
@@ -73,7 +92,7 @@ const Mentors = () => {
       }
 
       // Refresh the mentors list
-      await fetchMentors();
+      await fetchAllData();
       
       // Show success message
       Swal.fire({
@@ -114,6 +133,21 @@ const Mentors = () => {
     });
   };
 
+  // Get level name by ID
+  const getLevelName = (levelId) => {
+    const level = levels.find(l => l.level_id === levelId);
+    return level ? `${level.name} (${level.number})` : 'Unknown Level';
+  };
+
+  // Get department names by IDs
+  const getDepartmentNames = (deptIds) => {
+    if (!deptIds || !Array.isArray(deptIds)) return 'No specializations';
+    return deptIds.map(id => {
+      const dept = departments.find(d => d.department_id === id);
+      return dept ? `${dept.name} (${dept.code})` : null;
+    }).filter(Boolean).join(', ') || 'No specializations';
+  };
+
   // Calculate stats from actual data
   const totalMentors = mentors.length;
   const activeMentors = mentors.filter(m => m.mentorship_status === 'active').length;
@@ -132,11 +166,14 @@ const Mentors = () => {
   // Filter mentors based on search
   const filteredMentors = mentors.filter(mentor => {
     const searchLower = searchTerm.toLowerCase();
+    const departmentNames = getDepartmentNames(mentor.specializations).toLowerCase();
+    
     return (
-      mentor.full_name.toLowerCase().includes(searchLower) ||
-      mentor.specializations?.toLowerCase().includes(searchLower) ||
+      mentor.full_name?.toLowerCase().includes(searchLower) ||
+      departmentNames.includes(searchLower) ||
       mentor.current_company?.toLowerCase().includes(searchLower) ||
-      mentor.email?.toLowerCase().includes(searchLower)
+      mentor.email?.toLowerCase().includes(searchLower) ||
+      getLevelName(mentor.mentor_level).toLowerCase().includes(searchLower)
     );
   });
 
@@ -172,15 +209,19 @@ const Mentors = () => {
 
             {/* Loading and Error States */}
             {loading && (
-              <div className="mm-loading">
-                <p>Loading mentors...</p>
+              <div className="text-center p-5">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <p className="mt-2">Loading mentors...</p>
               </div>
             )}
 
             {error && (
-              <div className="mm-error">
-                <p>Error: {error}</p>
-                <button onClick={fetchMentors} className="btn btn-secondary">
+              <div className="alert alert-danger" role="alert">
+                <h5>Error Loading Data</h5>
+                <p>{error}</p>
+                <button onClick={fetchAllData} className="btn btn-primary mt-2">
                   Retry
                 </button>
               </div>
@@ -196,16 +237,18 @@ const Mentors = () => {
               </div>
             )}
 
-            {/* Search */}
-            <div className="mm-search-box mt-4">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search mentors by name, specialization, or company..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+            {/* Search - Only show when not loading and no error */}
+            {!loading && !error && (
+              <div className="mm-search-box mt-4">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Search mentors by name, specialization, company, or level..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            )}
 
             {/* Mentor Cards */}
             {!loading && !error && (
@@ -216,13 +259,23 @@ const Mentors = () => {
                       key={mentor.mentor_id}
                       mentor={mentor}
                       initials={getInitials(mentor.full_name)}
+                      levelName={getLevelName(mentor.mentor_level)}
+                      departmentNames={getDepartmentNames(mentor.specializations)}
                       onEdit={handleEdit}
                       onDelete={confirmDelete}
                     />
                   ))
                 ) : (
-                  <div className="col-12 text-center">
-                    <p className="mm-no-results">No mentors found matching your search.</p>
+                  <div className="col-12 text-center py-5">
+                    <p className="text-muted">No mentors found matching your search.</p>
+                    {searchTerm && (
+                      <button 
+                        className="btn btn-outline-secondary mt-2"
+                        onClick={() => setSearchTerm('')}
+                      >
+                        Clear Search
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -245,15 +298,12 @@ const StatBox = ({ title, value }) => (
   </div>
 );
 
-const MentorCard = ({ mentor, initials, onEdit, onDelete }) => {
+const MentorCard = ({ mentor, initials, levelName, departmentNames, onEdit, onDelete }) => {
   // Calculate approval rate based on background verification and certification
   const approvalRate = mentor.background_verified && mentor.mentorship_certified ? 100 : 50;
   
   // Determine status class
   const statusClass = mentor.mentorship_status === 'active' ? 'active' : 'inactive';
-  
-  // Format department/specialization
-  const department = mentor.specializations || 'No specialization';
   
   // Calculate pending validations
   const pendingValidations = (mentor.max_trainees || 0) - (mentor.current_trainees || 0);
@@ -265,8 +315,12 @@ const MentorCard = ({ mentor, initials, onEdit, onDelete }) => {
           <div className="mm-avatar">{initials}</div>
           <div className="mm-mentor-info">
             <h5>{mentor.full_name}</h5>
-            <span>{department}</span>
-            <small className="text-muted">{mentor.current_company || 'No company'}</small>
+            <span className="mentor-level-badge" title="Mentor Level">
+              {levelName}
+            </span>
+            <small className="text-muted d-block mt-1">
+              {mentor.current_company || 'No company'}
+            </small>
           </div>
           <div className="mm-card-actions">
             <FaEdit 
@@ -279,35 +333,56 @@ const MentorCard = ({ mentor, initials, onEdit, onDelete }) => {
               onClick={() => onDelete(mentor)}
               title="Delete Mentor"
             />
-            {/* <FaEllipsisH className="action-icon more-icon" /> */}
           </div>
         </div>
 
         <div className="mm-card-body">
-          <div className="mm-metric">
-            <span>Current Trainees</span>
-            <strong>{mentor.current_trainees || 0}</strong>
-          </div>
-          <div className="mm-metric">
-            <span>Max Capacity</span>
-            <strong>{mentor.max_trainees || 0}</strong>
-          </div>
-          
-          <div className="mm-metric">
-            <span>Years Experience</span>
-            <strong>{parseFloat(mentor.years_of_experience || 0).toFixed(1)} years</strong>
+          <div className="specialization-info mb-2">
+            <small className="text-muted">Specializations:</small>
+            <p className="specialization-text">{departmentNames}</p>
           </div>
 
-          <div className="mm-progress-wrap">
-            <span>Approval Rate</span>
-            <strong>{approvalRate}%</strong>
+          <div className="row">
+            <div className="col-6">
+              <div className="mm-metric">
+                <span>Current Trainees</span>
+                <strong>{mentor.current_trainees || 0}</strong>
+              </div>
+            </div>
+            <div className="col-6">
+              <div className="mm-metric">
+                <span>Max Capacity</span>
+                <strong>{mentor.max_trainees || 0}</strong>
+              </div>
+            </div>
           </div>
 
-          <div className="progress mm-progress">
-            <div
-              className="progress-bar"
-              style={{ width: `${approvalRate}%` }}
-            />
+          <div className="row mt-2">
+            <div className="col-6">
+              <div className="mm-metric">
+                <span>Experience</span>
+                <strong>{parseFloat(mentor.years_of_experience || 0).toFixed(1)} yrs</strong>
+              </div>
+            </div>
+            <div className="col-6">
+              <div className="mm-metric">
+                <span>Pending</span>
+                <strong>{pendingValidations}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3">
+            <div className="d-flex justify-content-between mb-1">
+              <span>Approval Rate</span>
+              <strong>{approvalRate}%</strong>
+            </div>
+            <div className="progress mm-progress">
+              <div
+                className="progress-bar"
+                style={{ width: `${approvalRate}%` }}
+              />
+            </div>
           </div>
         </div>
 
