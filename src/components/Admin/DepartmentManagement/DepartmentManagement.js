@@ -251,24 +251,27 @@ const DeptCard = ({
 }) => (
   <div className={`col-lg-4 col-md-6`}>
     <div className={`dm-card ${isPlaceholder ? 'dm-card-placeholder' : ''}`}>
-      <div className="dm-card-header">
-        <div className="dm-icon">🏢</div>
-        <h5>{title} {code && code !== "Not specified" && `(${code})`}</h5>
-        <div className="dm-actions">
-          <FaEdit 
-            className="dm-edit me-2" 
-            onClick={() => onEdit(id)}
-            style={{ cursor: 'pointer', color: '#4a6cf7' }}
-            title="Edit Department"
-          />
-          <FaTrash 
-            className="dm-delete" 
-            onClick={() => onDelete(id, title)}
-            style={{ cursor: 'pointer', color: '#dc3545' }}
-            title="Delete Department"
-          />
+        <div className="dm-card-header">
+          <div className="dm-header-left">
+            <div className="dm-icon">🏢</div>
+            <h5 className="dm-title">
+              {title} {code && code !== "Not specified" && `(${code})`}
+            </h5>
+          </div>
+
+          <div className="dm-actions">
+            <FaEdit
+              className="dm-edit me-2"
+              onClick={() => onEdit(id)}
+              title="Edit Department"
+            />
+            <FaTrash
+              className="dm-delete"
+              onClick={() => onDelete(id, title)}
+              title="Delete Department"
+            />
+          </div>
         </div>
-      </div>
 
       <p className="dm-desc">{desc || 'No description provided'}</p>
 
@@ -286,7 +289,7 @@ const DeptCard = ({
             <FaClock />
             <span>Duration</span>
           </div>
-          <strong>{min}</strong>
+           <strong>{min}</strong>
         </div>
 
         <div className="dm-item">
