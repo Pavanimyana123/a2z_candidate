@@ -261,12 +261,12 @@ const DeptCard = ({
 
           <div className="dm-actions">
             <FaEdit
-              className="dm-edit me-2"
+              className="dm-edit me-1"
               onClick={() => onEdit(id)}
               title="Edit Department"
             />
             <FaTrash
-              className="dm-delete"
+              className="dm-delete-btn"
               onClick={() => onDelete(id, title)}
               title="Delete Department"
             />
