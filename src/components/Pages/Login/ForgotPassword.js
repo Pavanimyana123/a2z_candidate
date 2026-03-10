@@ -12,6 +12,10 @@ const ForgotPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  // New state for password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // API Base URL
   const API_BASE_URL = 'http://145.79.0.94:8000/api/admin';
@@ -414,32 +418,64 @@ const ForgotPassword = () => {
                 <label className="form-label" style={{ fontWeight: "500", fontSize: "14px" }}>
                   New Password <span className="text-danger">*</span>
                 </label>
-
-                <input
-                  type="password"
-                  className="form-control"
-                  placeholder="Enter new password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                  style={{ padding: "12px", fontSize: "14px" }}
-                />
+                
+                <div className="position-relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="form-control"
+                    placeholder="Enter new password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    style={{ padding: "12px 40px 12px 12px", fontSize: "14px" }}
+                  />
+                  <span 
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: "absolute",
+                      right: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      cursor: "pointer",
+                      color: "#667eea",
+                      fontSize: "18px"
+                    }}
+                  >
+                    {showPassword ? "👁️" : "👁️‍🗨️"}
+                  </span>
+                </div>
               </div>
 
               <div className="mb-4">
                 <label className="form-label" style={{ fontWeight: "500", fontSize: "14px" }}>
                   Confirm Password <span className="text-danger">*</span>
                 </label>
-
-                <input
-                  type="password"
-                  className="form-control"
-                  placeholder="Confirm new password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  disabled={loading}
-                  style={{ padding: "12px", fontSize: "14px" }}
-                />
+                
+                <div className="position-relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    className="form-control"
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={loading}
+                    style={{ padding: "12px 40px 12px 12px", fontSize: "14px" }}
+                  />
+                  <span 
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={{
+                      position: "absolute",
+                      right: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      cursor: "pointer",
+                      color: "#667eea",
+                      fontSize: "18px"
+                    }}
+                  >
+                    {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
+                  </span>
+                </div>
               </div>
 
               <div className="d-grid">
@@ -467,26 +503,6 @@ const ForgotPassword = () => {
               </div>
             </>
           )}
-
-          {/* Footer */}
-          {/* <div className="text-center mt-4">
-            <small className="text-muted">
-              Remember your password?{' '}
-              <button 
-                onClick={goToLogin}
-                className="btn btn-link p-0"
-                style={{ color: "#667eea", textDecoration: "none" }}
-              >
-                Login here
-              </button>
-            </small>
-          </div> */}
-
-          {/* <div className="text-center mt-3">
-            <small className="text-muted">
-              © 2026 Training Admin. All rights reserved.
-            </small>
-          </div> */}
         </div>
       </div>
     </div>
