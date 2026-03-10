@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Login from "./components/Pages/Login/Login";
 import Dashboard from "./components/Admin/Dashboard/Dashboard";
+import Users from "./components/Admin/Users/Users"
+import AddUsers from "./components/Admin/Users/AddUsers"
 import Candidate from "./components/Admin/Candidates/Candidates";
 import CandidateForm from "./components/Admin/Candidates/AddCandidate";
 import Mentors from "./components/Admin/Mentors/Mentors";
@@ -44,6 +46,9 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+         <Route path="/users" element={<Users />} />
+            <Route path="/add-admin-users" element={<AddUsers />} />
+            <Route path="/add-admin-users/:id" element={<AddUsers />} />
         <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/candidate" element={<Candidate />} />
           <Route path="/add-candidate" element={<CandidateForm />} />

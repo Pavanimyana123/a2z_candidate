@@ -1,45 +1,92 @@
 // components/Pages/Login/Login.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import eye icons from react-icons
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import Swal from 'sweetalert2';
 import "./Login.css";
 
 const Login = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // State for toggling password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
-    // Validate credentials
-    if (email === "admin@gmail.com" && password === "admin@123") {
-      // Admin credentials - navigate to /dashboard
-      navigate("/dashboard");
-    } else if (email === "mentor@gmail.com" && password === "mentor@123") {
-      // Mentor credentials - navigate to /mentor-dashboard
-      navigate("/mentor-dashboard");
-    } else if (email === "candidate@gmail.com" && password === "candidate@123") {
-      navigate("/candidate-dashboard");
+    // Basic validation
+    if (!identifier.trim() || !password.trim()) {
+      setError("Please enter both identifier and password");
+      setLoading(false);
+      return;
     }
-      else {
-      // Invalid credentials
-      setError("Invalid email or password. Please try again.");
+
+    try {
+      const response = await fetch('http://145.79.0.94:8000/api/admin/login/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          identifier: identifier.trim(),
+          password: password
+        })
+      });
+
+      const data = await response.json();
+      console.log('📥 Login response:', data);
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed. Please check your credentials.');
+      }
+
+      if (data.status && data.data) {
+        // Login successful
+        console.log('✅ Login successful:', data);
+        
+        // Store user data in localStorage
+        localStorage.setItem('user', JSON.stringify(data.data));
+        
+        // If token is returned in the response, store it
+        if (data.data.token) {
+          localStorage.setItem('token', data.data.token);
+        } else if (data.token) {
+          localStorage.setItem('token', data.token);
+        }
+        
+        // Show success message
+        await Swal.fire({
+          icon: 'success',
+          title: 'Login Successful!',
+          text: 'Welcome back!',
+          timer: 1500,
+          showConfirmButton: false
+        });
+
+        // Navigate to dashboard
+        navigate('/dashboard');
+      } else {
+        throw new Error(data.message || 'Invalid response from server');
+      }
+
+    } catch (err) {
+      console.error('❌ Login error:', err);
+      setError(err.message || 'Login failed. Please try again.');
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Login Failed',
+        text: err.message || 'Invalid credentials. Please try again.',
+        timer: 3000,
+        showConfirmButton: true
+      });
+    } finally {
+      setLoading(false);
     }
-  };
-
-  // Optional: Pre-fill demo credentials for testing
-  const fillAdminCredentials = () => {
-    setEmail("admin@gmail.com");
-    setPassword("admin@123");
-  };
-
-  const fillMentorCredentials = () => {
-    setEmail("mentor@gmail.com");
-    setPassword("mentor@123");
   };
 
   // Toggle password visibility
@@ -49,15 +96,36 @@ const Login = () => {
 
   return (
     <div className="training-admin-login d-flex align-items-center justify-content-center min-vh-100 bg-light">
-      <div className="training-admin-login-card card p-4 shadow" style={{ width: "100%", maxWidth: "400px" }}>
+      <div className="training-admin-login-card card p-4 shadow" style={{ width: "100%", maxWidth: "450px" }}>
         <div className="card-body">
           <div className="training-admin-login-header text-center mb-4">
-            <h3 className="training-admin-login-title">Training Admin</h3>
-            <p className="training-admin-login-subtitle text-muted">Surveyor Management System</p>
+            <div className="mb-3">
+              <div className="training-admin-logo" style={{ 
+                width: "80px", 
+                height: "80px", 
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", 
+                borderRadius: "50%", 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center", 
+                margin: "0 auto",
+                fontSize: "40px",
+                color: "white"
+              }}>
+                🛡️
+              </div>
+            </div>
+            <h3 className="training-admin-login-title" style={{ fontSize: "24px", fontWeight: "600", color: "#333" }}>
+              Training Admin
+            </h3>
+            <p className="training-admin-login-subtitle text-muted" style={{ fontSize: "14px" }}>
+              Surveyor Management System
+            </p>
           </div>
           
           {error && (
-            <div className="alert alert-danger alert-dismissible fade show" role="alert">
+            <div className="alert alert-danger alert-dismissible fade show" role="alert" style={{ fontSize: "14px" }}>
+              <i className="fas fa-exclamation-circle me-2"></i>
               {error}
               <button type="button" className="btn-close" onClick={() => setError("")}></button>
             </div>
@@ -65,87 +133,87 @@ const Login = () => {
           
           <form onSubmit={handleLogin}>
             <div className="mb-3">
-              <label htmlFor="email" className="form-label">Email address</label>
+              <label htmlFor="identifier" className="form-label" style={{ fontWeight: "500", fontSize: "14px" }}>
+                Email or Phone Number <span className="text-danger">*</span>
+              </label>
               <input 
-                type="email" 
+                type="text" 
                 className="form-control" 
-                id="email" 
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="identifier" 
+                placeholder="Enter your email or phone number"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
+                disabled={loading}
+                style={{ padding: "12px", fontSize: "14px" }}
               />
+              {/* <small className="text-muted" style={{ fontSize: "12px" }}>
+                You can login with either email or phone number
+              </small> */}
             </div>
             
-            <div className="mb-3 position-relative">
-              <label htmlFor="password" className="form-label">Password</label>
+            <div className="mb-4">
+              <label htmlFor="password" className="form-label" style={{ fontWeight: "500", fontSize: "14px" }}>
+                Password <span className="text-danger">*</span>
+              </label>
               <div className="input-group">
                 <input 
                   type={showPassword ? "text" : "password"} 
                   className="form-control" 
                   id="password" 
-                  placeholder="Enter password"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  disabled={loading}
+                  style={{ padding: "12px", fontSize: "14px" }}
                 />
                 <button 
                   type="button" 
                   className="btn btn-outline-secondary"
                   onClick={togglePasswordVisibility}
+                  disabled={loading}
                   style={{
-                    borderTopLeftRadius: 0,
-                    borderBottomLeftRadius: 0,
-                    borderColor: '#ced4da'
+                    padding: "12px",
+                    borderColor: '#ced4da',
+                    backgroundColor: '#f8f9fa'
                   }}
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
               </div>
-              {/* <div className="form-text">
-                Click the eye icon to {showPassword ? "hide" : "show"} password
-              </div> */}
             </div>
             
             <div className="d-grid mb-3">
-              <button type="submit" className="btn btn-primary">
-                Sign In
+              <button 
+                type="submit" 
+                className="btn btn-primary"
+                disabled={loading}
+                style={{ 
+                  padding: "12px", 
+                  fontSize: "16px", 
+                  fontWeight: "500",
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  border: "none"
+                }}
+              >
+                {loading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
               </button>
             </div>
           </form>
-{/*           
-          <div className="training-admin-login-note text-center mt-4">
-            <div className="mb-2">
-              <small className="text-muted">
-                Use the following credentials for testing:
-              </small>
-            </div>
-            
-            <div className="d-flex flex-column gap-2">
-              <button 
-                type="button" 
-                className="btn btn-sm btn-outline-primary"
-                onClick={fillAdminCredentials}
-              >
-                Admin: admin@gmail.com / admin@123
-              </button>
-              
-              <button 
-                type="button" 
-                className="btn btn-sm btn-outline-secondary"
-                onClick={fillMentorCredentials}
-              >
-                Mentor: mentor@gmail.com / mentor@123
-              </button>
-            </div>
-            
-            <div className="mt-3">
-              <small className="text-muted">
-                • Admin will be redirected to <code>/dashboard</code><br/>
-                • Mentor will be redirected to <code>/mentor-dashboard</code>
-              </small>
-            </div>
-          </div> */}
+
+          <div className="text-center mt-4">
+            <small className="text-muted">
+              © 2026 Training Admin. All rights reserved.
+            </small>
+          </div>
         </div>
       </div>
     </div>
