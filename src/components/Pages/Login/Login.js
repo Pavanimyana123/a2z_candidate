@@ -13,81 +13,98 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+ const handleLogin = async (e) => {
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    // Basic validation
-    if (!identifier.trim() || !password.trim()) {
-      setError("Please enter both identifier and password");
-      setLoading(false);
-      return;
+  // Basic validation
+  if (!identifier.trim() || !password.trim()) {
+    setError("Please enter both identifier and password");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    const response = await fetch('http://145.79.0.94:8000/api/admin/login/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        identifier: identifier.trim(),
+        password: password
+      })
+    });
+
+    const data = await response.json();
+    console.log('📥 Login response:', data);
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Login failed. Please check your credentials.');
     }
 
-    try {
-      const response = await fetch('http://145.79.0.94:8000/api/admin/login/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          identifier: identifier.trim(),
-          password: password
-        })
-      });
-
-      const data = await response.json();
-      console.log('📥 Login response:', data);
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed. Please check your credentials.');
-      }
-
-      if (data.status && data.data) {
-        // Login successful
-        console.log('✅ Login successful:', data);
-        
-        // Store user data in localStorage
-        localStorage.setItem('user', JSON.stringify(data.data));
-        
-        // If token is returned in the response, store it
-        if (data.data.token) {
-          localStorage.setItem('token', data.data.token);
-        } else if (data.token) {
-          localStorage.setItem('token', data.token);
-        }
-        
-        // Show success message
-        await Swal.fire({
-          icon: 'success',
-          title: 'Login Successful!',
-          text: 'Welcome back!',
-          timer: 1500,
-          showConfirmButton: false
-        });
-
-        // Navigate to dashboard
-        navigate('/dashboard');
-      } else {
-        throw new Error(data.message || 'Invalid response from server');
-      }
-
-    } catch (err) {
-      console.error('❌ Login error:', err);
-      setError(err.message || 'Login failed. Please try again.');
+    if (data.status && data.data) {
+      // Login successful
+      console.log('✅ Login successful:', data);
       
-      Swal.fire({
-        icon: 'error',
-        title: 'Login Failed',
-        text: err.message || 'Invalid credentials. Please try again.',
-        timer: 3000,
-        showConfirmButton: true
+      // Store user data in localStorage
+      localStorage.setItem('user', JSON.stringify(data.data));
+      
+      // If token is returned in the response, store it
+      if (data.data.token) {
+        localStorage.setItem('token', data.data.token);
+      } else if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
+      
+      // Show success message
+      await Swal.fire({
+        icon: 'success',
+        title: 'Login Successful!',
+        text: 'Welcome back!',
+        timer: 1500,
+        showConfirmButton: false
       });
-    } finally {
-      setLoading(false);
+
+      // Role-based navigation
+      const userType = data.data.user_type;
+      
+      switch (userType) {
+        case 'admin':
+          navigate('/dashboard');
+          break;
+        case 'mentor':
+          navigate('/mentor-dashboard');
+          break;
+        case 'candidate':
+          navigate('/candidate-dashboard');
+          break;
+        default:
+          // If user_type is unknown, log error and redirect to a default page
+          console.error('Unknown user type:', userType);
+          navigate('/dashboard'); // or '/unauthorized' if you have such route
+      }
+      
+    } else {
+      throw new Error(data.message || 'Invalid response from server');
     }
-  };
+
+  } catch (err) {
+    console.error('❌ Login error:', err);
+    setError(err.message || 'Login failed. Please try again.');
+    
+    Swal.fire({
+      icon: 'error',
+      title: 'Login Failed',
+      text: err.message || 'Invalid credentials. Please try again.',
+      timer: 3000,
+      showConfirmButton: true
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Toggle password visibility
   const togglePasswordVisibility = () => {
