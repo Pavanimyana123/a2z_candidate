@@ -96,9 +96,9 @@ const Login = () => {
 
   return (
     <div className="training-admin-login d-flex align-items-center justify-content-center min-vh-100 bg-light">
-      <div className="training-admin-login-card card p-4 shadow" style={{ width: "100%", maxWidth: "450px" }}>
+      <div className="training-admin-login-card card p-4 shadow" style={{ width: "100%", maxWidth: "400px", maxHeight: "600px"  }}>
         <div className="card-body">
-          <div className="training-admin-login-header text-center mb-4">
+          <div className="training-admin-login-header login-text-center mb-4">
             <div className="mb-3">
               <div className="training-admin-logo" style={{ 
                 width: "80px", 

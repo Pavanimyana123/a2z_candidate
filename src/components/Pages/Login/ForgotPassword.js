@@ -249,7 +249,7 @@ const ForgotPassword = () => {
 
   return (
     <div className="training-admin-login d-flex align-items-center justify-content-center min-vh-100">
-      <div className="training-admin-login-card card p-4 shadow" style={{ width: "100%", maxWidth: "450px" }}>
+      <div className="training-admin-login-card card p-4 shadow" style={{ width: "100%", maxWidth: "400px", maxHeight: "600px" }}>
         <div className="card-body">
           {/* Back to Login Button */}
           <button 
@@ -469,7 +469,7 @@ const ForgotPassword = () => {
           )}
 
           {/* Footer */}
-          <div className="text-center mt-4">
+          {/* <div className="text-center mt-4">
             <small className="text-muted">
               Remember your password?{' '}
               <button 
@@ -480,13 +480,13 @@ const ForgotPassword = () => {
                 Login here
               </button>
             </small>
-          </div>
+          </div> */}
 
-          <div className="text-center mt-3">
+          {/* <div className="text-center mt-3">
             <small className="text-muted">
               © 2026 Training Admin. All rights reserved.
             </small>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

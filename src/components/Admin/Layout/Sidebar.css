@@ -3,6 +3,11 @@
   padding: 14px 16px;
   border-top: 1px solid rgba(255,255,255,0.08);
   background: rgba(0,0,0,0.15);
+
+   /* ADD THIS */
+  overflow-x: auto;
+  overflow-y: hidden;
+
 }
 
 /* Wrapper */
@@ -11,6 +16,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+
+    /* ADD THIS */
+  min-width: max-content;
 }
 
 /* Avatar */
@@ -39,6 +47,10 @@
 .ta-user-details{
   flex:1;
   min-width:0;
+
+    /* ADD THIS */
+  overflow-x: auto;
+
 }
 
 /* Name */
@@ -56,8 +68,9 @@
   color:#9ca3af;
   display:block;
   white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  /* REMOVE ellipsis */
+  overflow-x:auto;
+  text-overflow:unset;
 }
 
 /* Logout button */
@@ -83,4 +96,14 @@
 
 .ta-logout-btn svg{
   font-size:15px;
+}
+
+
+.ta-sidebar-footer::-webkit-scrollbar {
+  height: 4px;
+}
+
+.ta-sidebar-footer::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
 }

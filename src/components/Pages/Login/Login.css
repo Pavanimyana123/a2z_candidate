@@ -1,7 +1,7 @@
 /* Login.css */
 
 .training-admin-login {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
   position: relative;
   overflow: hidden;
 }
@@ -54,9 +54,9 @@
   }
 }
 
-.training-admin-login-card .card-body {
+/* .training-admin-login-card .card-body {
   padding: 2.5rem;
-}
+} */
 
 .training-admin-login-title {
   margin-bottom: 0.5rem;
@@ -230,3 +230,41 @@
   box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
 }
 
+
+
+.login-text-center {
+  text-align: center;
+  padding: 5px;
+  color: #6b7280;
+}
+
+
+/* Forgot / Add Password Link Wrapper */
+.text-center.mb-3 {
+  margin-top: 12px;
+}
+
+/* Link Button Styling */
+.training-admin-forgot-link {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+/* Hover Effect */
+.training-admin-forgot-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* Focus Fix */
+.training-admin-forgot-link:focus {
+  outline: none;
+  box-shadow: none;
+}
