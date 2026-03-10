@@ -14,7 +14,8 @@ import {
   FaCog,
   FaUsers,
   FaSignOutAlt,
-  FaUserCircle
+  FaUserCircle,
+  FaEnvelope // Add this icon for Email Settings
 } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import "./Sidebar.css";
@@ -207,6 +208,14 @@ const Sidebar = () => {
             className={`ta-menu-item ${isActive("/system") ? "active" : ""}`}
           >
             <FaCog /> System Settings
+          </Link>
+
+          {/* New Email Settings Link */}
+          <Link 
+            to="/email-settings" 
+            className={`ta-menu-item ${isActive("/email-settings") ? "active" : ""}`}
+          >
+            <FaEnvelope /> Email Settings
           </Link>
         </div>
       </div>

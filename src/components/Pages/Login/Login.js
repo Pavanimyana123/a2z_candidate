@@ -207,6 +207,16 @@ const Login = () => {
                 )}
               </button>
             </div>
+
+            <div className="text-center mb-3">
+              <button
+                type="button"
+                className="training-admin-forgot-link"
+                onClick={() => navigate("/forgot-password")}
+              >
+                Add / Forgot Password
+              </button>
+            </div>
           </form>
 
           <div className="text-center mt-4">

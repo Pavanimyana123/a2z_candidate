@@ -2,6 +2,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Login from "./components/Pages/Login/Login";
+import ForgotPassword from "./components/Pages/Login/ForgotPassword";
 import Dashboard from "./components/Admin/Dashboard/Dashboard";
 import Users from "./components/Admin/Users/Users"
 import AddUsers from "./components/Admin/Users/AddUsers"
@@ -19,6 +20,9 @@ import AuditLogs from "./components/Admin/AuditLogs/AuditLogs";
 import Certifications from "./components/Admin/Certificate/Certificate";
 import ReportsAnalytics from "./components/Admin/Reports/Reports";
 import SystemSettings from "./components/Admin/SystemSettings/SystemSettings";
+import EmailSettings from "./components/Admin/EmailSettings/EmailSettings";
+import AddEmailSettings from "./components/Admin/EmailSettings/AddEmailSettings";
+
 import CandidateLayout from "./components/Candidate/Layout/CandidateLayout";
 import MentorLayout from "./components/Mentor/Layout/MentorLayout";
 import MentorDashboard from "./components/Mentor/MentorDashboard/MentorDashboard"
@@ -46,6 +50,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
          <Route path="/users" element={<Users />} />
             <Route path="/add-admin-users" element={<AddUsers />} />
             <Route path="/add-admin-users/:id" element={<AddUsers />} />
@@ -68,7 +73,9 @@ function App() {
                <Route path="/report" element={<ReportsAnalytics />} />
             <Route path="/audit" element={<AuditLogs />} />
             <Route path="/system" element={<SystemSettings />} />
-
+            <Route path="/email-settings" element={<EmailSettings />} />
+            <Route path="/add-email-settings" element={<AddEmailSettings />} />
+            <Route path="/add-email-settings/:id" element={<AddEmailSettings />} />
 
              {/* <Route path="/candidate-layout" element={<CandidateLayout />} />
              <Route path="/mentor-layout" element={<MentorLayout />} /> */}
