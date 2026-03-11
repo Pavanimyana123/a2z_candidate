@@ -11,9 +11,9 @@ import {
   FaChartBar,
   FaSignOutAlt,
   FaUserCircle,
-  FaUser
+  FaUser,
 } from "react-icons/fa";
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
 import "./Sidebar.css";
 
 const MentorSidebar = () => {
@@ -23,35 +23,16 @@ const MentorSidebar = () => {
 
   // Load user data from localStorage based on user_type
   useEffect(() => {
-    const loadUserData = () => {
-      // First check which user type is logged in
-      const userType = localStorage.getItem('user_type');
-      
-      if (userType === 'mentor') {
-        const mentorData = localStorage.getItem('mentor_user');
-        if (mentorData) {
-          try {
-            const parsedUser = JSON.parse(mentorData);
-            setUser(parsedUser);
-          } catch (error) {
-            console.error('Error parsing mentor user data:', error);
-          }
-        }
-      } else {
-        // Fallback to generic user key
-        const userData = localStorage.getItem('user');
-        if (userData) {
-          try {
-            const parsedUser = JSON.parse(userData);
-            setUser(parsedUser);
-          } catch (error) {
-            console.error('Error parsing user data:', error);
-          }
-        }
-      }
-    };
+    const mentorData = localStorage.getItem("mentor_user");
 
-    loadUserData();
+    if (mentorData) {
+      try {
+        const parsedUser = JSON.parse(mentorData);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error("Error parsing mentor user data:", error);
+      }
+    }
   }, []);
 
   const isActive = (path) => {
@@ -61,35 +42,28 @@ const MentorSidebar = () => {
   // Handle logout
   const handleLogout = () => {
     Swal.fire({
-      title: 'Are you sure?',
-      text: 'You will be logged out of the system',
-      icon: 'question',
+      title: "Are you sure?",
+      text: "You will be logged out of the system",
+      icon: "question",
       showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, logout',
-      cancelButtonText: 'Cancel'
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, logout",
+      cancelButtonText: "Cancel",
     }).then((result) => {
       if (result.isConfirmed) {
-        // Clear all user data from localStorage
-        localStorage.removeItem('user');
-        localStorage.removeItem('admin_user');
-        localStorage.removeItem('mentor_user');
-        localStorage.removeItem('candidate_user');
-        localStorage.removeItem('user_type');
-        localStorage.removeItem('token');
-        
-        // Show success message
+        localStorage.removeItem("mentor_user");
+        localStorage.removeItem("token");
+
         Swal.fire({
-          icon: 'success',
-          title: 'Logged Out!',
-          text: 'You have been successfully logged out.',
+          icon: "success",
+          title: "Logged Out!",
+          text: "You have been successfully logged out.",
           timer: 1500,
-          showConfirmButton: false
+          showConfirmButton: false,
         });
-        
-        // Navigate to login page
-        navigate('/');
+
+        navigate("/");
       }
     });
   };
@@ -97,11 +71,16 @@ const MentorSidebar = () => {
   // Get user initials for avatar
   const getUserInitials = () => {
     if (user?.full_name) {
-      return user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+      return user.full_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .substring(0, 2);
     } else if (user?.identifier) {
       return user.identifier.substring(0, 2).toUpperCase();
     }
-    return 'MN';
+    return "MN";
   };
 
   // Get display name
@@ -109,19 +88,19 @@ const MentorSidebar = () => {
     if (user?.full_name) {
       return user.full_name;
     } else if (user?.identifier) {
-      return user.identifier.split('@')[0]; // Show username part of email
+      return user.identifier.split("@")[0]; // Show username part of email
     }
-    return 'Mentor User';
+    return "Mentor User";
   };
 
   // Get display email
   const getDisplayEmail = () => {
     if (user?.email) {
       return user.email;
-    } else if (user?.identifier && user.identifier.includes('@')) {
+    } else if (user?.identifier && user.identifier.includes("@")) {
       return user.identifier;
     }
-    return 'mentor@company.com';
+    return "mentor@company.com";
   };
 
   return (
@@ -138,57 +117,57 @@ const MentorSidebar = () => {
       {/* Scrollable Menu */}
       <div className="ta-sidebar-scroll">
         <div className="ta-menu-section">
-          <Link 
-            to="/mentor-dashboard" 
+          <Link
+            to="/mentor-dashboard"
             className={`ta-menu-item ${isActive("/mentor-dashboard") ? "active" : ""}`}
           >
             <FaThLarge /> Dashboard
           </Link>
 
-          <Link 
-            to="/mentor-candidates" 
+          <Link
+            to="/mentor-candidates"
             className={`ta-menu-item ${isActive("/mentor-candidates") ? "active" : ""}`}
           >
             <FaUserGraduate /> Candidates
           </Link>
 
-          <Link 
-            to="/mentor-logbook" 
+          <Link
+            to="/mentor-logbook"
             className={`ta-menu-item ${isActive("/mentor-logbook") ? "active" : ""}`}
           >
             <FaBook /> Logbook Approvals
           </Link>
 
-          <Link 
-            to="/mentor-evidence" 
+          <Link
+            to="/mentor-evidence"
             className={`ta-menu-item ${isActive("/mentor-evidence") ? "active" : ""}`}
           >
             <FaEye /> Evidence Review
           </Link>
 
-          <Link 
-            to="/mentor-rotation" 
+          <Link
+            to="/mentor-rotation"
             className={`ta-menu-item ${isActive("/mentor-rotation") ? "active" : ""}`}
           >
             <FaSyncAlt /> Rotation Tracking
           </Link>
 
-          <Link 
-            to="/mentor-compliance" 
+          <Link
+            to="/mentor-compliance"
             className={`ta-menu-item ${isActive("/mentor-compliance") ? "active" : ""}`}
           >
             <FaShieldAlt /> Compliance
           </Link>
 
-          <Link 
-            to="/mentor-feedback" 
+          <Link
+            to="/mentor-feedback"
             className={`ta-menu-item ${isActive("/mentor-feedback") ? "active" : ""}`}
           >
             <FaCommentAlt /> Feedback
           </Link>
 
-          <Link 
-            to="/mentor-reports" 
+          <Link
+            to="/mentor-reports"
             className={`ta-menu-item ${isActive("/mentor-reports") ? "active" : ""}`}
           >
             <FaChartBar /> Reports
@@ -199,15 +178,13 @@ const MentorSidebar = () => {
       {/* Footer with User Info and Logout */}
       <div className="ta-sidebar-footer">
         <div className="ta-user-info-wrapper">
-          <div className="ta-avatar">
-            {getUserInitials()}
-          </div>
+          <div className="ta-avatar">{getUserInitials()}</div>
           <div className="ta-user-details">
             <p className="ta-user-name">{getDisplayName()}</p>
             <span className="ta-user-email">{getDisplayEmail()}</span>
           </div>
-          <button 
-            className="ta-logout-btn" 
+          <button
+            className="ta-logout-btn"
             onClick={handleLogout}
             title="Logout"
           >

@@ -10,9 +10,9 @@ import {
   FaGraduationCap,
   FaUsers,
   FaSignOutAlt,
-  FaUserCircle
+  FaUserCircle,
 } from "react-icons/fa";
-import Swal from 'sweetalert2';
+import Swal from "sweetalert2";
 import "./Sidebar.css";
 
 const CandidateSidebar = () => {
@@ -22,35 +22,16 @@ const CandidateSidebar = () => {
 
   // Load user data from localStorage based on user_type
   useEffect(() => {
-    const loadUserData = () => {
-      // First check which user type is logged in
-      const userType = localStorage.getItem('user_type');
-      
-      if (userType === 'candidate') {
-        const candidateData = localStorage.getItem('candidate_user');
-        if (candidateData) {
-          try {
-            const parsedUser = JSON.parse(candidateData);
-            setUser(parsedUser);
-          } catch (error) {
-            console.error('Error parsing candidate user data:', error);
-          }
-        }
-      } else {
-        // Fallback to generic user key
-        const userData = localStorage.getItem('user');
-        if (userData) {
-          try {
-            const parsedUser = JSON.parse(userData);
-            setUser(parsedUser);
-          } catch (error) {
-            console.error('Error parsing user data:', error);
-          }
-        }
-      }
-    };
+    const candidateData = localStorage.getItem("candidate_user");
 
-    loadUserData();
+    if (candidateData) {
+      try {
+        const parsedUser = JSON.parse(candidateData);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error("Error parsing candidate user data:", error);
+      }
+    }
   }, []);
 
   const isActive = (path) => {
@@ -60,35 +41,28 @@ const CandidateSidebar = () => {
   // Handle logout
   const handleLogout = () => {
     Swal.fire({
-      title: 'Are you sure?',
-      text: 'You will be logged out of the system',
-      icon: 'question',
+      title: "Are you sure?",
+      text: "You will be logged out of the system",
+      icon: "question",
       showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, logout',
-      cancelButtonText: 'Cancel'
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, logout",
+      cancelButtonText: "Cancel",
     }).then((result) => {
       if (result.isConfirmed) {
-        // Clear all user data from localStorage
-        localStorage.removeItem('user');
-        localStorage.removeItem('admin_user');
-        localStorage.removeItem('mentor_user');
-        localStorage.removeItem('candidate_user');
-        localStorage.removeItem('user_type');
-        localStorage.removeItem('token');
-        
-        // Show success message
+        localStorage.removeItem("candidate_user");
+        localStorage.removeItem("token");
+
         Swal.fire({
-          icon: 'success',
-          title: 'Logged Out!',
-          text: 'You have been successfully logged out.',
+          icon: "success",
+          title: "Logged Out!",
+          text: "You have been successfully logged out.",
           timer: 1500,
-          showConfirmButton: false
+          showConfirmButton: false,
         });
-        
-        // Navigate to login page
-        navigate('/');
+
+        navigate("/");
       }
     });
   };
@@ -96,11 +70,16 @@ const CandidateSidebar = () => {
   // Get user initials for avatar
   const getUserInitials = () => {
     if (user?.full_name) {
-      return user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+      return user.full_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .substring(0, 2);
     } else if (user?.identifier) {
       return user.identifier.substring(0, 2).toUpperCase();
     }
-    return 'CA';
+    return "CA";
   };
 
   // Get display name
@@ -108,19 +87,19 @@ const CandidateSidebar = () => {
     if (user?.full_name) {
       return user.full_name;
     } else if (user?.identifier) {
-      return user.identifier.split('@')[0]; // Show username part of email
+      return user.identifier.split("@")[0]; // Show username part of email
     }
-    return 'Candidate User';
+    return "Candidate User";
   };
 
   // Get display email
   const getDisplayEmail = () => {
     if (user?.email) {
       return user.email;
-    } else if (user?.identifier && user.identifier.includes('@')) {
+    } else if (user?.identifier && user.identifier.includes("@")) {
       return user.identifier;
     }
-    return 'candidate@company.com';
+    return "candidate@company.com";
   };
 
   return (
@@ -140,36 +119,36 @@ const CandidateSidebar = () => {
         <div className="ta-menu-section">
           <p className="ta-menu-title">MAIN</p>
 
-          <Link 
-            to="/candidate-dashboard" 
+          <Link
+            to="/candidate-dashboard"
             className={`ta-menu-item ${isActive("/candidate-dashboard") ? "active" : ""}`}
           >
             <FaThLarge /> Dashboard
           </Link>
 
-          <Link 
-            to="/candidate-professionality" 
+          <Link
+            to="/candidate-professionality"
             className={`ta-menu-item ${isActive("/candidate-professionality") ? "active" : ""}`}
           >
             <FaIdCard /> Professional ID
           </Link>
 
-          <Link 
-            to="/candidate-digital" 
+          <Link
+            to="/candidate-digital"
             className={`ta-menu-item ${isActive("/candidate-digital") ? "active" : ""}`}
           >
             <FaBook /> Digital Logbook
           </Link>
 
-          <Link 
-            to="/candidate-competence" 
+          <Link
+            to="/candidate-competence"
             className={`ta-menu-item ${isActive("/candidate-competence") ? "active" : ""}`}
           >
             <FaCheckCircle /> Competency
           </Link>
 
-          <Link 
-            to="/candidate-rotation" 
+          <Link
+            to="/candidate-rotation"
             className={`ta-menu-item ${isActive("/candidate-rotation") ? "active" : ""}`}
           >
             <FaCertificate /> Rotation Program
@@ -180,15 +159,15 @@ const CandidateSidebar = () => {
         <div className="ta-menu-section">
           <p className="ta-menu-title">COMPLIANCE</p>
 
-          <Link 
-            to="/candidate-compliance" 
+          <Link
+            to="/candidate-compliance"
             className={`ta-menu-item ${isActive("/candidate-compliance") ? "active" : ""}`}
           >
             <FaShieldAlt /> Compliance & Safety
           </Link>
 
-          <Link 
-            to="/candidate-certificate" 
+          <Link
+            to="/candidate-certificate"
             className={`ta-menu-item ${isActive("/candidate-certificate") ? "active" : ""}`}
           >
             <FaCertificate /> Certifications
@@ -199,15 +178,15 @@ const CandidateSidebar = () => {
         <div className="ta-menu-section">
           <p className="ta-menu-title">DEVELOPMENT</p>
 
-          <Link 
-            to="/candidate-learning" 
+          <Link
+            to="/candidate-learning"
             className={`ta-menu-item ${isActive("/candidate-learning") ? "active" : ""}`}
           >
             <FaGraduationCap /> Learning
           </Link>
 
-          <Link 
-            to="/candidate-mentorship" 
+          <Link
+            to="/candidate-mentorship"
             className={`ta-menu-item ${isActive("/candidate-mentorship") ? "active" : ""}`}
           >
             <FaUsers /> Mentorship
@@ -218,15 +197,13 @@ const CandidateSidebar = () => {
       {/* Footer with User Info and Logout */}
       <div className="ta-sidebar-footer">
         <div className="ta-user-info-wrapper">
-          <div className="ta-avatar">
-            {getUserInitials()}
-          </div>
+          <div className="ta-avatar">{getUserInitials()}</div>
           <div className="ta-user-details">
             <p className="ta-user-name">{getDisplayName()}</p>
             <span className="ta-user-email">{getDisplayEmail()}</span>
           </div>
-          <button 
-            className="ta-logout-btn" 
+          <button
+            className="ta-logout-btn"
             onClick={handleLogout}
             title="Logout"
           >
