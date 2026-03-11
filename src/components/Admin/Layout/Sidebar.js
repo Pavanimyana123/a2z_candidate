@@ -15,7 +15,7 @@ import {
   FaUsers,
   FaSignOutAlt,
   FaUserCircle,
-  FaEnvelope // Add this icon for Email Settings
+  FaEnvelope
 } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import "./Sidebar.css";
@@ -25,17 +25,37 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
-  // Load user data from localStorage on component mount
+  // Load user data from localStorage based on user_type
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-      } catch (error) {
-        console.error('Error parsing user data:', error);
+    const loadUserData = () => {
+      // First check which user type is logged in
+      const userType = localStorage.getItem('user_type');
+      
+      if (userType === 'admin') {
+        const adminData = localStorage.getItem('admin_user');
+        if (adminData) {
+          try {
+            const parsedUser = JSON.parse(adminData);
+            setUser(parsedUser);
+          } catch (error) {
+            console.error('Error parsing admin user data:', error);
+          }
+        }
+      } else {
+        // Fallback to generic user key
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          try {
+            const parsedUser = JSON.parse(userData);
+            setUser(parsedUser);
+          } catch (error) {
+            console.error('Error parsing user data:', error);
+          }
+        }
       }
-    }
+    };
+
+    loadUserData();
   }, []);
 
   // Helper function to check if a path is active
@@ -56,8 +76,12 @@ const Sidebar = () => {
       cancelButtonText: 'Cancel'
     }).then((result) => {
       if (result.isConfirmed) {
-        // Clear user data from localStorage
+        // Clear all user data from localStorage
         localStorage.removeItem('user');
+        localStorage.removeItem('admin_user');
+        localStorage.removeItem('mentor_user');
+        localStorage.removeItem('candidate_user');
+        localStorage.removeItem('user_type');
         localStorage.removeItem('token');
         
         // Show success message
@@ -77,16 +101,20 @@ const Sidebar = () => {
 
   // Get user initials for avatar
   const getUserInitials = () => {
-    if (user?.username) {
-      return user.username.substring(0, 2).toUpperCase();
+    if (user?.full_name) {
+      return user.full_name.substring(0, 2).toUpperCase();
+    } else if (user?.identifier) {
+      return user.identifier.substring(0, 2).toUpperCase();
     }
     return 'AD';
   };
 
   // Get display name
   const getDisplayName = () => {
-    if (user?.username) {
-      return user.username;
+    if (user?.full_name) {
+      return user.full_name;
+    } else if (user?.identifier) {
+      return user.identifier.split('@')[0]; // Show username part of email
     }
     return 'Admin User';
   };
@@ -95,6 +123,8 @@ const Sidebar = () => {
   const getDisplayEmail = () => {
     if (user?.email) {
       return user.email;
+    } else if (user?.identifier && user.identifier.includes('@')) {
+      return user.identifier;
     }
     return 'admin@company.com';
   };
@@ -210,7 +240,6 @@ const Sidebar = () => {
             <FaCog /> System Settings
           </Link>
 
-          {/* New Email Settings Link */}
           <Link 
             to="/email-settings" 
             className={`ta-menu-item ${isActive("/email-settings") ? "active" : ""}`}
@@ -224,11 +253,7 @@ const Sidebar = () => {
       <div className="ta-sidebar-footer">
         <div className="ta-user-info-wrapper">
           <div className="ta-avatar">
-            {user?.profile_picture ? (
-              <img src={user.profile_picture} alt={getDisplayName()} />
-            ) : (
-              getUserInitials()
-            )}
+            {getUserInitials()}
           </div>
           <div className="ta-user-details">
             <p className="ta-user-name">{getDisplayName()}</p>

@@ -21,17 +21,37 @@ const MentorSidebar = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
 
-  // Load user data from localStorage on component mount
+  // Load user data from localStorage based on user_type
   useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      try {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-      } catch (error) {
-        console.error('Error parsing user data:', error);
+    const loadUserData = () => {
+      // First check which user type is logged in
+      const userType = localStorage.getItem('user_type');
+      
+      if (userType === 'mentor') {
+        const mentorData = localStorage.getItem('mentor_user');
+        if (mentorData) {
+          try {
+            const parsedUser = JSON.parse(mentorData);
+            setUser(parsedUser);
+          } catch (error) {
+            console.error('Error parsing mentor user data:', error);
+          }
+        }
+      } else {
+        // Fallback to generic user key
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          try {
+            const parsedUser = JSON.parse(userData);
+            setUser(parsedUser);
+          } catch (error) {
+            console.error('Error parsing user data:', error);
+          }
+        }
       }
-    }
+    };
+
+    loadUserData();
   }, []);
 
   const isActive = (path) => {
@@ -51,8 +71,12 @@ const MentorSidebar = () => {
       cancelButtonText: 'Cancel'
     }).then((result) => {
       if (result.isConfirmed) {
-        // Clear user data from localStorage
+        // Clear all user data from localStorage
         localStorage.removeItem('user');
+        localStorage.removeItem('admin_user');
+        localStorage.removeItem('mentor_user');
+        localStorage.removeItem('candidate_user');
+        localStorage.removeItem('user_type');
         localStorage.removeItem('token');
         
         // Show success message
@@ -74,8 +98,8 @@ const MentorSidebar = () => {
   const getUserInitials = () => {
     if (user?.full_name) {
       return user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-    } else if (user?.username) {
-      return user.username.substring(0, 2).toUpperCase();
+    } else if (user?.identifier) {
+      return user.identifier.substring(0, 2).toUpperCase();
     }
     return 'MN';
   };
@@ -84,8 +108,8 @@ const MentorSidebar = () => {
   const getDisplayName = () => {
     if (user?.full_name) {
       return user.full_name;
-    } else if (user?.username) {
-      return user.username;
+    } else if (user?.identifier) {
+      return user.identifier.split('@')[0]; // Show username part of email
     }
     return 'Mentor User';
   };
@@ -94,6 +118,8 @@ const MentorSidebar = () => {
   const getDisplayEmail = () => {
     if (user?.email) {
       return user.email;
+    } else if (user?.identifier && user.identifier.includes('@')) {
+      return user.identifier;
     }
     return 'mentor@company.com';
   };
@@ -111,7 +137,6 @@ const MentorSidebar = () => {
 
       {/* Scrollable Menu */}
       <div className="ta-sidebar-scroll">
-        {/* All items in single section based on image */}
         <div className="ta-menu-section">
           <Link 
             to="/mentor-dashboard" 
@@ -175,11 +200,7 @@ const MentorSidebar = () => {
       <div className="ta-sidebar-footer">
         <div className="ta-user-info-wrapper">
           <div className="ta-avatar">
-            {user?.profile_picture ? (
-              <img src={user.profile_picture} alt={getDisplayName()} />
-            ) : (
-              getUserInitials()
-            )}
+            {getUserInitials()}
           </div>
           <div className="ta-user-details">
             <p className="ta-user-name">{getDisplayName()}</p>
