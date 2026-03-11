@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from 'sweetalert2';
 import "./ForgotPassword.css";
+import { BASE_URL } from "../../../ApiUrl";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const ForgotPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // API Base URL
-  const API_BASE_URL = 'http://145.79.0.94:8000/api/admin';
+  const API_BASE_URL = `${BASE_URL}/api/admin`;
 
   // Step 1: Send OTP API
   const sendOTP = async () => {
