@@ -38,6 +38,7 @@ import CandidateDashboard from "./components/Candidate/CandidateDasboard/Candida
 import CandidateProfessionalIdentity from "./components/Candidate/CandidateProfessionality/CandidateProfessionality";
 import CandidateDigitalLogbook from "./components/Candidate/CandidateDigitalLogBox/CandidateDigitalLogBox";
 import CandidateCompetency from "./components/Candidate/CandidateCompetency/CandidateCompetency";
+import CompetenceForm from "./components/Candidate/CandidateCompetency/AddCandidateCompetency";
 import CandidateRotation from "./components/Candidate/CandidateRotation/CandidateRotation"
 import CandidateCompliance from "./components/Candidate/CandidateCompliance/CandidateCompliance";
 import CandidateCertifications from "./components/Candidate/CandidateCertification/CartificationCertificate";
@@ -93,6 +94,7 @@ function App() {
               <Route path="/candidate-professionality" element={<CandidateProfessionalIdentity />} />
               <Route path="/candidate-digital" element={<CandidateDigitalLogbook />} />
                <Route path="/candidate-competence" element={<CandidateCompetency />} />
+               <Route path="/add-competence" element={<CompetenceForm />} />
                <Route path="/candidate-rotation" element={<CandidateRotation />} />
                <Route path="/candidate-compliance" element={<CandidateCompliance />} />
                 <Route path="/candidate-certificate" element={<CandidateCertifications />} />
