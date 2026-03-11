@@ -13,12 +13,11 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
- const handleLogin = async (e) => {
+const handleLogin = async (e) => {
   e.preventDefault();
   setError("");
   setLoading(true);
 
-  // Basic validation
   if (!identifier.trim() || !password.trim()) {
     setError("Please enter both identifier and password");
     setLoading(false);
@@ -45,20 +44,41 @@ const Login = () => {
     }
 
     if (data.status && data.data) {
-      // Login successful
+
+      const userType = data.data.user_type;
+
       console.log('✅ Login successful:', data);
-      
-      // Store user data in localStorage
-      localStorage.setItem('user', JSON.stringify(data.data));
-      
-      // If token is returned in the response, store it
-      if (data.data.token) {
-        localStorage.setItem('token', data.data.token);
-      } else if (data.token) {
-        localStorage.setItem('token', data.token);
+
+      /* -----------------------------------------
+         Store user data based on user_type
+      ------------------------------------------ */
+
+      let storageKey = "user";
+
+      if (userType === "admin") {
+        storageKey = "admin_user";
+      } else if (userType === "mentor") {
+        storageKey = "mentor_user";
+      } else if (userType === "candidate") {
+        storageKey = "candidate_user";
       }
-      
-      // Show success message
+
+      localStorage.setItem(storageKey, JSON.stringify(data.data));
+
+      /* -----------------------------------------
+         Store token based on user_type
+      ------------------------------------------ */
+
+      const token = data.data.token || data.token;
+
+      if (token) {
+        localStorage.setItem(`${userType}_token`, token);
+      }
+
+      /* -----------------------------------------
+         Success Message
+      ------------------------------------------ */
+
       await Swal.fire({
         icon: 'success',
         title: 'Login Successful!',
@@ -67,33 +87,38 @@ const Login = () => {
         showConfirmButton: false
       });
 
-      // Role-based navigation
-      const userType = data.data.user_type;
-      
+      /* -----------------------------------------
+         Role Based Navigation
+      ------------------------------------------ */
+
       switch (userType) {
         case 'admin':
           navigate('/dashboard');
           break;
+
         case 'mentor':
           navigate('/mentor-dashboard');
           break;
+
         case 'candidate':
           navigate('/candidate-dashboard');
           break;
+
         default:
-          // If user_type is unknown, log error and redirect to a default page
           console.error('Unknown user type:', userType);
-          navigate('/dashboard'); // or '/unauthorized' if you have such route
+          navigate('/dashboard');
       }
-      
+
     } else {
       throw new Error(data.message || 'Invalid response from server');
     }
 
   } catch (err) {
+
     console.error('❌ Login error:', err);
+
     setError(err.message || 'Login failed. Please try again.');
-    
+
     Swal.fire({
       icon: 'error',
       title: 'Login Failed',
@@ -101,12 +126,12 @@ const Login = () => {
       timer: 3000,
       showConfirmButton: true
     });
+
   } finally {
     setLoading(false);
   }
 };
 
-  // Toggle password visibility
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
@@ -115,16 +140,17 @@ const Login = () => {
     <div className="training-admin-login d-flex align-items-center justify-content-center min-vh-100 bg-light">
       <div className="training-admin-login-card card p-4 shadow" style={{ width: "100%", maxWidth: "400px", maxHeight: "600px"  }}>
         <div className="card-body">
+
           <div className="training-admin-login-header login-text-center mb-4">
             <div className="mb-3">
               <div className="training-admin-logo" style={{ 
-                width: "80px", 
-                height: "80px", 
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", 
-                borderRadius: "50%", 
-                display: "flex", 
-                alignItems: "center", 
-                justifyContent: "center", 
+                width: "80px",
+                height: "80px",
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 margin: "0 auto",
                 fontSize: "40px",
                 color: "white"
@@ -132,31 +158,34 @@ const Login = () => {
                 🛡️
               </div>
             </div>
+
             <h3 className="training-admin-login-title" style={{ fontSize: "24px", fontWeight: "600", color: "#333" }}>
               Training Admin
             </h3>
+
             <p className="training-admin-login-subtitle text-muted" style={{ fontSize: "14px" }}>
               Surveyor Management System
             </p>
           </div>
-          
+
           {error && (
             <div className="alert alert-danger alert-dismissible fade show" role="alert" style={{ fontSize: "14px" }}>
-              <i className="fas fa-exclamation-circle me-2"></i>
               {error}
               <button type="button" className="btn-close" onClick={() => setError("")}></button>
             </div>
           )}
-          
+
           <form onSubmit={handleLogin}>
+
             <div className="mb-3">
               <label htmlFor="identifier" className="form-label" style={{ fontWeight: "500", fontSize: "14px" }}>
                 Email or Phone Number <span className="text-danger">*</span>
               </label>
-              <input 
-                type="text" 
-                className="form-control" 
-                id="identifier" 
+
+              <input
+                type="text"
+                className="form-control"
+                id="identifier"
                 placeholder="Enter your email or phone number"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
@@ -164,20 +193,19 @@ const Login = () => {
                 disabled={loading}
                 style={{ padding: "12px", fontSize: "14px" }}
               />
-              {/* <small className="text-muted" style={{ fontSize: "12px" }}>
-                You can login with either email or phone number
-              </small> */}
             </div>
-            
+
             <div className="mb-4">
               <label htmlFor="password" className="form-label" style={{ fontWeight: "500", fontSize: "14px" }}>
                 Password <span className="text-danger">*</span>
               </label>
+
               <div className="input-group">
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  className="form-control" 
-                  id="password" 
+
+                <input
+                  type={showPassword ? "text" : "password"}
+                  className="form-control"
+                  id="password"
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -185,30 +213,27 @@ const Login = () => {
                   disabled={loading}
                   style={{ padding: "12px", fontSize: "14px" }}
                 />
-                <button 
-                  type="button" 
+
+                <button
+                  type="button"
                   className="btn btn-outline-secondary"
                   onClick={togglePasswordVisibility}
                   disabled={loading}
-                  style={{
-                    padding: "12px",
-                    borderColor: '#ced4da',
-                    backgroundColor: '#f8f9fa'
-                  }}
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
+
               </div>
             </div>
-            
+
             <div className="d-grid mb-3">
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="btn btn-primary"
                 disabled={loading}
-                style={{ 
-                  padding: "12px", 
-                  fontSize: "16px", 
+                style={{
+                  padding: "12px",
+                  fontSize: "16px",
                   fontWeight: "500",
                   background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                   border: "none"
@@ -216,7 +241,7 @@ const Login = () => {
               >
                 {loading ? (
                   <>
-                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    <span className="spinner-border spinner-border-sm me-2"></span>
                     Signing in...
                   </>
                 ) : (
@@ -234,6 +259,7 @@ const Login = () => {
                 Add / Forgot Password
               </button>
             </div>
+
           </form>
 
           <div className="text-center mt-4">
@@ -241,6 +267,7 @@ const Login = () => {
               © 2026 Training Admin. All rights reserved.
             </small>
           </div>
+
         </div>
       </div>
     </div>
