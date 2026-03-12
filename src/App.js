@@ -44,6 +44,9 @@ import CandidateCompliance from "./components/Candidate/CandidateCompliance/Cand
 import CandidateCertifications from "./components/Candidate/CandidateCertification/CartificationCertificate";
 import CandidateLearning from "./components/Candidate/CandidateLearning/CandidateLearning";
 import CandidateMentorship from "./components/Candidate/CandidateMentorship/CandidateMentorship";
+import Learning from "./components/Admin/Learning/Learning";
+import AddLearning from './components/Admin/Learning/AddLearning';
+
 
 
 function App() {
@@ -70,8 +73,11 @@ function App() {
             <Route path="/department/edit/:id" element={<AddDepartment />} />
             <Route path="/rotation" element={<RotationProgram />} />
             <Route path="/compliance" element={<ComplianceManagement />} />
-             <Route path="/certificate" element={<Certifications />} />
-               <Route path="/report" element={<ReportsAnalytics />} />
+            <Route path="/certificate" element={<Certifications />} />
+            <Route path="/learning" element={<Learning />} />
+            <Route path="/add-learning" element={<AddLearning />} />
+            <Route path="/add-learning/:id" element={<AddLearning />} />
+            <Route path="/report" element={<ReportsAnalytics />} />
             <Route path="/audit" element={<AuditLogs />} />
             <Route path="/system" element={<SystemSettings />} />
             <Route path="/email-settings" element={<EmailSettings />} />

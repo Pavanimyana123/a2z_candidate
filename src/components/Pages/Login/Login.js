@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import "./Login.css";
+import { BASE_URL } from "../../../ApiUrl";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const handleLogin = async (e) => {
   }
 
   try {
-    const response = await fetch('http://145.79.0.94:8000/api/admin/login/', {
+    const response = await fetch(`${BASE_URL}/api/admin/login/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

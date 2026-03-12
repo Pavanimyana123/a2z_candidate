@@ -16,6 +16,7 @@ import {
   FaSignOutAlt,
   FaUserCircle,
   FaEnvelope,
+  FaBook, // Added for Learning icon
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import "./Sidebar.css";
@@ -187,6 +188,14 @@ const Sidebar = () => {
             className={`ta-menu-item ${isActive("/certificate") ? "active" : ""}`}
           >
             <FaCertificate /> Certifications
+          </Link>
+
+          {/* New Learning item added after Certifications */}
+          <Link
+            to="/learning"
+            className={`ta-menu-item ${isActive("/learning") ? "active" : ""}`}
+          >
+            <FaBook /> Learning
           </Link>
         </div>
 
