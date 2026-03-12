@@ -269,8 +269,8 @@ const EmailSettings = () => {
                       <th>SMTP Server</th>
                       <th>Port</th>
                       <th>Limits</th>
-                      <th>Usage</th>
-                      <th>Last Used</th>
+                      {/* <th>Usage</th> */}
+                      {/* <th>Last Used</th> */}
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
@@ -360,7 +360,7 @@ const EmailSettingRow = ({ setting, onEdit, onDelete, onToggleStatus, getStatusB
           </small>
         </div>
       </td>
-      <td>
+      {/* <td>
         <div className="usage-indicator">
           {isDailyLimitExceeded() && (
             <span className="badge bg-warning text-dark me-1" title="Daily limit exceeded">D</span>
@@ -372,12 +372,12 @@ const EmailSettingRow = ({ setting, onEdit, onDelete, onToggleStatus, getStatusB
             <span className="badge bg-success">OK</span>
           )}
         </div>
-      </td>
-      <td>
+      </td> */}
+      {/* <td>
         <small className="text-muted">
           {formatDate(setting.last_used_at)}
         </small>
-      </td>
+      </td> */}
       <td>
         <span className={`email-settings-pill ${getStatusBadgeClass(setting.status)}`}>
           {getStatusDisplay(setting.status)}
@@ -385,13 +385,13 @@ const EmailSettingRow = ({ setting, onEdit, onDelete, onToggleStatus, getStatusB
       </td>
       <td>
         <div className="action-icons">
-          <button 
+          {/* <button 
             className="btn btn-sm btn-outline-primary me-2"
             onClick={() => onToggleStatus(setting)}
             title={setting.status === 'active' ? 'Deactivate' : 'Activate'}
           >
             {setting.status === 'active' ? 'Deactivate' : 'Activate'}
-          </button>
+          </button> */}
           <FaEdit 
             className="email-settings-action-icon edit-icon" 
             onClick={() => onEdit(setting.host_id)}

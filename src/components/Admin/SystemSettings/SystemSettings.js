@@ -144,47 +144,6 @@ const SystemSettingsPage = () => {
                 </div>
               </div>
 
-              {/* Email Config */}
-              <div className="col-12">
-                <div className="ss-card">
-                  <div className="ss-card-header">
-                    <h5>Email Configuration</h5>
-                    <p>SMTP and email delivery settings</p>
-                  </div>
-
-                  <div className="row">
-                    <div className="col-md-6">
-                      <label>SMTP Host</label>
-                      <input className="form-control ss-input" defaultValue="smtp.company.com" />
-                    </div>
-
-                    <div className="col-md-6">
-                      <label>SMTP Port</label>
-                      <input className="form-control ss-input" defaultValue="587" />
-                    </div>
-
-                    <div className="col-md-6">
-                      <label>SMTP Username</label>
-                      <input className="form-control ss-input" defaultValue="noreply@company.com" />
-                    </div>
-
-                    <div className="col-md-6">
-                      <label>SMTP Password</label>
-                      <input className="form-control ss-input" type="password" defaultValue="password" />
-                    </div>
-
-                    <div className="col-md-6">
-                      <label>From Email</label>
-                      <input className="form-control ss-input" defaultValue="training@company.com" />
-                    </div>
-
-                    <div className="col-md-6">
-                      <label>From Name</label>
-                      <input className="form-control ss-input" defaultValue="Training Admin System" />
-                    </div>
-                  </div>
-                </div>
-              </div>
 
             </div>
           </div>
