@@ -391,13 +391,6 @@ const AddCandidate = () => {
                 <h2>{isEditMode ? 'Edit Candidate' : 'Add New Candidate'}</h2>
                 <p>{isEditMode ? 'Update the candidate details below' : 'Fill in the candidate details below'}</p>
               </div>
-              <button 
-                className="btn btn-outline-secondary"
-                onClick={handleCancel}
-                disabled={loading}
-              >
-                Cancel
-              </button>
             </div>
 
             {/* Error Message */}
@@ -408,7 +401,7 @@ const AddCandidate = () => {
               <form onSubmit={handleSubmit}>
                 <div className="row">
                   {/* Full Name */}
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">Full Name *</label>
                     <input
                       type="text"
@@ -424,7 +417,7 @@ const AddCandidate = () => {
                   </div>
 
                   {/* Date of Birth */}
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">Date of Birth *</label>
                     <input
                       type="date"
@@ -439,7 +432,7 @@ const AddCandidate = () => {
                   </div>
 
                   {/* Gender */}
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">Gender *</label>
                     <select
                       className={`form-select ${errors.gender ? 'is-invalid' : ''}`}
@@ -454,7 +447,7 @@ const AddCandidate = () => {
                   </div>
 
                   {/* Phone Number */}
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">Phone Number *</label>
                     <input
                       type="tel"
@@ -470,7 +463,7 @@ const AddCandidate = () => {
                   </div>
 
                   {/* Email */}
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">Email *</label>
                     <input
                       type="email"
@@ -486,7 +479,7 @@ const AddCandidate = () => {
                   </div>
 
                   {/* Address */}
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">Address *</label>
                     <input
                       type="text"
@@ -502,7 +495,7 @@ const AddCandidate = () => {
                   </div>
 
                   {/* City */}
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">City *</label>
                     <input
                       type="text"
@@ -518,7 +511,7 @@ const AddCandidate = () => {
                   </div>
 
                   {/* State */}
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">State *</label>
                     <input
                       type="text"
@@ -534,7 +527,7 @@ const AddCandidate = () => {
                   </div>
 
                   {/* Country */}
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">Country *</label>
                     <input
                       type="text"
@@ -550,7 +543,7 @@ const AddCandidate = () => {
                   </div>
 
                   {/* Pincode */}
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">Pincode *</label>
                     <input
                       type="text"
@@ -567,7 +560,7 @@ const AddCandidate = () => {
                   </div>
 
                   {/* Emergency Contact Name */}
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">Emergency Contact Name *</label>
                     <input
                       type="text"
@@ -583,7 +576,7 @@ const AddCandidate = () => {
                   </div>
 
                   {/* Emergency Contact Phone */}
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">Emergency Contact Phone *</label>
                     <input
                       type="tel"
@@ -599,7 +592,7 @@ const AddCandidate = () => {
                   </div>
 
                   {/* Current Level - Dropdown with level_id */}
-                  <div className="col-md-6 mb-3">
+                  {/* <div className="col-md-6 mb-3">
                     <label className="form-label">Current Level *</label>
                     <select
                       className={`form-select ${errors.current_level ? 'is-invalid' : ''}`}
@@ -617,10 +610,10 @@ const AddCandidate = () => {
                     {errors.current_level && (
                       <div className="invalid-feedback">{errors.current_level}</div>
                     )}
-                  </div>
+                  </div> */}
 
                   {/* Blood Group */}
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">Blood Group</label>
                     <select
                       className="form-select"
@@ -641,7 +634,7 @@ const AddCandidate = () => {
                   </div>
 
                   {/* Medical Expiry Date */}
-                  <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">Medical Expiry Date</label>
                     <input
                       type="date"
@@ -654,11 +647,11 @@ const AddCandidate = () => {
                 </div>
 
                 {/* Note */}
-                <div className="ac-note mb-4">
+                {/* <div className="ac-note mb-4">
                   <small className="text-muted">
                     Note: Safety induction status is automatically set to "true".
                   </small>
-                </div>
+                </div> */}
 
                 {/* Form Actions */}
                 <div className="ac-actions">

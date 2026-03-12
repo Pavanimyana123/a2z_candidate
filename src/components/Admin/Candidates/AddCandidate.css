@@ -8,7 +8,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .ac-header h2 {
@@ -86,9 +86,9 @@
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 24px;
-  padding-top: 24px;
-  border-top: 1px solid #e0e0e0;
+  /* margin-top: 24px; */
+  /* padding-top: 24px; */
+  /* border-top: 1px solid #e0e0e0; */
 }
 
 .ac-actions .btn {
