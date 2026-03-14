@@ -25,7 +25,6 @@ const LevelsManagement = () => {
       const data = await response.json();
       
       if (data.status) {
-        // Don't filter out items with "string" - show them but handle gracefully
         setLevels(data.data);
         setError(null);
       } else {
@@ -77,8 +76,8 @@ const LevelsManagement = () => {
         throw new Error(data.message || 'Failed to delete level');
       }
       
-      // Remove the deleted level from state
-      setLevels(prev => prev.filter(level => level.level_id !== levelId));
+      // Remove the deleted level from state - FIXED: using id instead of level_id
+      setLevels(prev => prev.filter(level => level.id !== levelId));
       
       await Swal.fire({
         icon: 'success',
@@ -270,8 +269,8 @@ const LevelsManagement = () => {
                 })
                 .map((level) => (
                   <LevelCard
-                    key={level.level_id}
-                    levelId={level.level_id}
+                    key={level.id} // FIXED: using id instead of level_id
+                    levelId={level.id} // FIXED: using id instead of level_id
                     level={formatLevelNumber(level.number)}
                     title={formatText(level.name)}
                     code={formatText(level.code)}

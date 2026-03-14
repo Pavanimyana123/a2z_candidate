@@ -279,3 +279,83 @@
     justify-content: space-between;
   }
 }
+
+/* Add these styles */
+
+.cld-filter-bar {
+  background: white;
+  padding: 15px 20px;
+  border-radius: 12px;
+  border: 1px solid #e6eaf0;
+  margin-bottom: 20px;
+}
+
+.cld-type-filter {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #e6eaf0;
+  background: white;
+  color: #4a5568;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cld-type-filter:hover {
+  background: #f8fafc;
+  border-color: #1f3a5f;
+}
+
+.cld-type-filter.active {
+  background: #1f3a5f;
+  color: white;
+  border-color: #1f3a5f;
+}
+
+.cld-badge.mandatory {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}
+
+.cld-badge.assessment {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+/* Loading state */
+.cld-loading {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e6eaf0;
+}
+
+/* Error state */
+.cld-error {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e6eaf0;
+  color: #dc3545;
+}
+
+/* Animation for filter bar */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cld-filter-bar {
+  animation: slideDown 0.3s ease;
+}

@@ -23,8 +23,8 @@ const AddMentor = () => {
     full_name: "",
     phone_number: "",
     email: "",
-    mentor_level: "", // Will store level_id
-    specializations: [], // Will store array of department_ids
+    mentor_level: "", // Will store level_id as integer
+    specializations: [], // Will store array of department_ids as integers
     current_company: "",
     years_of_experience: "",
     max_trainees: "",
@@ -69,7 +69,7 @@ const AddMentor = () => {
       const deptsData = await deptsResponse.json();
       console.log("✅ Departments fetched:", deptsData);
 
-      // Filter active levels and departments
+      // Filter active levels and departments - using 'id' field
       const activeLevels =
         levelsData.data?.filter((level) => level.is_active) || [];
       const activeDepartments =
@@ -106,12 +106,15 @@ const AddMentor = () => {
 
       if (result.status && result.data) {
         const mentorData = result.data;
+        // Ensure IDs are integers
         setFormData({
           full_name: mentorData.full_name || "",
           phone_number: mentorData.phone_number || "",
           email: mentorData.email || "",
-          mentor_level: mentorData.mentor_level || "",
-          specializations: mentorData.specializations || [],
+          mentor_level: mentorData.mentor_level ? parseInt(mentorData.mentor_level) : "",
+          specializations: Array.isArray(mentorData.specializations) 
+            ? mentorData.specializations.map(id => parseInt(id)) 
+            : [],
           current_company: mentorData.current_company || "",
           years_of_experience: mentorData.years_of_experience || "",
           max_trainees: mentorData.max_trainees || "",
@@ -149,14 +152,20 @@ const AddMentor = () => {
         [name]: checked,
       }));
     } else if (name === "specializations") {
-      // Handle multi-select for specializations
+      // Handle multi-select for specializations - convert to integers
       const selectedOptions = Array.from(
         e.target.selectedOptions,
-        (option) => option.value,
+        (option) => parseInt(option.value)
       );
       setFormData((prev) => ({
         ...prev,
         [name]: selectedOptions,
+      }));
+    } else if (name === "mentor_level") {
+      // Convert mentor_level to integer
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value ? parseInt(value) : "",
       }));
     } else {
       setFormData((prev) => ({
@@ -206,7 +215,7 @@ const AddMentor = () => {
       newErrors.email = "Please enter a valid email address";
     }
 
-    if (!formData.mentor_level) {
+    if (!formData.mentor_level && formData.mentor_level !== 0) {
       newErrors.mentor_level = "Mentor level is required";
     }
 
@@ -254,12 +263,13 @@ const AddMentor = () => {
     setLoading(true);
     setError("");
 
+    // Prepare payload with proper integer IDs
     const payload = {
       full_name: formData.full_name,
       phone_number: formData.phone_number,
       email: formData.email,
-      mentor_level: formData.mentor_level,
-      specializations: formData.specializations,
+      mentor_level: formData.mentor_level ? parseInt(formData.mentor_level) : null,
+      specializations: formData.specializations.map(id => parseInt(id)),
       current_company: formData.current_company || "",
       years_of_experience: Number(formData.years_of_experience),
       max_trainees: Number(formData.max_trainees),
@@ -268,6 +278,8 @@ const AddMentor = () => {
       background_verified: formData.background_verified,
       mentorship_certified: formData.mentorship_certified,
     };
+
+    console.log("📦 Sending payload:", payload);
 
     const url = isEditMode
       ? `${BASE_URL}/api/mentor/mentors/${id}/`
@@ -283,14 +295,33 @@ const AddMentor = () => {
         body: JSON.stringify(payload),
       });
 
+      // Try to parse error response if any
+      const responseData = await response.json().catch(() => null);
+      console.log("📥 Response:", responseData);
+
       if (!response.ok) {
         let errorMessage = `HTTP ${response.status}`;
-
-        try {
-          const errorData = await response.json();
-          errorMessage =
-            errorData.message || errorData.error || JSON.stringify(errorData);
-        } catch {}
+        
+        if (responseData) {
+          if (responseData.message) {
+            errorMessage = responseData.message;
+          } else if (responseData.errors) {
+            // Handle field-specific errors
+            const fieldErrors = Object.entries(responseData.errors)
+              .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
+              .join('\n');
+            errorMessage = `Validation failed:\n${fieldErrors}`;
+            
+            // Update errors state for form fields
+            const newErrors = {};
+            Object.entries(responseData.errors).forEach(([field, errors]) => {
+              newErrors[field] = Array.isArray(errors) ? errors[0] : errors;
+            });
+            setErrors(newErrors);
+          } else {
+            errorMessage = JSON.stringify(responseData);
+          }
+        }
 
         throw new Error(errorMessage);
       }
@@ -305,6 +336,7 @@ const AddMentor = () => {
 
       navigate("/mentor");
     } catch (err) {
+      console.error("❌ Error saving mentor:", err);
       setError(err.message);
 
       Swal.fire({
@@ -322,25 +354,25 @@ const AddMentor = () => {
     navigate("/mentor");
   };
 
-  // Get level display name with number
+  // Get level display name with number - using 'id' field
   const getLevelDisplay = (level) => {
-    return `${level.name} (${level.number})`;
+    return `${level.name} (Level ${level.number})`;
   };
 
-  // Get department display with code
+  // Get department display with code - using 'id' field
   const getDepartmentDisplay = (dept) => {
     return `${dept.name} (${dept.code})`;
   };
 
-  // Get level name by ID for display
+  // Get level name by ID for display - using 'id' field
   const getLevelName = (levelId) => {
-    const level = levels.find((l) => l.level_id === levelId);
+    const level = levels.find((l) => l.id === levelId);
     return level ? getLevelDisplay(level) : "Unknown Level";
   };
 
-  // Get department name by ID for display
+  // Get department name by ID for display - using 'id' field
   const getDepartmentName = (deptId) => {
-    const dept = departments.find((d) => d.department_id === deptId);
+    const dept = departments.find((d) => d.id === deptId);
     return dept ? getDepartmentDisplay(dept) : "Unknown Department";
   };
 
@@ -386,7 +418,6 @@ const AddMentor = () => {
                     : "Fill in the mentor details below"}
                 </p>
               </div>
-
             </div>
 
             {/* Error Message */}
@@ -437,6 +468,7 @@ const AddMentor = () => {
                       onChange={handleChange}
                       placeholder="Enter 10-digit phone number"
                       disabled={loading}
+                      maxLength="10"
                     />
                     {errors.phone_number && (
                       <div className="invalid-feedback">
@@ -462,20 +494,20 @@ const AddMentor = () => {
                     )}
                   </div>
 
-                  {/* Mentor Level - Now showing name and number */}
+                  {/* Mentor Level - Using id field */}
                   <div className="col-md-4 mb-3">
                     <label className="form-label">Mentor Level *</label>
                     <div className="position-relative">
                       <select
                         className={`form-select ${errors.mentor_level ? "is-invalid" : ""} ${formData.mentor_level ? "has-value" : ""}`}
                         name="mentor_level"
-                        value={formData.mentor_level}
+                        value={formData.mentor_level || ""}
                         onChange={handleChange}
                         disabled={loading || levels.length === 0}
                       >
                         <option value="">Select Mentor Level</option>
                         {levels.map((level) => (
-                          <option key={level.level_id} value={level.level_id}>
+                          <option key={level.id} value={level.id}>
                             {getLevelDisplay(level)}
                           </option>
                         ))}
@@ -487,12 +519,12 @@ const AddMentor = () => {
                           onClick={clearMentorLevel}
                           title="Clear selection"
                         >
-                          <i className="bi bi-x-circle-fill"></i>
+                          ✕
                         </button>
                       )}
                     </div>
                     {errors.mentor_level && (
-                      <div className="invalid-feedback">
+                      <div className="invalid-feedback d-block">
                         {errors.mentor_level}
                       </div>
                     )}
@@ -591,29 +623,26 @@ const AddMentor = () => {
                     </select>
                   </div>
 
-                  {/* Specializations - Multi-select showing name and code */}
+                  {/* Specializations - Multi-select using id field */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Specializations *</label>
                     <select
                       multiple
                       className={`form-select ${errors.specializations ? "is-invalid" : ""}`}
                       name="specializations"
-                      value={formData.specializations}
+                      value={formData.specializations.map(String)}
                       onChange={handleChange}
                       disabled={loading || departments.length === 0}
                       size="4"
                     >
                       {departments.map((dept) => (
-                        <option
-                          key={dept.department_id}
-                          value={dept.department_id}
-                        >
+                        <option key={dept.id} value={dept.id}>
                           {getDepartmentDisplay(dept)}
                         </option>
                       ))}
                     </select>
                     {errors.specializations && (
-                      <div className="invalid-feedback">
+                      <div className="invalid-feedback d-block">
                         {errors.specializations}
                       </div>
                     )}
@@ -622,7 +651,7 @@ const AddMentor = () => {
                         No active departments available
                       </small>
                     )}
-                    <small className="text-muted">
+                    <small className="text-muted d-block">
                       Hold Ctrl/Cmd to select multiple
                     </small>
                   </div>
@@ -636,7 +665,7 @@ const AddMentor = () => {
                       <div className="selected-tags-container">
                         {formData.specializations.map((deptId) => {
                           const dept = departments.find(
-                            (d) => d.department_id === deptId,
+                            (d) => d.id === deptId,
                           );
                           return dept ? (
                             <span key={deptId} className="selected-tag">
@@ -655,17 +684,15 @@ const AddMentor = () => {
                       </div>
                     </div>
                   )}
-
-                  
                 </div>
 
                 {/* Verification Status Section */}
-                <div className="row">
+                <div className="row mt-3">
                   <div className="col-12">
-                    <h5>Verification Status</h5>
+                    <h5 className="mb-3">Verification Status</h5>
                   </div>
                   <div className="col-md-6">
-                    <div className="form-check">
+                    <div className="form-check mb-3">
                       <input
                         type="checkbox"
                         className="form-check-input"
@@ -683,8 +710,8 @@ const AddMentor = () => {
                       </label>
                     </div>
                   </div>
-                  <div className="col-md-6 mb-3">
-                    <div className="form-check">
+                  <div className="col-md-6">
+                    <div className="form-check mb-3">
                       <input
                         type="checkbox"
                         className="form-check-input"

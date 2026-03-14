@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../Layout/Sidebar";
 import Header from "../Layout/Header";
 import "./EmailSettings.css";
-import { FaSearch, FaFilter, FaEdit, FaTrash, FaEnvelope, FaPlus, FaServer, FaClock, FaChartBar } from "react-icons/fa";
+import { FaSearch, FaFilter, FaEdit, FaTrash, FaPlus, FaServer, FaClock } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import { BASE_URL } from "../../../ApiUrl";
 
@@ -31,10 +31,11 @@ const EmailSettings = () => {
       }
       
       const result = await response.json();
-      console.log('API Response:', result);
+      console.log('Email Settings API Response:', result);
       
       if (result.status && result.data) {
         setEmailSettings(result.data);
+        console.log('Email settings set:', result.data);
       } else {
         setEmailSettings([]);
       }
@@ -43,6 +44,14 @@ const EmailSettings = () => {
     } catch (err) {
       console.error('Error fetching email settings:', err);
       setError(err.message);
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Failed to Load Email Settings',
+        text: err.message || 'An error occurred while fetching email settings',
+        timer: 3000,
+        showConfirmButton: true
+      });
     } finally {
       setLoading(false);
     }
@@ -93,7 +102,7 @@ const EmailSettings = () => {
     try {
       const newStatus = setting.status === 'active' ? 'inactive' : 'active';
       
-      const response = await fetch(`${BASE_URL}/api/admin/host-mails/${setting.host_id}/`, {
+      const response = await fetch(`${BASE_URL}/api/admin/host-mails/${setting.id}/`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -140,7 +149,7 @@ const EmailSettings = () => {
       cancelButtonText: 'Cancel'
     }).then((result) => {
       if (result.isConfirmed) {
-        handleDelete(setting.host_id, setting.host_name);
+        handleDelete(setting.id, setting.host_name);
       }
     });
   };
@@ -173,7 +182,7 @@ const EmailSettings = () => {
       case 'suspended':
         return 'Suspended';
       default:
-        return status;
+        return status || 'Unknown';
     }
   };
 
@@ -243,16 +252,19 @@ const EmailSettings = () => {
 
             {/* Loading State */}
             {loading && (
-              <div className="email-settings-loading">
-                <p>Loading SMTP hosts...</p>
+              <div className="email-settings-loading text-center p-5">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <p className="mt-2">Loading SMTP hosts...</p>
               </div>
             )}
 
             {/* Error State */}
             {error && !loading && (
-              <div className="email-settings-error">
+              <div className="email-settings-error alert alert-danger">
                 <p>Error: {error}</p>
-                <button onClick={fetchEmailSettings} className="btn btn-secondary">
+                <button onClick={fetchEmailSettings} className="btn btn-primary mt-2">
                   Retry
                 </button>
               </div>
@@ -269,8 +281,6 @@ const EmailSettings = () => {
                       <th>SMTP Server</th>
                       <th>Port</th>
                       <th>Limits</th>
-                      {/* <th>Usage</th> */}
-                      {/* <th>Last Used</th> */}
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
@@ -279,7 +289,7 @@ const EmailSettings = () => {
                     {filteredSettings.length > 0 ? (
                       filteredSettings.map((setting) => (
                         <EmailSettingRow 
-                          key={setting.host_id}
+                          key={setting.id}
                           setting={setting}
                           onEdit={handleEdit}
                           onDelete={confirmDelete}
@@ -290,8 +300,18 @@ const EmailSettings = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="9" className="text-center">
+                        <td colSpan="7" className="text-center py-4">
                           No SMTP hosts found
+                          {searchTerm && (
+                            <div>
+                              <button 
+                                className="btn btn-link mt-2"
+                                onClick={() => setSearchTerm('')}
+                              >
+                                Clear Search
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     )}
@@ -354,30 +374,18 @@ const EmailSettingRow = ({ setting, onEdit, onDelete, onToggleStatus, getStatusB
         <div className="limits-info">
           <small className="d-block">
             <FaClock className="me-1" /> Daily: {setting.current_daily_count || 0}/{setting.daily_limit || '∞'}
+            {isDailyLimitExceeded() && (
+              <span className="badge bg-warning text-dark ms-1" title="Daily limit exceeded">!</span>
+            )}
           </small>
           <small className="d-block">
             <FaClock className="me-1" /> Hourly: {setting.current_hourly_count || 0}/{setting.hourly_limit || '∞'}
+            {isHourlyLimitExceeded() && (
+              <span className="badge bg-warning text-dark ms-1" title="Hourly limit exceeded">!</span>
+            )}
           </small>
         </div>
       </td>
-      {/* <td>
-        <div className="usage-indicator">
-          {isDailyLimitExceeded() && (
-            <span className="badge bg-warning text-dark me-1" title="Daily limit exceeded">D</span>
-          )}
-          {isHourlyLimitExceeded() && (
-            <span className="badge bg-warning text-dark" title="Hourly limit exceeded">H</span>
-          )}
-          {!isDailyLimitExceeded() && !isHourlyLimitExceeded() && (
-            <span className="badge bg-success">OK</span>
-          )}
-        </div>
-      </td> */}
-      {/* <td>
-        <small className="text-muted">
-          {formatDate(setting.last_used_at)}
-        </small>
-      </td> */}
       <td>
         <span className={`email-settings-pill ${getStatusBadgeClass(setting.status)}`}>
           {getStatusDisplay(setting.status)}
@@ -385,6 +393,7 @@ const EmailSettingRow = ({ setting, onEdit, onDelete, onToggleStatus, getStatusB
       </td>
       <td>
         <div className="action-icons">
+          {/* Toggle Status Button - Uncomment if needed */}
           {/* <button 
             className="btn btn-sm btn-outline-primary me-2"
             onClick={() => onToggleStatus(setting)}
@@ -394,9 +403,9 @@ const EmailSettingRow = ({ setting, onEdit, onDelete, onToggleStatus, getStatusB
           </button> */}
           <FaEdit 
             className="email-settings-action-icon edit-icon" 
-            onClick={() => onEdit(setting.host_id)}
+            onClick={() => onEdit(setting.id)}
             title="Edit Host"
-            style={{ cursor: 'pointer', marginRight: '10px' }}
+            style={{ cursor: 'pointer', marginRight: '10px', color: '#4a6cf7' }}
           />
           <FaTrash 
             className="email-settings-action-icon delete-icon" 

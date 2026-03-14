@@ -248,7 +248,7 @@ const AddCandidate = () => {
     setLoading(true);
     setError('');
 
-    // Prepare payload
+    // Prepare payload - send level_id as current_level
     const payload = {
       full_name: formData.full_name,
       date_of_birth: formData.date_of_birth,
@@ -265,7 +265,7 @@ const AddCandidate = () => {
       blood_group: formData.blood_group || '',
       medical_expiry_date: formData.medical_expiry_date || '',
       safety_induction_status: true, // Always set to true for new candidates
-      current_level: formData.current_level // This is already the level_id from the dropdown
+      current_level: parseInt(formData.current_level) // Convert to integer as the API expects ID
     };
 
     // Remove any empty string values but keep valid falsy values like false
@@ -297,15 +297,31 @@ const AddCandidate = () => {
 
       console.log(`📥 Response received - Status: ${response.status} ${response.statusText}`);
 
+      // Try to parse the response even if it's not OK to get error details
+      const responseData = await response.json().catch(() => null);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ Server returned error:', errorData);
-        throw new Error(errorData.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate`);
+        console.error('❌ Server returned error:', responseData);
+        
+        // Handle field-specific validation errors from server
+        if (responseData && responseData.errors) {
+          // If server returns field-specific errors, update the errors state
+          const serverErrors = {};
+          Object.keys(responseData.errors).forEach(key => {
+            serverErrors[key] = Array.isArray(responseData.errors[key]) 
+              ? responseData.errors[key][0] 
+              : responseData.errors[key];
+          });
+          setErrors(serverErrors);
+          
+          throw new Error('Please check the form for errors');
+        }
+        
+        throw new Error(responseData?.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate`);
       }
 
-      const data = await response.json();
       console.log(`✅ Candidate ${isEditMode ? 'updated' : 'created'} successfully!`);
-      console.log('📋 Server response:', data);
+      console.log('📋 Server response:', responseData);
       
       // Show success message
       await Swal.fire({
@@ -394,7 +410,7 @@ const AddCandidate = () => {
             </div>
 
             {/* Error Message */}
-            {error && <div className="ac-error">{error}</div>}
+            {error && <div className="ac-error alert alert-danger">{error}</div>}
 
             {/* Form */}
             <div className="ac-form-container">
@@ -444,6 +460,9 @@ const AddCandidate = () => {
                       <option value="F">Female</option>
                       <option value="O">Other</option>
                     </select>
+                    {errors.gender && (
+                      <div className="invalid-feedback">{errors.gender}</div>
+                    )}
                   </div>
 
                   {/* Phone Number */}
@@ -456,6 +475,7 @@ const AddCandidate = () => {
                       value={formData.phone_number || ''}
                       onChange={handleChange}
                       placeholder="Enter 10-digit phone number"
+                      maxLength="10"
                     />
                     {errors.phone_number && (
                       <div className="invalid-feedback">{errors.phone_number}</div>
@@ -585,6 +605,7 @@ const AddCandidate = () => {
                       value={formData.emergency_contact_phone || ''}
                       onChange={handleChange}
                       placeholder="Enter emergency contact phone"
+                      maxLength="10"
                     />
                     {errors.emergency_contact_phone && (
                       <div className="invalid-feedback">{errors.emergency_contact_phone}</div>
@@ -592,17 +613,18 @@ const AddCandidate = () => {
                   </div>
 
                   {/* Current Level - Dropdown with level_id */}
-                  {/* <div className="col-md-6 mb-3">
+                  <div className="col-md-4 mb-3">
                     <label className="form-label">Current Level *</label>
                     <select
                       className={`form-select ${errors.current_level ? 'is-invalid' : ''}`}
                       name="current_level"
                       value={formData.current_level || ''}
                       onChange={handleChange}
+                      disabled={levelsLoading}
                     >
-                      <option value="">Select Level</option>
+                      <option value="">-- Select Level --</option>
                       {levels.map((level) => (
-                        <option key={level.level_id} value={level.level_id}>
+                        <option key={level.id} value={level.id}>
                           {level.name} (Level {level.number})
                         </option>
                       ))}
@@ -610,7 +632,10 @@ const AddCandidate = () => {
                     {errors.current_level && (
                       <div className="invalid-feedback">{errors.current_level}</div>
                     )}
-                  </div> */}
+                    {levels.length === 0 && !levelsLoading && (
+                      <small className="text-danger">No levels available</small>
+                    )}
+                  </div>
 
                   {/* Blood Group */}
                   <div className="col-md-4 mb-3">
@@ -646,10 +671,10 @@ const AddCandidate = () => {
                   </div>
                 </div>
 
-                {/* Note */}
+                {/* Note about required fields */}
                 {/* <div className="ac-note mb-4">
                   <small className="text-muted">
-                    Note: Safety induction status is automatically set to "true".
+                    <span className="text-danger">*</span> Required fields
                   </small>
                 </div> */}
 
@@ -668,7 +693,12 @@ const AddCandidate = () => {
                     className="btn btn-primary"
                     disabled={loading}
                   >
-                    {loading ? (isEditMode ? 'Updating...' : 'Creating...') : (isEditMode ? 'Update Candidate' : 'Add Candidate')}
+                    {loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        {isEditMode ? 'Updating...' : 'Creating...'}
+                      </>
+                    ) : (isEditMode ? 'Update Candidate' : 'Add Candidate')}
                   </button>
                 </div>
               </form>
