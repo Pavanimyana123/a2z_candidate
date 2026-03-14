@@ -84,17 +84,19 @@ const CompetenceForm = () => {
       const result = await response.json();
       
       if (result.status && result.data) {
-        setLevels(result.data);
-        console.log('✅ Levels fetched successfully:', result.data);
+        // Filter active levels
+        const activeLevels = result.data.filter(level => level.is_active);
+        setLevels(activeLevels);
+        console.log('✅ Levels fetched successfully:', activeLevels);
         
-        // Find and set default level (level 0 - Trainee)
-        const defaultLevel = result.data.find(level => level.number === 0);
+        // Find and set default level (level with number 0 - Trainee)
+        const defaultLevel = activeLevels.find(level => level.number === 0);
         if (defaultLevel) {
           setFormData(prev => ({
             ...prev,
-            level: defaultLevel.level_id
+            level: defaultLevel.id // Store the ID, not the display text
           }));
-          console.log('✅ Default level set:', defaultLevel.name);
+          console.log('✅ Default level set:', defaultLevel.name, 'with ID:', defaultLevel.id);
         }
       } else {
         throw new Error(result.message || 'Failed to fetch levels');
@@ -113,17 +115,30 @@ const CompetenceForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log(`Field changed - ${name}:`, value);
+    
+    // For department and level, we want to store the ID as integer
+    // The value from select is already the ID (since we set value={dept.id})
+    let processedValue = value;
+    
+    // If it's department or level, convert to integer
+    if (name === 'department' || name === 'level') {
+      processedValue = value ? parseInt(value) : '';
+    }
+    
+    console.log(`Field changed - ${name}:`, processedValue);
     
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: processedValue
     }));
 
     // Update competency_name when department or level changes
     if (name === 'department' || name === 'level') {
-      updateCompetencyName(name === 'department' ? value : formData.department, 
-                          name === 'level' ? value : formData.level);
+      // Get the current values (using the updated value for the changed field)
+      const currentDeptId = name === 'department' ? processedValue : formData.department;
+      const currentLevelId = name === 'level' ? processedValue : formData.level;
+      
+      updateCompetencyName(currentDeptId, currentLevelId);
     }
     
     // Clear error for this field
@@ -133,8 +148,13 @@ const CompetenceForm = () => {
   };
 
   const updateCompetencyName = (deptId, levelId) => {
-    const selectedDept = departments.find(d => d.department_id === deptId);
-    const selectedLevel = levels.find(l => l.level_id === levelId);
+    // Only proceed if both IDs are valid numbers
+    if (!deptId || !levelId) return;
+    
+    // Find department by id
+    const selectedDept = departments.find(d => d.id === deptId);
+    // Find level by id
+    const selectedLevel = levels.find(l => l.id === levelId);
     
     if (selectedDept && selectedLevel) {
       const competencyName = `${selectedLevel.name} - ${selectedDept.name}`;
@@ -205,12 +225,12 @@ const CompetenceForm = () => {
     console.log('✅ Form validation passed. Preparing payload...');
     setLoading(true);
 
-    // Prepare payload with only required fields
+    // Prepare payload with proper integer IDs
     const payload = {
       competency_name: formData.competency_name,
-      candidate: formData.candidate,
-      department: formData.department,
-      level: formData.level
+      candidate: parseInt(formData.candidate), // Ensure integer
+      department: parseInt(formData.department), // Ensure integer
+      level: parseInt(formData.level) // Ensure integer
     };
 
     console.log('📦 Payload prepared for submission:');
@@ -232,15 +252,28 @@ const CompetenceForm = () => {
 
       console.log(`📥 Response received - Status: ${response.status} ${response.statusText}`);
 
+      const responseData = await response.json().catch(() => null);
+
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ Server returned error:', errorData);
-        throw new Error(errorData.message || 'Failed to create competence');
+        console.error('❌ Server returned error:', responseData);
+        
+        // Handle field-specific validation errors from server
+        if (responseData && responseData.errors) {
+          const serverErrors = {};
+          Object.keys(responseData.errors).forEach(key => {
+            serverErrors[key] = Array.isArray(responseData.errors[key]) 
+              ? responseData.errors[key][0] 
+              : responseData.errors[key];
+          });
+          setErrors(serverErrors);
+          throw new Error('Please check the form for errors');
+        }
+        
+        throw new Error(responseData?.message || 'Failed to create competence');
       }
 
-      const data = await response.json();
       console.log('✅ Competence created successfully!');
-      console.log('📋 Server response:', data);
+      console.log('📋 Server response:', responseData);
       
       // Show success message
       await Swal.fire({
@@ -276,6 +309,30 @@ const CompetenceForm = () => {
   const handleCancel = () => {
     console.log('Cancel button clicked - navigating back');
     navigate(-1);
+  };
+
+  // Get department display name with code
+  const getDepartmentDisplay = (dept) => {
+    return `${dept.name} (${dept.code})`;
+  };
+
+  // Get level display name with number
+  const getLevelDisplay = (level) => {
+    return `${level.name} (Level ${level.number})`;
+  };
+
+  // Helper to get current department name for display
+  const getCurrentDepartmentName = () => {
+    if (!formData.department) return '';
+    const dept = departments.find(d => d.id === formData.department);
+    return dept ? getDepartmentDisplay(dept) : '';
+  };
+
+  // Helper to get current level name for display
+  const getCurrentLevelName = () => {
+    if (!formData.level) return '';
+    const level = levels.find(l => l.id === formData.level);
+    return level ? getLevelDisplay(level) : '';
   };
 
   if (fetchLoading) {
@@ -357,7 +414,7 @@ const CompetenceForm = () => {
 
                 {/* Second Row - Department and Level (Two Columns) */}
                 <div className="competence-form-row">
-                  {/* Department Dropdown */}
+                  {/* Department Dropdown - Fixed: using id */}
                   <div className="competence-form-group competence-half-width">
                     <label className="competence-form-label">
                       Department <span className="competence-required-star">*</span>
@@ -370,17 +427,25 @@ const CompetenceForm = () => {
                     >
                       <option value="">Select Department</option>
                       {departments.map((dept) => (
-                        <option key={dept.department_id} value={dept.department_id}>
-                          {dept.name} ({dept.code})
+                        <option key={dept.id} value={dept.id}>
+                          {getDepartmentDisplay(dept)}
                         </option>
                       ))}
                     </select>
                     {errors.department && (
                       <div className="competence-error-message">{errors.department}</div>
                     )}
+                    {departments.length === 0 && (
+                      <small className="text-warning">No departments available</small>
+                    )}
+                    {formData.department && (
+                      <small className="text-success d-block mt-1">
+                        Selected: {getCurrentDepartmentName()}
+                      </small>
+                    )}
                   </div>
 
-                  {/* Level Dropdown */}
+                  {/* Level Dropdown - Fixed: using id */}
                   <div className="competence-form-group competence-half-width">
                     <label className="competence-form-label">
                       Level <span className="competence-required-star">*</span>
@@ -393,8 +458,8 @@ const CompetenceForm = () => {
                     >
                       <option value="">Select Level</option>
                       {levels.map((level) => (
-                        <option key={level.level_id} value={level.level_id}>
-                          {level.name} (Level {level.number})
+                        <option key={level.id} value={level.id}>
+                          {getLevelDisplay(level)}
                         </option>
                       ))}
                     </select>
@@ -404,6 +469,14 @@ const CompetenceForm = () => {
                     <small className="competence-field-hint">
                       Default: Level 0 (Trainee)
                     </small>
+                    {levels.length === 0 && (
+                      <small className="text-warning">No levels available</small>
+                    )}
+                    {formData.level && (
+                      <small className="text-success d-block mt-1">
+                        Selected: {getCurrentLevelName()}
+                      </small>
+                    )}
                   </div>
                 </div>
 

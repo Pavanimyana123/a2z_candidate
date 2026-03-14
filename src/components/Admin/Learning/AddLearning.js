@@ -25,8 +25,8 @@ const AddLearning = () => {
     title: '',
     description: '',
     module_type: 'orientation',
-    target_level: '', // This will store level_id (UUID)
-    target_department: '', // This will store department_id (UUID)
+    target_level: '', // This will store level_id (integer)
+    target_department: '', // This will store department_id (integer)
     content: '',
     video_links: '',
     document_links: '',
@@ -131,8 +131,8 @@ const AddLearning = () => {
           title: moduleData.title || '',
           description: moduleData.description || '',
           module_type: moduleData.module_type || 'orientation',
-          target_level: moduleData.target_level || '', // This should be level_id from API
-          target_department: moduleData.target_department || '', // This should be department_id from API
+          target_level: moduleData.target_level?.toString() || '', // Convert to string for select
+          target_department: moduleData.target_department?.toString() || '', // Convert to string for select
           content: moduleData.content || '',
           video_links: moduleData.video_links || '',
           document_links: moduleData.document_links || '',
@@ -246,13 +246,13 @@ const AddLearning = () => {
     setLoading(true);
     setError('');
 
-    // Prepare payload with UUIDs for level and department
+    // Prepare payload with integer IDs for level and department
     const payload = {
       title: formData.title,
       description: formData.description,
       module_type: formData.module_type,
-      target_level: formData.target_level, // This is now level_id (UUID)
-      target_department: formData.target_department, // This is now department_id (UUID)
+      target_level: parseInt(formData.target_level), // Convert to integer
+      target_department: parseInt(formData.target_department), // Convert to integer
       content: formData.content,
       video_links: formData.video_links || '',
       document_links: formData.document_links || '',
@@ -320,13 +320,13 @@ const AddLearning = () => {
 
   // Helper function to get level display name for selected value
   const getSelectedLevelDisplay = () => {
-    const level = levels.find(l => l.level_id === formData.target_level);
+    const level = levels.find(l => l.id === parseInt(formData.target_level));
     return level ? `${level.name} (Level ${level.number})` : '';
   };
 
   // Helper function to get department display name for selected value
   const getSelectedDepartmentDisplay = () => {
-    const dept = departments.find(d => d.department_id === formData.target_department);
+    const dept = departments.find(d => d.id === parseInt(formData.target_department));
     return dept ? `${dept.name} (${dept.code})` : '';
   };
 
@@ -418,7 +418,7 @@ const AddLearning = () => {
                     )}
                   </div>
 
-                  {/* Target Level - Now using level_id as value */}
+                  {/* Target Level - Using id as value */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Target Level *</label>
                     <select
@@ -429,7 +429,7 @@ const AddLearning = () => {
                     >
                       <option value="">Select Level</option>
                       {levels.map((level) => (
-                        <option key={level.level_id} value={level.level_id}>
+                        <option key={level.id} value={level.id}>
                           {level.name} (Level {level.number}) - {level.code}
                         </option>
                       ))}
@@ -437,14 +437,14 @@ const AddLearning = () => {
                     {errors.target_level && (
                       <div className="invalid-feedback">{errors.target_level}</div>
                     )}
-                    {formData.target_level && (
-                      <small className="text-muted">
+                    {/* {formData.target_level && (
+                      <small className="text-muted d-block mt-1">
                         Selected: {getSelectedLevelDisplay()}
                       </small>
-                    )}
+                    )} */}
                   </div>
 
-                  {/* Target Department - Now using department_id as value */}
+                  {/* Target Department - Using id as value */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Target Department *</label>
                     <select
@@ -455,7 +455,7 @@ const AddLearning = () => {
                     >
                       <option value="">Select Department</option>
                       {departments.map((dept) => (
-                        <option key={dept.department_id} value={dept.department_id}>
+                        <option key={dept.id} value={dept.id}>
                           {dept.name} ({dept.code})
                         </option>
                       ))}
@@ -463,11 +463,11 @@ const AddLearning = () => {
                     {errors.target_department && (
                       <div className="invalid-feedback">{errors.target_department}</div>
                     )}
-                    {formData.target_department && (
-                      <small className="text-muted">
+                    {/* {formData.target_department && (
+                      <small className="text-muted d-block mt-1">
                         Selected: {getSelectedDepartmentDisplay()}
                       </small>
-                    )}
+                    )} */}
                   </div>
 
                   {/* Description */}

@@ -21,8 +21,10 @@ const CandidateCompetencyProgression = () => {
   const [loading, setLoading] = useState(true);
   const [competencies, setCompetencies] = useState([]);
   const [levels, setLevels] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [currentCompetency, setCurrentCompetency] = useState(null);
   const [currentLevelData, setCurrentLevelData] = useState(null);
+  const [currentDepartmentData, setCurrentDepartmentData] = useState(null);
   const [error, setError] = useState(null);
 
   // Get candidate user_id from localStorage
@@ -41,7 +43,7 @@ const CandidateCompetencyProgression = () => {
 
   const candidateId = getCandidateId();
 
-  // Fetch competencies and levels on component mount
+  // Fetch competencies, levels, and departments on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -61,12 +63,19 @@ const CandidateCompetencyProgression = () => {
         }
         const levelsResult = await levelsResponse.json();
 
+        // Fetch departments
+        const departmentsResponse = await fetch(`${BASE_URL}/api/admin/departments/`);
+        if (!departmentsResponse.ok) {
+          throw new Error(`HTTP error! status: ${departmentsResponse.status}`);
+        }
+        const departmentsResult = await departmentsResponse.json();
+
         if (competenciesResult.status && competenciesResult.data) {
           setCompetencies(competenciesResult.data);
           
           // Find competency for current candidate
           const userCompetency = competenciesResult.data.find(
-            comp => comp.candidate === candidateId
+            comp => comp.candidate === parseInt(candidateId) || comp.candidate === candidateId
           );
           
           if (userCompetency) {
@@ -76,6 +85,10 @@ const CandidateCompetencyProgression = () => {
 
         if (levelsResult.status && levelsResult.data) {
           setLevels(levelsResult.data);
+        }
+
+        if (departmentsResult.status && departmentsResult.data) {
+          setDepartments(departmentsResult.data);
         }
 
       } catch (err) {
@@ -94,28 +107,55 @@ const CandidateCompetencyProgression = () => {
   // Update current level data when competency or levels change
   useEffect(() => {
     if (currentCompetency && levels.length > 0) {
-      const levelInfo = levels.find(level => level.level_id === currentCompetency.level);
+      // Find level by ID (not level_id)
+      const levelInfo = levels.find(level => level.id === currentCompetency.level);
       if (levelInfo) {
         setCurrentLevelData(levelInfo);
       }
     }
   }, [currentCompetency, levels]);
 
+  // Update current department data when competency or departments change
+  useEffect(() => {
+    if (currentCompetency && departments.length > 0) {
+      const deptInfo = departments.find(dept => dept.id === currentCompetency.department);
+      if (deptInfo) {
+        setCurrentDepartmentData(deptInfo);
+      }
+    }
+  }, [currentCompetency, departments]);
+
   const handleAddCompetence = () => {
     navigate('/add-competence');
   };
 
-  // Get level display name based on level number
+  // Get level display name based on level number from the levels API
   const getLevelDisplay = (levelNumber) => {
+    // Find the level with this number from the levels data
+    const levelFromData = levels.find(l => l.number === levelNumber);
+    if (levelFromData) {
+      return {
+        name: levelFromData.name,
+        display: `Level ${levelNumber} - ${levelFromData.name}`
+      };
+    }
+    
+    // Fallback mapping if not found in API data
     const levelMap = {
-      0: { name: "Aspirant", display: "Level 0 - Aspirant" },
-      1: { name: "Foundation", display: "Level 1 - Foundation" },
-      2: { name: "Developing", display: "Level 2 - Developing" },
-      3: { name: "Competent", display: "Level 3 - Competent" },
-      4: { name: "Proficient", display: "Level 4 - Proficient" },
-      5: { name: "Expert", display: "Level 5 - Expert" }
+      0: { name: "Trainee", display: "Level 0 - Trainee" },
+      1: { name: "Junior Surveyor", display: "Level 1 - Junior Surveyor" },
+      2: { name: "Associate Surveyor", display: "Level 2 - Associate Surveyor" },
+      3: { name: "Surveyor", display: "Level 3 - Surveyor" },
+      4: { name: "Senior Surveyor", display: "Level 4 - Senior Surveyor" },
+      5: { name: "Principal Surveyor", display: "Level 5 - Principal Surveyor" }
     };
     return levelMap[levelNumber] || { name: "Unknown", display: `Level ${levelNumber}` };
+  };
+
+  // Get department name from department ID
+  const getDepartmentName = (deptId) => {
+    const dept = departments.find(d => d.id === deptId);
+    return dept ? dept.name : "Unknown Department";
   };
 
   if (loading) {
@@ -179,7 +219,7 @@ const CandidateCompetencyProgression = () => {
               <div>
                 <h3 className="cp-page-title">Competency Progression</h3>
                 <p className="cp-page-subtitle">
-                  Track your journey from Aspirant to Principal
+                  Track your journey through different competency levels
                 </p>
               </div>
               <button 
@@ -205,7 +245,7 @@ const CandidateCompetencyProgression = () => {
                   </h2>
                   <p>
                     {currentCompetency 
-                      ? currentCompetency.competency_name || levelDisplay.name
+                      ? `${currentDepartmentData ? currentDepartmentData.name : ''}`
                       : "Add your first competency to get started"}
                   </p>
                 </div>
@@ -257,7 +297,7 @@ const CandidateCompetencyProgression = () => {
             {/* ================================================= */}
             {/* PROGRESS TO NEXT LEVEL */}
             {/* ================================================= */}
-            {currentCompetency && currentLevelNumber < 5 && (
+            {/* {currentCompetency && currentLevelNumber < 5 && (
               <div className="cp-section">
                 <div className="cp-progress-card">
                   <div className="d-flex justify-content-between align-items-start mb-3">
@@ -361,7 +401,7 @@ const CandidateCompetencyProgression = () => {
                   </div>
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* ================================================= */}
             {/* COMPLETE JOURNEY OVERVIEW */}
@@ -369,33 +409,33 @@ const CandidateCompetencyProgression = () => {
             <div className="cp-section">
               <h4>Complete Journey Overview</h4>
               <p className="cp-muted">
-                All levels from Aspirant to Principal
+                All levels from Trainee to Principal Surveyor
               </p>
 
               <JourneyItem
                 level="0"
-                title="Level 0 - Aspirant"
-                role="Aspirant"
+                title="Level 0 - Trainee"
+                role="Trainee"
                 done={currentLevelNumber > 0}
                 current={currentLevelNumber === 0}
               />
               <JourneyItem
                 level="1"
-                title="Level 1 - Foundation"
-                role="Surveyor-in-Training (SIT)"
+                title="Level 1 - Junior Surveyor"
+                role="Junior Surveyor"
                 done={currentLevelNumber > 1}
                 current={currentLevelNumber === 1}
               />
               <JourneyItem
                 level="2"
-                title="Level 2 - Developing"
-                role="Junior Surveyor"
+                title="Level 2 - Associate Surveyor"
+                role="Associate Surveyor"
                 done={currentLevelNumber > 2}
                 current={currentLevelNumber === 2}
               />
               <JourneyItem
                 level="3"
-                title="Level 3 - Competent"
+                title="Level 3 - Surveyor"
                 role="Surveyor"
                 done={currentLevelNumber > 3}
                 current={currentLevelNumber === 3}
@@ -403,7 +443,7 @@ const CandidateCompetencyProgression = () => {
               />
               <JourneyItem
                 level="4"
-                title="Level 4 - Proficient"
+                title="Level 4 - Senior Surveyor"
                 role="Senior Surveyor / Lead"
                 done={currentLevelNumber > 4}
                 current={currentLevelNumber === 4}
@@ -411,7 +451,7 @@ const CandidateCompetencyProgression = () => {
               />
               <JourneyItem
                 level="5"
-                title="Level 5 - Expert"
+                title="Level 5 - Principal Surveyor"
                 role="Principal / Authority"
                 done={currentLevelNumber > 5}
                 current={currentLevelNumber === 5}
