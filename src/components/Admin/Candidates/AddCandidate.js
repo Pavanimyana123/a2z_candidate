@@ -52,8 +52,10 @@ const AddCandidate = () => {
       const result = await response.json();
       
       if (result.status && result.data) {
-        setLevels(result.data);
-        console.log('✅ Levels fetched successfully:', result.data);
+        // Filter active levels
+        const activeLevels = result.data.filter(level => level.is_active);
+        setLevels(activeLevels);
+        console.log('✅ Levels fetched successfully:', activeLevels);
       } else {
         throw new Error(result.message || 'Failed to fetch levels');
       }
@@ -94,10 +96,21 @@ const AddCandidate = () => {
         const candidateData = result.data;
         // Format dates for input fields (YYYY-MM-DD)
         const formattedData = {
-          ...candidateData,
+          full_name: candidateData.full_name || '',
           date_of_birth: candidateData.date_of_birth ? candidateData.date_of_birth.split('T')[0] : '',
+          gender: candidateData.gender || 'M',
+          phone_number: candidateData.phone_number || '',
+          email: candidateData.email || '',
+          address: candidateData.address || '',
+          city: candidateData.city || '',
+          state: candidateData.state || '',
+          country: candidateData.country || '',
+          pincode: candidateData.pincode || '',
+          emergency_contact_name: candidateData.emergency_contact_name || '',
+          emergency_contact_phone: candidateData.emergency_contact_phone || '',
+          current_level: candidateData.current_level ? parseInt(candidateData.current_level) : '',
+          blood_group: candidateData.blood_group || '',
           medical_expiry_date: candidateData.medical_expiry_date ? candidateData.medical_expiry_date.split('T')[0] : '',
-          current_level: candidateData.current_level || '',
         };
         setFormData(formattedData);
         console.log('✅ Candidate data loaded for edit:', formattedData);
@@ -122,18 +135,37 @@ const AddCandidate = () => {
 
   const handleChange = (e) => {
     const { name, value, type } = e.target;
-    console.log(`Field changed - ${name}:`, value);
     
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    if (name === "current_level") {
+      // Convert level to integer
+      setFormData(prev => ({
+        ...prev,
+        [name]: value ? parseInt(value) : ""
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
     
     // Clear error for this field
     if (errors[name]) {
-      console.log(`Clearing error for field: ${name}`);
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  // Clear selected level
+  const clearCurrentLevel = () => {
+    setFormData(prev => ({
+      ...prev,
+      current_level: ""
+    }));
+  };
+
+  // Get level display name with number
+  const getLevelDisplay = (level) => {
+    return `${level.name} (Level ${level.number})`;
   };
 
   const validateForm = () => {
@@ -144,74 +176,58 @@ const AddCandidate = () => {
 
     if (!formData.full_name?.trim()) {
       newErrors.full_name = "Full name is required";
-      console.log('Validation failed: Full name is empty');
     }
 
     if (!formData.date_of_birth) {
       newErrors.date_of_birth = "Date of birth is required";
-      console.log('Validation failed: Date of birth is empty');
     }
 
     if (!formData.phone_number?.trim()) {
       newErrors.phone_number = "Phone number is required";
-      console.log('Validation failed: Phone number is empty');
     } else if (!/^\d{10}$/.test(formData.phone_number.replace(/\D/g, ''))) {
       newErrors.phone_number = "Please enter a valid 10-digit phone number";
-      console.log('Validation failed: Invalid phone number format');
     }
 
     if (!formData.email?.trim()) {
       newErrors.email = "Email is required";
-      console.log('Validation failed: Email is empty');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Please enter a valid email address";
-      console.log('Validation failed: Invalid email format');
     }
 
     if (!formData.address?.trim()) {
       newErrors.address = "Address is required";
-      console.log('Validation failed: Address is empty');
     }
 
     if (!formData.city?.trim()) {
       newErrors.city = "City is required";
-      console.log('Validation failed: City is empty');
     }
 
     if (!formData.state?.trim()) {
       newErrors.state = "State is required";
-      console.log('Validation failed: State is empty');
     }
 
     if (!formData.country?.trim()) {
       newErrors.country = "Country is required";
-      console.log('Validation failed: Country is empty');
     }
 
     if (!formData.pincode?.trim()) {
       newErrors.pincode = "Pincode is required";
-      console.log('Validation failed: Pincode is empty');
     } else if (!/^\d{6}$/.test(formData.pincode)) {
       newErrors.pincode = "Please enter a valid 6-digit pincode";
-      console.log('Validation failed: Invalid pincode format');
     }
 
     if (!formData.emergency_contact_name?.trim()) {
       newErrors.emergency_contact_name = "Emergency contact name is required";
-      console.log('Validation failed: Emergency contact name is empty');
     }
 
     if (!formData.emergency_contact_phone?.trim()) {
       newErrors.emergency_contact_phone = "Emergency contact phone is required";
-      console.log('Validation failed: Emergency contact phone is empty');
     } else if (!/^\d{10}$/.test(formData.emergency_contact_phone.replace(/\D/g, ''))) {
       newErrors.emergency_contact_phone = "Please enter a valid 10-digit phone number";
-      console.log('Validation failed: Invalid emergency contact phone format');
     }
 
-    if (!formData.current_level) {
+    if (!formData.current_level && formData.current_level !== 0) {
       newErrors.current_level = "Current level is required";
-      console.log('Validation failed: Current level is empty');
     }
 
     const isValid = Object.keys(newErrors).length === 0;
@@ -226,14 +242,8 @@ const AddCandidate = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('='.repeat(50));
-    console.log(isEditMode ? 'EDIT FORM SUBMISSION STARTED' : 'CREATE FORM SUBMISSION STARTED');
-    console.log('='.repeat(50));
     
-    console.log('Validating form...');
     if (!validateForm()) {
-      console.log('❌ Form validation failed. Submission aborted.');
-      
       Swal.fire({
         icon: 'error',
         title: 'Validation Failed',
@@ -244,11 +254,10 @@ const AddCandidate = () => {
       return;
     }
 
-    console.log('✅ Form validation passed. Preparing payload...');
     setLoading(true);
     setError('');
 
-    // Prepare payload - send level_id as current_level
+    // Prepare payload
     const payload = {
       full_name: formData.full_name,
       date_of_birth: formData.date_of_birth,
@@ -264,27 +273,23 @@ const AddCandidate = () => {
       emergency_contact_phone: formData.emergency_contact_phone,
       blood_group: formData.blood_group || '',
       medical_expiry_date: formData.medical_expiry_date || '',
-      safety_induction_status: true, // Always set to true for new candidates
-      current_level: parseInt(formData.current_level) // Convert to integer as the API expects ID
+      safety_induction_status: true,
+      current_level: formData.current_level ? parseInt(formData.current_level) : null
     };
 
-    // Remove any empty string values but keep valid falsy values like false
+    // Remove empty values
     Object.keys(payload).forEach(key => {
       if (payload[key] === undefined || payload[key] === null || payload[key] === '') {
         delete payload[key];
       }
     });
 
-    console.log('📦 Payload prepared for submission:');
-    console.log(JSON.stringify(payload, null, 2));
+    console.log('📦 Payload:', payload);
     
     const method = isEditMode ? 'PUT' : 'POST';
     const url = isEditMode 
       ? `${BASE_URL}/api/candidate/candidates/${id}/` 
       : `${BASE_URL}/api/candidate/candidates/`;
-    
-    console.log(`📍 API Endpoint: ${url}`);
-    console.log(`📤 Sending ${method} request...`);
 
     try {
       const response = await fetch(url, {
@@ -295,17 +300,10 @@ const AddCandidate = () => {
         body: JSON.stringify(payload)
       });
 
-      console.log(`📥 Response received - Status: ${response.status} ${response.statusText}`);
-
-      // Try to parse the response even if it's not OK to get error details
       const responseData = await response.json().catch(() => null);
 
       if (!response.ok) {
-        console.error('❌ Server returned error:', responseData);
-        
-        // Handle field-specific validation errors from server
         if (responseData && responseData.errors) {
-          // If server returns field-specific errors, update the errors state
           const serverErrors = {};
           Object.keys(responseData.errors).forEach(key => {
             serverErrors[key] = Array.isArray(responseData.errors[key]) 
@@ -313,17 +311,11 @@ const AddCandidate = () => {
               : responseData.errors[key];
           });
           setErrors(serverErrors);
-          
           throw new Error('Please check the form for errors');
         }
-        
         throw new Error(responseData?.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate`);
       }
 
-      console.log(`✅ Candidate ${isEditMode ? 'updated' : 'created'} successfully!`);
-      console.log('📋 Server response:', responseData);
-      
-      // Show success message
       await Swal.fire({
         icon: 'success',
         title: isEditMode ? 'Updated!' : 'Created!',
@@ -332,44 +324,26 @@ const AddCandidate = () => {
         showConfirmButton: false
       });
       
-      console.log('🔄 Navigating back to candidates list...');
       navigate('/candidate');
     } catch (err) {
-      console.error(`❌ Error ${isEditMode ? 'updating' : 'creating'} candidate:`);
-      console.error('Error name:', err.name);
-      console.error('Error message:', err.message);
-      console.error('Full error object:', err);
-      
-      setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate. Please try again.`);
+      console.error(`❌ Error:`, err);
+      setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`);
       
       Swal.fire({
         icon: 'error',
         title: isEditMode ? 'Update Failed' : 'Creation Failed',
-        text: err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate. Please try again.`,
+        text: err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`,
         timer: 3000,
         showConfirmButton: true
       });
     } finally {
-      console.log(`🏁 Form submission process completed.`);
-      console.log('='.repeat(50));
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
-    console.log('Cancel button clicked - navigating back to candidates list');
     navigate('/candidate');
   };
-
-  // Log component mount
-  useEffect(() => {
-    console.log(`📝 ${isEditMode ? 'EditCandidate' : 'AddCandidate'} component mounted`);
-    console.log('Initial form state:', formData);
-    
-    return () => {
-      console.log(`📝 ${isEditMode ? 'EditCandidate' : 'AddCandidate'} component unmounted`);
-    };
-  }, [isEditMode]);
 
   if (fetchLoading || levelsLoading) {
     return (
@@ -426,6 +400,7 @@ const AddCandidate = () => {
                       value={formData.full_name || ''}
                       onChange={handleChange}
                       placeholder="Enter full name"
+                      disabled={loading}
                     />
                     {errors.full_name && (
                       <div className="invalid-feedback">{errors.full_name}</div>
@@ -441,6 +416,7 @@ const AddCandidate = () => {
                       name="date_of_birth"
                       value={formData.date_of_birth || ''}
                       onChange={handleChange}
+                      disabled={loading}
                     />
                     {errors.date_of_birth && (
                       <div className="invalid-feedback">{errors.date_of_birth}</div>
@@ -455,6 +431,7 @@ const AddCandidate = () => {
                       name="gender"
                       value={formData.gender || 'M'}
                       onChange={handleChange}
+                      disabled={loading}
                     >
                       <option value="M">Male</option>
                       <option value="F">Female</option>
@@ -476,6 +453,7 @@ const AddCandidate = () => {
                       onChange={handleChange}
                       placeholder="Enter 10-digit phone number"
                       maxLength="10"
+                      disabled={loading}
                     />
                     {errors.phone_number && (
                       <div className="invalid-feedback">{errors.phone_number}</div>
@@ -492,6 +470,7 @@ const AddCandidate = () => {
                       value={formData.email || ''}
                       onChange={handleChange}
                       placeholder="Enter email address"
+                      disabled={loading}
                     />
                     {errors.email && (
                       <div className="invalid-feedback">{errors.email}</div>
@@ -508,6 +487,7 @@ const AddCandidate = () => {
                       value={formData.address || ''}
                       onChange={handleChange}
                       placeholder="Enter address"
+                      disabled={loading}
                     />
                     {errors.address && (
                       <div className="invalid-feedback">{errors.address}</div>
@@ -524,6 +504,7 @@ const AddCandidate = () => {
                       value={formData.city || ''}
                       onChange={handleChange}
                       placeholder="Enter city"
+                      disabled={loading}
                     />
                     {errors.city && (
                       <div className="invalid-feedback">{errors.city}</div>
@@ -540,6 +521,7 @@ const AddCandidate = () => {
                       value={formData.state || ''}
                       onChange={handleChange}
                       placeholder="Enter state"
+                      disabled={loading}
                     />
                     {errors.state && (
                       <div className="invalid-feedback">{errors.state}</div>
@@ -556,6 +538,7 @@ const AddCandidate = () => {
                       value={formData.country || ''}
                       onChange={handleChange}
                       placeholder="Enter country"
+                      disabled={loading}
                     />
                     {errors.country && (
                       <div className="invalid-feedback">{errors.country}</div>
@@ -573,6 +556,7 @@ const AddCandidate = () => {
                       onChange={handleChange}
                       placeholder="Enter 6-digit pincode"
                       maxLength="6"
+                      disabled={loading}
                     />
                     {errors.pincode && (
                       <div className="invalid-feedback">{errors.pincode}</div>
@@ -589,6 +573,7 @@ const AddCandidate = () => {
                       value={formData.emergency_contact_name || ''}
                       onChange={handleChange}
                       placeholder="Enter emergency contact name"
+                      disabled={loading}
                     />
                     {errors.emergency_contact_name && (
                       <div className="invalid-feedback">{errors.emergency_contact_name}</div>
@@ -606,34 +591,58 @@ const AddCandidate = () => {
                       onChange={handleChange}
                       placeholder="Enter emergency contact phone"
                       maxLength="10"
+                      disabled={loading}
                     />
                     {errors.emergency_contact_phone && (
                       <div className="invalid-feedback">{errors.emergency_contact_phone}</div>
                     )}
                   </div>
 
-                  {/* Current Level - Dropdown with level_id */}
+                  {/* Current Level - Dropdown with level_id (Fixed) */}
                   <div className="col-md-4 mb-3">
                     <label className="form-label">Current Level *</label>
-                    <select
-                      className={`form-select ${errors.current_level ? 'is-invalid' : ''}`}
-                      name="current_level"
-                      value={formData.current_level || ''}
-                      onChange={handleChange}
-                      disabled={levelsLoading}
-                    >
-                      <option value="">-- Select Level --</option>
-                      {levels.map((level) => (
-                        <option key={level.id} value={level.id}>
-                          {level.name} (Level {level.number})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="position-relative">
+                      <select
+                        className={`form-select ${errors.current_level ? 'is-invalid' : ''} ${formData.current_level ? 'has-value' : ''}`}
+                        name="current_level"
+                        value={formData.current_level || ''}
+                        onChange={handleChange}
+                        disabled={loading || levelsLoading || levels.length === 0}
+                      >
+                        <option value="">-- Select Level --</option>
+                        {levels.map((level) => (
+                          <option key={level.id} value={level.id}>
+                            {getLevelDisplay(level)}
+                          </option>
+                        ))}
+                      </select>
+                      {formData.current_level && (
+                        <button
+                          type="button"
+                          className="btn-clear-selection"
+                          onClick={clearCurrentLevel}
+                          title="Clear selection"
+                          style={{
+                            position: 'absolute',
+                            right: '10px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            border: 'none',
+                            background: 'transparent',
+                            cursor: 'pointer',
+                            fontSize: '16px',
+                            color: '#666'
+                          }}
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
                     {errors.current_level && (
-                      <div className="invalid-feedback">{errors.current_level}</div>
+                      <div className="invalid-feedback d-block">{errors.current_level}</div>
                     )}
                     {levels.length === 0 && !levelsLoading && (
-                      <small className="text-danger">No levels available</small>
+                      <small className="text-warning">No active levels available</small>
                     )}
                   </div>
 
@@ -645,6 +654,7 @@ const AddCandidate = () => {
                       name="blood_group"
                       value={formData.blood_group || ''}
                       onChange={handleChange}
+                      disabled={loading}
                     >
                       <option value="">Select Blood Group</option>
                       <option value="A+">A+</option>
@@ -667,16 +677,10 @@ const AddCandidate = () => {
                       name="medical_expiry_date"
                       value={formData.medical_expiry_date || ''}
                       onChange={handleChange}
+                      disabled={loading}
                     />
                   </div>
                 </div>
-
-                {/* Note about required fields */}
-                {/* <div className="ac-note mb-4">
-                  <small className="text-muted">
-                    <span className="text-danger">*</span> Required fields
-                  </small>
-                </div> */}
 
                 {/* Form Actions */}
                 <div className="ac-actions">

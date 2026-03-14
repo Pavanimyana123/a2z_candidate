@@ -61,13 +61,13 @@ const Users = () => {
     navigate('/add-admin-users');
   };
 
-  const handleEdit = (adminId) => {
-    navigate(`/add-admin-users/${adminId}`);
+  const handleEdit = (userId) => {
+    navigate(`/add-admin-users/${userId}`);
   };
 
-  const handleDelete = async (adminId, username) => {
+  const handleDelete = async (userId, username) => {
     try {
-      const response = await fetch(`${BASE_URL}/api/admin/admin-users/${adminId}/`, {
+      const response = await fetch(`${BASE_URL}/api/admin/admin-users/${userId}/`, {
         method: 'DELETE',
       });
 
@@ -111,7 +111,7 @@ const Users = () => {
       cancelButtonText: 'Cancel'
     }).then((result) => {
       if (result.isConfirmed) {
-        handleDelete(user.admin_id, user.username);
+        handleDelete(user.id, user.username); // Changed from user.admin_id to user.id
       }
     });
   };
@@ -122,9 +122,6 @@ const Users = () => {
       (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (user.phone_number && user.phone_number.includes(searchTerm));
-    
-    // Since the API doesn't have role and status fields, we'll skip those filters for now
-    // You can add them later if the API provides these fields
     
     return matchesSearch;
   });
@@ -201,7 +198,7 @@ const Users = () => {
                     {filteredUsers.length > 0 ? (
                       filteredUsers.map((user) => (
                         <UserRow 
-                          key={user.admin_id}
+                          key={user.id} // Changed from user.admin_id to user.id
                           user={user}
                           onEdit={handleEdit}
                           onDelete={confirmDelete}
@@ -268,7 +265,7 @@ const UserRow = ({ user, onEdit, onDelete }) => {
         <div className="action-icons">
           <FaEdit 
             className="users-action-icon edit-icon" 
-            onClick={() => onEdit(user.admin_id)}
+            onClick={() => onEdit(user.id)} // Changed from user.admin_id to user.id
             title="Edit User"
             style={{ cursor: 'pointer', marginRight: '10px' }}
           />

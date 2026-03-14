@@ -49,6 +49,7 @@ const Candidates = () => {
       // Set levels for reference
       if (levelsResult.data) {
         setLevels(levelsResult.data);
+        console.log('Levels set:', levelsResult.data);
       }
       
       setError(null);
@@ -127,11 +128,11 @@ const Candidates = () => {
     });
   };
 
-  // Get level name by ID
+  // Get level name by ID - using 'id' field
   const getLevelName = (levelId) => {
     if (!levelId) return 'No Level';
-    const level = levels.find(l => l.id === levelId);
-    return level ? `${level.name} (Level ${level.number})` : `Level ID: ${levelId}`;
+    const level = levels.find(l => l.id === parseInt(levelId));
+    return level ? `${level.name} (Level ${level.number})` : 'Unknown Level';
   };
 
   // Filter candidates based on search and filters
@@ -142,9 +143,9 @@ const Candidates = () => {
       (candidate.phone_number && candidate.phone_number.includes(searchTerm)) ||
       (candidate.city && candidate.city.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    // For level filter, compare with level ID as string
+    // For level filter, compare with level ID as integer
     const matchesLevel = levelFilter === "All Levels" || 
-      (candidate.current_level && candidate.current_level.toString() === levelFilter);
+      (candidate.current_level && parseInt(candidate.current_level) === parseInt(levelFilter));
     
     const candidateStatus = candidate.safety_induction_status ? "active" : "blocked";
     const matchesStatus = statusFilter === "All Status" || 
@@ -153,12 +154,12 @@ const Candidates = () => {
     return matchesSearch && matchesLevel && matchesStatus;
   });
 
-  // Get unique levels for filter dropdown - using level names instead of IDs
+  // Get unique levels for filter dropdown - using level IDs
   const uniqueLevels = [...new Set(candidates
     .map(c => c.current_level)
     .filter(Boolean)
   )].map(levelId => {
-    const level = levels.find(l => l.id === levelId);
+    const level = levels.find(l => l.id === parseInt(levelId));
     return {
       id: levelId,
       name: level ? `${level.name} (Level ${level.number})` : `Level ${levelId}`
@@ -252,7 +253,7 @@ const Candidates = () => {
                   <thead>
                     <tr>
                       <th>Candidate Name</th>
-                      <th>Level</th>
+                      {/* <th>Level</th> */}
                       <th>Email</th>
                       <th>Phone</th>
                       <th>City</th>
@@ -334,11 +335,11 @@ const CandidateRow = ({ candidate, levelName, onEdit, onDelete }) => {
       <td className="candidates-name">
         {candidate.full_name || 'N/A'}
       </td>
-      <td>
+      {/* <td>
         <span className="candidates-level">
           {levelName}
         </span>
-      </td>
+      </td> */}
       <td>{candidate.email || 'N/A'}</td>
       <td>{candidate.phone_number || 'N/A'}</td>
       <td>{candidate.city || 'N/A'}</td>
