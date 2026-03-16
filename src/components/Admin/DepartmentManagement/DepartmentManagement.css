@@ -97,7 +97,12 @@
 
 .dm-edit {
   cursor: pointer;
-  color: #6b7280;
+  color: blue;
+}
+
+.dm-delete{
+   cursor: pointer;
+  color: red;
 }
 
 .dm-card h5 {
