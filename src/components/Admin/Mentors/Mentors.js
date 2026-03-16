@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../Layout/Sidebar";
 import Header from "../Layout/Header";
 import "./Mentors.css";
-import { FaEllipsisH, FaCheckCircle, FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaCheckCircle } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import { BASE_URL } from "../../../ApiUrl";
 
@@ -32,6 +32,7 @@ const Mentors = () => {
         throw new Error(`Failed to fetch mentors: ${mentorsResponse.status}`);
       }
       const mentorsResult = await mentorsResponse.json();
+      console.log('Mentors API Response:', mentorsResult);
       
       // Fetch levels for reference
       const levelsResponse = await fetch(`${BASE_URL}/api/admin/levels/`);
@@ -128,22 +129,23 @@ const Mentors = () => {
       cancelButtonText: 'Cancel'
     }).then((result) => {
       if (result.isConfirmed) {
-        handleDelete(mentor.mentor_id, mentor.full_name);
+        handleDelete(mentor.id, mentor.full_name);
       }
     });
   };
 
-  // Get level name by ID
+  // Get level name by ID - using 'id' field
   const getLevelName = (levelId) => {
-    const level = levels.find(l => l.level_id === levelId);
-    return level ? `${level.name} (${level.number})` : 'Unknown Level';
+    if (!levelId) return 'No Level';
+    const level = levels.find(l => l.id === levelId);
+    return level ? `${level.name} (Level ${level.number})` : 'Unknown Level';
   };
 
-  // Get department names by IDs
+  // Get department names by IDs - using 'id' field
   const getDepartmentNames = (deptIds) => {
-    if (!deptIds || !Array.isArray(deptIds)) return 'No specializations';
+    if (!deptIds || !Array.isArray(deptIds) || deptIds.length === 0) return 'No specializations';
     return deptIds.map(id => {
-      const dept = departments.find(d => d.department_id === id);
+      const dept = departments.find(d => d.id === id);
       return dept ? `${dept.name} (${dept.code})` : null;
     }).filter(Boolean).join(', ') || 'No specializations';
   };
@@ -167,18 +169,20 @@ const Mentors = () => {
   const filteredMentors = mentors.filter(mentor => {
     const searchLower = searchTerm.toLowerCase();
     const departmentNames = getDepartmentNames(mentor.specializations).toLowerCase();
+    const levelName = getLevelName(mentor.mentor_level).toLowerCase();
     
     return (
       mentor.full_name?.toLowerCase().includes(searchLower) ||
       departmentNames.includes(searchLower) ||
       mentor.current_company?.toLowerCase().includes(searchLower) ||
       mentor.email?.toLowerCase().includes(searchLower) ||
-      getLevelName(mentor.mentor_level).toLowerCase().includes(searchLower)
+      levelName.includes(searchLower)
     );
   });
 
   // Get initials from name
   const getInitials = (name) => {
+    if (!name) return '---';
     return name
       .split(' ')
       .map(word => word[0])
@@ -207,7 +211,7 @@ const Mentors = () => {
               </button>
             </div>
 
-            {/* Loading and Error States */}
+            {/* Loading State */}
             {loading && (
               <div className="text-center p-5">
                 <div className="spinner-border text-primary" role="status">
@@ -217,7 +221,8 @@ const Mentors = () => {
               </div>
             )}
 
-            {error && (
+            {/* Error State */}
+            {error && !loading && (
               <div className="alert alert-danger" role="alert">
                 <h5>Error Loading Data</h5>
                 <p>{error}</p>
@@ -229,56 +234,54 @@ const Mentors = () => {
 
             {/* Stats - Only show when not loading and no error */}
             {!loading && !error && (
-              <div className="row g-4 mt-1">
-                <StatBox title="Total Mentors" value={totalMentors.toString()} />
-                <StatBox title="Active Mentors" value={activeMentors.toString()} />
-                <StatBox title="Total Trainees" value={totalTrainees.toString()} />
-                <StatBox title="Avg Approval Rate" value={`${avgApprovalRate}%`} />
-              </div>
-            )}
+              <>
+                <div className="row g-4 mt-1">
+                  <StatBox title="Total Mentors" value={totalMentors.toString()} />
+                  <StatBox title="Active Mentors" value={activeMentors.toString()} />
+                  <StatBox title="Total Trainees" value={totalTrainees.toString()} />
+                  <StatBox title="Avg Approval Rate" value={`${avgApprovalRate}%`} />
+                </div>
 
-            {/* Search - Only show when not loading and no error */}
-            {!loading && !error && (
-              <div className="mm-search-box mt-4">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search mentors by name, specialization, company, or level..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            )}
+                {/* Search */}
+                <div className="mm-search-box mt-4">
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search mentors by name, specialization, company, or level..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
 
-            {/* Mentor Cards */}
-            {!loading && !error && (
-              <div className="row g-4 mt-3">
-                {filteredMentors.length > 0 ? (
-                  filteredMentors.map((mentor) => (
-                    <MentorCard 
-                      key={mentor.mentor_id}
-                      mentor={mentor}
-                      initials={getInitials(mentor.full_name)}
-                      levelName={getLevelName(mentor.mentor_level)}
-                      departmentNames={getDepartmentNames(mentor.specializations)}
-                      onEdit={handleEdit}
-                      onDelete={confirmDelete}
-                    />
-                  ))
-                ) : (
-                  <div className="col-12 text-center py-5">
-                    <p className="text-muted">No mentors found matching your search.</p>
-                    {searchTerm && (
-                      <button 
-                        className="btn btn-outline-secondary mt-2"
-                        onClick={() => setSearchTerm('')}
-                      >
-                        Clear Search
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
+                {/* Mentor Cards */}
+                <div className="row g-4 mt-3">
+                  {filteredMentors.length > 0 ? (
+                    filteredMentors.map((mentor) => (
+                      <MentorCard 
+                        key={mentor.id}
+                        mentor={mentor}
+                        initials={getInitials(mentor.full_name)}
+                        levelName={getLevelName(mentor.mentor_level)}
+                        departmentNames={getDepartmentNames(mentor.specializations)}
+                        onEdit={handleEdit}
+                        onDelete={confirmDelete}
+                      />
+                    ))
+                  ) : (
+                    <div className="col-12 text-center py-5">
+                      <p className="text-muted">No mentors found matching your search.</p>
+                      {searchTerm && (
+                        <button 
+                          className="btn btn-outline-secondary mt-2"
+                          onClick={() => setSearchTerm('')}
+                        >
+                          Clear Search
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -287,8 +290,7 @@ const Mentors = () => {
   );
 };
 
-/* -------- Components -------- */
-
+/* -------- StatBox Component -------- */
 const StatBox = ({ title, value }) => (
   <div className="col-lg-3 col-md-6">
     <div className="mm-stat-card">
@@ -298,6 +300,7 @@ const StatBox = ({ title, value }) => (
   </div>
 );
 
+/* -------- MentorCard Component -------- */
 const MentorCard = ({ mentor, initials, levelName, departmentNames, onEdit, onDelete }) => {
   // Calculate approval rate based on background verification and certification
   const approvalRate = mentor.background_verified && mentor.mentorship_certified ? 100 : 50;
@@ -325,13 +328,15 @@ const MentorCard = ({ mentor, initials, levelName, departmentNames, onEdit, onDe
           <div className="mm-card-actions">
             <FaEdit 
               className="action-icon edit-icon" 
-              onClick={() => onEdit(mentor.mentor_id)}
+              onClick={() => onEdit(mentor.id)}
               title="Edit Mentor"
+              style={{ cursor: 'pointer', marginRight: '10px', color: '#4a6cf7' }}
             />
             <FaTrash 
               className="action-icon delete-icon" 
               onClick={() => onDelete(mentor)}
               title="Delete Mentor"
+              style={{ cursor: 'pointer', color: '#dc3545' }}
             />
           </div>
         </div>

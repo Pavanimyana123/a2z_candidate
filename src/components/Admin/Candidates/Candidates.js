@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../Layout/Sidebar";
 import Header from "../Layout/Header";
 import "./Candidates.css";
-import { FaSearch, FaFilter, FaEdit, FaTrash, FaEllipsisH } from "react-icons/fa";
+import { FaSearch, FaFilter, FaEdit, FaTrash } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import { BASE_URL } from "../../../ApiUrl";
 
 const Candidates = () => {
   const [candidates, setCandidates] = useState([]);
+  const [levels, setLevels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -17,34 +18,44 @@ const Candidates = () => {
   
   const navigate = useNavigate();
 
-  // Fetch candidates data
+  // Fetch candidates and levels data
   useEffect(() => {
-    fetchCandidates();
+    fetchAllData();
   }, []);
 
-  const fetchCandidates = async () => {
+  const fetchAllData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${BASE_URL}/api/candidate/candidates/`);
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // Fetch candidates
+      const candidatesResponse = await fetch(`${BASE_URL}/api/candidate/candidates/`);
+      if (!candidatesResponse.ok) {
+        throw new Error(`HTTP error! status: ${candidatesResponse.status}`);
+      }
+      const candidatesResult = await candidatesResponse.json();
+      console.log('Candidates API Response:', candidatesResult);
+      
+      // Fetch levels for reference
+      const levelsResponse = await fetch(`${BASE_URL}/api/admin/levels/`);
+      const levelsResult = levelsResponse.ok ? await levelsResponse.json() : { data: [] };
+      
+      if (candidatesResult.status && candidatesResult.data) {
+        setCandidates(candidatesResult.data);
+        console.log('Candidates set:', candidatesResult.data);
+      } else {
+        throw new Error(candidatesResult.message || 'Failed to fetch candidates');
       }
       
-      const result = await response.json();
-      console.log('API Response:', result); // Debug log
-      
-      if (result.status && result.data) {
-        setCandidates(result.data);
-        console.log('Candidates set:', result.data); // Debug log
-      } else {
-        throw new Error(result.message || 'Failed to fetch candidates');
+      // Set levels for reference
+      if (levelsResult.data) {
+        setLevels(levelsResult.data);
+        console.log('Levels set:', levelsResult.data);
       }
       
       setError(null);
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching candidates:', err);
+      console.error('Error fetching data:', err);
       
       Swal.fire({
         icon: 'error',
@@ -77,7 +88,7 @@ const Candidates = () => {
       }
 
       // Refresh the candidates list
-      await fetchCandidates();
+      await fetchAllData();
       
       Swal.fire({
         icon: 'success',
@@ -112,9 +123,16 @@ const Candidates = () => {
       cancelButtonText: 'Cancel'
     }).then((result) => {
       if (result.isConfirmed) {
-        handleDelete(candidate.candidate_id, candidate.full_name);
+        handleDelete(candidate.id, candidate.full_name);
       }
     });
+  };
+
+  // Get level name by ID - using 'id' field
+  const getLevelName = (levelId) => {
+    if (!levelId) return 'No Level';
+    const level = levels.find(l => l.id === parseInt(levelId));
+    return level ? `${level.name} (Level ${level.number})` : 'Unknown Level';
   };
 
   // Filter candidates based on search and filters
@@ -122,11 +140,12 @@ const Candidates = () => {
     const matchesSearch = searchTerm === "" || 
       (candidate.full_name && candidate.full_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (candidate.email && candidate.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (candidate.phone_number && candidate.phone_number.includes(searchTerm));
+      (candidate.phone_number && candidate.phone_number.includes(searchTerm)) ||
+      (candidate.city && candidate.city.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    // For level filter, we need to handle UUIDs properly
+    // For level filter, compare with level ID as integer
     const matchesLevel = levelFilter === "All Levels" || 
-      (candidate.current_level && candidate.current_level.toString() === levelFilter);
+      (candidate.current_level && parseInt(candidate.current_level) === parseInt(levelFilter));
     
     const candidateStatus = candidate.safety_induction_status ? "active" : "blocked";
     const matchesStatus = statusFilter === "All Status" || 
@@ -135,9 +154,17 @@ const Candidates = () => {
     return matchesSearch && matchesLevel && matchesStatus;
   });
 
-  // Get unique levels for filter dropdown - but since they're UUIDs, we might want to show something else
-  // For now, let's just show "Level 1", "Level 2", etc. based on index or we can fetch level names separately
-  const uniqueLevels = [...new Set(candidates.map(c => c.current_level))].filter(Boolean);
+  // Get unique levels for filter dropdown - using level IDs
+  const uniqueLevels = [...new Set(candidates
+    .map(c => c.current_level)
+    .filter(Boolean)
+  )].map(levelId => {
+    const level = levels.find(l => l.id === parseInt(levelId));
+    return {
+      id: levelId,
+      name: level ? `${level.name} (Level ${level.number})` : `Level ${levelId}`
+    };
+  });
 
   return (
     <div className="ta-layout-wrapper">
@@ -177,8 +204,8 @@ const Candidates = () => {
                 >
                   <option value="All Levels">All Levels</option>
                   {uniqueLevels.map(level => (
-                    <option key={level} value={level}>
-                      {level.substring(0, 8)}... {/* Show first 8 chars of UUID */}
+                    <option key={level.id} value={level.id}>
+                      {level.name}
                     </option>
                   ))}
                 </select>
@@ -193,7 +220,7 @@ const Candidates = () => {
                   <option value="blocked">Blocked</option>
                 </select>
 
-                <button className="candidates-filter-btn" onClick={fetchCandidates}>
+                <button className="candidates-filter-btn" onClick={fetchAllData}>
                   <FaFilter />
                 </button>
               </div>
@@ -201,16 +228,19 @@ const Candidates = () => {
 
             {/* Loading State */}
             {loading && (
-              <div className="candidates-loading">
-                <p>Loading candidates...</p>
+              <div className="candidates-loading text-center p-5">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <p className="mt-2">Loading candidates...</p>
               </div>
             )}
 
             {/* Error State */}
             {error && !loading && (
-              <div className="candidates-error">
+              <div className="candidates-error alert alert-danger">
                 <p>Error: {error}</p>
-                <button onClick={fetchCandidates} className="btn btn-secondary">
+                <button onClick={fetchAllData} className="btn btn-primary mt-2">
                   Retry
                 </button>
               </div>
@@ -237,16 +267,27 @@ const Candidates = () => {
                     {filteredCandidates.length > 0 ? (
                       filteredCandidates.map((candidate) => (
                         <CandidateRow 
-                          key={candidate.candidate_id}
+                          key={candidate.id}
                           candidate={candidate}
+                          levelName={getLevelName(candidate.current_level)}
                           onEdit={handleEdit}
                           onDelete={confirmDelete}
                         />
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="9" className="text-center">
+                        <td colSpan="9" className="text-center py-4">
                           No candidates found
+                          {searchTerm && (
+                            <div>
+                              <button 
+                                className="btn btn-link mt-2"
+                                onClick={() => setSearchTerm('')}
+                              >
+                                Clear Search
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     )}
@@ -261,8 +302,8 @@ const Candidates = () => {
   );
 };
 
-/* ---- Row Component (moved outside but kept in same file) ---- */
-const CandidateRow = ({ candidate, onEdit, onDelete }) => {
+/* ---- Row Component ---- */
+const CandidateRow = ({ candidate, levelName, onEdit, onDelete }) => {
   // Format date function
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -296,7 +337,7 @@ const CandidateRow = ({ candidate, onEdit, onDelete }) => {
       </td>
       {/* <td>
         <span className="candidates-level">
-          {candidate.current_level ? 'Level' : 'N/A'}
+          {levelName}
         </span>
       </td> */}
       <td>{candidate.email || 'N/A'}</td>
@@ -304,7 +345,7 @@ const CandidateRow = ({ candidate, onEdit, onDelete }) => {
       <td>{candidate.city || 'N/A'}</td>
       <td>{candidate.blood_group || 'N/A'}</td>
       <td>
-        <span className={medicalExpired ? 'text-danger' : ''}>
+        <span className={medicalExpired ? 'text-danger fw-bold' : ''}>
           {formatDate(candidate.medical_expiry_date)}
           {medicalExpired && ' (Expired)'}
         </span>
@@ -318,9 +359,9 @@ const CandidateRow = ({ candidate, onEdit, onDelete }) => {
         <div className="action-icons">
           <FaEdit 
             className="candidates-action-icon edit-icon" 
-            onClick={() => onEdit(candidate.candidate_id)}
+            onClick={() => onEdit(candidate.id)}
             title="Edit Candidate"
-            style={{ cursor: 'pointer', marginRight: '10px' }}
+            style={{ cursor: 'pointer', marginRight: '10px', color: '#4a6cf7' }}
           />
           <FaTrash 
             className="candidates-action-icon delete-icon" 

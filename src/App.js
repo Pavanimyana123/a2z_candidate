@@ -2,7 +2,10 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Login from "./components/Pages/Login/Login";
+import ForgotPassword from "./components/Pages/Login/ForgotPassword";
 import Dashboard from "./components/Admin/Dashboard/Dashboard";
+import Users from "./components/Admin/Users/Users"
+import AddUsers from "./components/Admin/Users/AddUsers"
 import Candidate from "./components/Admin/Candidates/Candidates";
 import CandidateForm from "./components/Admin/Candidates/AddCandidate";
 import Mentors from "./components/Admin/Mentors/Mentors";
@@ -17,6 +20,9 @@ import AuditLogs from "./components/Admin/AuditLogs/AuditLogs";
 import Certifications from "./components/Admin/Certificate/Certificate";
 import ReportsAnalytics from "./components/Admin/Reports/Reports";
 import SystemSettings from "./components/Admin/SystemSettings/SystemSettings";
+import EmailSettings from "./components/Admin/EmailSettings/EmailSettings";
+import AddEmailSettings from "./components/Admin/EmailSettings/AddEmailSettings";
+
 import CandidateLayout from "./components/Candidate/Layout/CandidateLayout";
 import MentorLayout from "./components/Mentor/Layout/MentorLayout";
 import MentorDashboard from "./components/Mentor/MentorDashboard/MentorDashboard"
@@ -32,11 +38,15 @@ import CandidateDashboard from "./components/Candidate/CandidateDasboard/Candida
 import CandidateProfessionalIdentity from "./components/Candidate/CandidateProfessionality/CandidateProfessionality";
 import CandidateDigitalLogbook from "./components/Candidate/CandidateDigitalLogBox/CandidateDigitalLogBox";
 import CandidateCompetency from "./components/Candidate/CandidateCompetency/CandidateCompetency";
+import CompetenceForm from "./components/Candidate/CandidateCompetency/AddCandidateCompetency";
 import CandidateRotation from "./components/Candidate/CandidateRotation/CandidateRotation"
 import CandidateCompliance from "./components/Candidate/CandidateCompliance/CandidateCompliance";
 import CandidateCertifications from "./components/Candidate/CandidateCertification/CartificationCertificate";
 import CandidateLearning from "./components/Candidate/CandidateLearning/CandidateLearning";
 import CandidateMentorship from "./components/Candidate/CandidateMentorship/CandidateMentorship";
+import Learning from "./components/Admin/Learning/Learning";
+import AddLearning from './components/Admin/Learning/AddLearning';
+
 
 
 function App() {
@@ -44,6 +54,10 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+         <Route path="/users" element={<Users />} />
+            <Route path="/add-admin-users" element={<AddUsers />} />
+            <Route path="/add-admin-users/:id" element={<AddUsers />} />
         <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/candidate" element={<Candidate />} />
           <Route path="/add-candidate" element={<CandidateForm />} />
@@ -59,11 +73,16 @@ function App() {
             <Route path="/department/edit/:id" element={<AddDepartment />} />
             <Route path="/rotation" element={<RotationProgram />} />
             <Route path="/compliance" element={<ComplianceManagement />} />
-             <Route path="/certificate" element={<Certifications />} />
-               <Route path="/report" element={<ReportsAnalytics />} />
+            <Route path="/certificate" element={<Certifications />} />
+            <Route path="/learning" element={<Learning />} />
+            <Route path="/add-learning" element={<AddLearning />} />
+            <Route path="/add-learning/:id" element={<AddLearning />} />
+            <Route path="/report" element={<ReportsAnalytics />} />
             <Route path="/audit" element={<AuditLogs />} />
             <Route path="/system" element={<SystemSettings />} />
-
+            <Route path="/email-settings" element={<EmailSettings />} />
+            <Route path="/add-email-settings" element={<AddEmailSettings />} />
+            <Route path="/add-email-settings/:id" element={<AddEmailSettings />} />
 
              {/* <Route path="/candidate-layout" element={<CandidateLayout />} />
              <Route path="/mentor-layout" element={<MentorLayout />} /> */}
@@ -81,6 +100,7 @@ function App() {
               <Route path="/candidate-professionality" element={<CandidateProfessionalIdentity />} />
               <Route path="/candidate-digital" element={<CandidateDigitalLogbook />} />
                <Route path="/candidate-competence" element={<CandidateCompetency />} />
+               <Route path="/add-competence" element={<CompetenceForm />} />
                <Route path="/candidate-rotation" element={<CandidateRotation />} />
                <Route path="/candidate-compliance" element={<CandidateCompliance />} />
                 <Route path="/candidate-certificate" element={<CandidateCertifications />} />

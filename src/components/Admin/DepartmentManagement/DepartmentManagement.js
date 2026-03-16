@@ -76,8 +76,8 @@ const DepartmentManagement = () => {
         throw new Error(data.message || 'Failed to delete department');
       }
       
-      // Remove the deleted department from state
-      setDepartments(prev => prev.filter(dept => dept.department_id !== id));
+      // Remove the deleted department from state - FIXED: using id instead of department_id
+      setDepartments(prev => prev.filter(dept => dept.id !== id));
       
       await Swal.fire({
         icon: 'success',
@@ -196,8 +196,8 @@ const DepartmentManagement = () => {
               <div className="row g-4">
                 {departments.map((dept) => (
                   <DeptCard
-                    key={dept.department_id}
-                    id={dept.department_id}
+                    key={dept.id} // FIXED: using id instead of department_id
+                    id={dept.id} // FIXED: using id instead of department_id
                     title={formatText(dept.name)}
                     desc={formatText(dept.description)}
                     min={!isPlaceholder(dept.duration_months) ? `${dept.duration_months} months` : 'Not specified'}
@@ -261,12 +261,12 @@ const DeptCard = ({
 
           <div className="dm-actions">
             <FaEdit
-              className="dm-edit me-2"
+              className="dm-edit me-1"
               onClick={() => onEdit(id)}
               title="Edit Department"
             />
             <FaTrash
-              className="dm-delete"
+              className="dm-delete-btn"
               onClick={() => onDelete(id, title)}
               title="Delete Department"
             />
