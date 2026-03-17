@@ -45,6 +45,7 @@ import CandidateCompliance from "./components/Candidate/CandidateCompliance/Cand
 import CandidateCertifications from "./components/Candidate/CandidateCertification/CartificationCertificate";
 import CandidateLearning from "./components/Candidate/CandidateLearning/CandidateLearning";
 import CandidateMentorship from "./components/Candidate/CandidateMentorship/CandidateMentorship";
+import FindMentor from './components/Candidate/CandidateMentorship/FindMentor';
 import Learning from "./components/Admin/Learning/Learning";
 import AddLearning from './components/Admin/Learning/AddLearning';
 
@@ -108,6 +109,7 @@ function App() {
                 <Route path="/candidate-certificate" element={<CandidateCertifications />} />
                  <Route path="/candidate-learning" element={<CandidateLearning />} />
                  <Route path="/candidate-mentorship" element={<CandidateMentorship />} />
+                 <Route path="/find-mentor" element={<FindMentor />} />
 
 
 

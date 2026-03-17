@@ -209,7 +209,7 @@ const AddEvidence = () => {
         showConfirmButton: false
       });
       
-      navigate('/candidate-competency');
+      navigate('/candidate-competence');
       
     } catch (err) {
       console.error('Error uploading evidence:', err);
@@ -227,7 +227,7 @@ const AddEvidence = () => {
   };
 
   const handleCancel = () => {
-    navigate('/candidate-competency');
+    navigate('/candidate-competence');
   };
 
   return (

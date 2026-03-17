@@ -16,7 +16,17 @@ import {
   FaStar,
   FaChartBar,
   FaFileAlt,
-  FaCloudUploadAlt
+  FaCloudUploadAlt,
+  FaLink,
+  FaFilePdf,
+  FaFileImage,
+  FaFileWord,
+  FaFileExcel,
+  FaFilePowerpoint,
+  FaFile,
+  FaDownload,
+  FaExternalLinkAlt,
+  FaEye
 } from "react-icons/fa";
 import { BASE_URL } from "../../../ApiUrl";
 import "./CandidateCompetency.css";
@@ -27,6 +37,8 @@ const CandidateCompetencyProgression = () => {
   const [competencies, setCompetencies] = useState([]);
   const [levels, setLevels] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [evidenceMap, setEvidenceMap] = useState({}); // Map competencyId -> evidence array
+  const [loadingEvidence, setLoadingEvidence] = useState({});
   const [currentCompetency, setCurrentCompetency] = useState(null);
   const [currentLevelData, setCurrentLevelData] = useState(null);
   const [currentDepartmentData, setCurrentDepartmentData] = useState(null);
@@ -48,6 +60,32 @@ const CandidateCompetencyProgression = () => {
   };
 
   const candidateId = getCandidateId();
+
+  // Fetch evidence for a specific competency
+  const fetchEvidenceForCompetency = async (competencyId) => {
+    if (!competencyId) return;
+    
+    try {
+      setLoadingEvidence(prev => ({ ...prev, [competencyId]: true }));
+      
+      const response = await fetch(`${BASE_URL}/api/candidate/competency-evidence/?competency=${competencyId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      
+      if (result.status && result.data) {
+        setEvidenceMap(prev => ({
+          ...prev,
+          [competencyId]: result.data
+        }));
+      }
+    } catch (err) {
+      console.error(`Error fetching evidence for competency ${competencyId}:`, err);
+    } finally {
+      setLoadingEvidence(prev => ({ ...prev, [competencyId]: false }));
+    }
+  };
 
   // Fetch competencies, levels, and departments on component mount
   useEffect(() => {
@@ -86,6 +124,13 @@ const CandidateCompetencyProgression = () => {
           
           if (userCompetency) {
             setCurrentCompetency(userCompetency);
+            // Fetch evidence for current competency
+            await fetchEvidenceForCompetency(userCompetency.id);
+          }
+
+          // Fetch evidence for all competencies
+          for (const comp of competenciesResult.data) {
+            await fetchEvidenceForCompetency(comp.id);
           }
         }
 
@@ -113,7 +158,7 @@ const CandidateCompetencyProgression = () => {
   // Update current level data when competency or levels change
   useEffect(() => {
     if (currentCompetency && levels.length > 0) {
-      // Find level by ID (not level_id)
+      // Find level by ID
       const levelInfo = levels.find(level => level.id === currentCompetency.level);
       if (levelInfo) {
         setCurrentLevelData(levelInfo);
@@ -142,25 +187,22 @@ const CandidateCompetencyProgression = () => {
     }));
   };
 
-  // Updated handleAddEvidence function - navigates to the new page
   // Updated handleAddEvidence function - passes competency data as query parameters
-// Updated handleAddEvidence function - passes competency data as query parameters
-const handleAddEvidence = (levelNum, competencyData) => {
-  const levelInfo = getLevelDisplay(levelNum);
-  
-  // competencyData contains the full competency object with id at root level
-  // From your API: { "id": 1, "candidate_name": "Pavani", ... }
-  const compId = competencyData?.id || '';
-  
-  console.log('Navigating to add-evidence with:', {
-    levelNum,
-    compId,
-    levelInfo
-  });
-  
-  // Navigate to AddEvidence page with query parameters
-  navigate(`/add-evidence?level=${levelNum}&competencyId=${compId}&levelName=${encodeURIComponent(levelInfo.display)}`);
-};
+  const handleAddEvidence = (levelNum, competencyData) => {
+    const levelInfo = getLevelDisplay(levelNum);
+    
+    // competencyData contains the full competency object with id at root level
+    const compId = competencyData?.id || '';
+    
+    console.log('Navigating to add-evidence with:', {
+      levelNum,
+      compId,
+      levelInfo
+    });
+    
+    // Navigate to AddEvidence page with query parameters
+    navigate(`/add-evidence?level=${levelNum}&competencyId=${compId}&levelName=${encodeURIComponent(levelInfo.display)}`);
+  };
 
   // Get competency data for a specific level
   const getCompetencyForLevel = (levelNumber) => {
@@ -193,6 +235,83 @@ const handleAddEvidence = (levelNum, competencyData) => {
       5: { name: "Principal Surveyor", display: "Level 5 - Principal Surveyor" }
     };
     return levelMap[levelNumber] || { name: "Unknown", display: `Level ${levelNumber}` };
+  };
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Get file icon based on file extension
+  const getFileIcon = (filename) => {
+    if (!filename) return <FaFile />;
+    
+    const ext = filename.split('.').pop().toLowerCase();
+    
+    switch(ext) {
+      case 'pdf':
+        return <FaFilePdf style={{ color: '#e74c3c' }} />;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'svg':
+        return <FaFileImage style={{ color: '#2ecc71' }} />;
+      case 'doc':
+      case 'docx':
+        return <FaFileWord style={{ color: '#2980b9' }} />;
+      case 'xls':
+      case 'xlsx':
+        return <FaFileExcel style={{ color: '#27ae60' }} />;
+      case 'ppt':
+      case 'pptx':
+        return <FaFilePowerpoint style={{ color: '#e67e22' }} />;
+      default:
+        return <FaFile />;
+    }
+  };
+
+  // Get verification status badge
+  const getVerificationBadge = (status) => {
+    switch(status) {
+      case 'verified':
+      case 'approved':
+        return <span className="cp-evidence-verified-badge"><FaCheckCircle /> Verified</span>;
+      case 'rejected':
+        return <span className="cp-evidence-rejected-badge">Rejected</span>;
+      default:
+        return <span className="cp-evidence-pending-badge">Pending</span>;
+    }
+  };
+
+  // Get evidence type icon
+  const getEvidenceTypeIcon = (type) => {
+    switch(type) {
+      case 'certificate':
+        return <FaFileAlt className="cp-evidence-type-icon certificate" />;
+      case 'work_sample':
+        return <FaFileImage className="cp-evidence-type-icon work-sample" />;
+      case 'reference':
+        return <FaUserFriends className="cp-evidence-type-icon reference" />;
+      case 'training':
+        return <FaBookOpen className="cp-evidence-type-icon training" />;
+      default:
+        return <FaFileAlt className="cp-evidence-type-icon" />;
+    }
+  };
+
+  // Get full document URL
+  const getDocumentUrl = (documentName) => {
+    if (!documentName) return '#';
+    return `${BASE_URL}/media/evidence/${documentName}`;
   };
 
   if (loading) {
@@ -349,6 +468,10 @@ const handleAddEvidence = (levelNum, competencyData) => {
                 const isDone = currentLevelNumber > levelNum;
                 const isLocked = currentLevelNumber < levelNum;
                 
+                // Get evidence for this competency
+                const evidence = competencyData ? evidenceMap[competencyData.id] || [] : [];
+                const isLoadingEvidence = competencyData ? loadingEvidence[competencyData.id] : false;
+                
                 return (
                   <div key={levelNum} className="cp-journey-container">
                     <div 
@@ -379,8 +502,8 @@ const handleAddEvidence = (levelNum, competencyData) => {
                       <div className="cp-journey-details">
                         <div className="cp-details-header">
                           <h5>Competency Details - {levelInfo.name}</h5>
-                          <span className={`cp-status-badge ${competencyData.status}`}>
-                            {competencyData.status}
+                          <span className={`cp-status-badge ${competencyData.status || 'draft'}`}>
+                            {competencyData.status || 'Draft'}
                           </span>
                         </div>
                         
@@ -471,12 +594,100 @@ const handleAddEvidence = (levelNum, competencyData) => {
                               </button>
                             </div>
 
-                            {/* Evidence List - Placeholder */}
+                            {/* Evidence List */}
                             <div className="cp-evidence-list">
-                              <div className="cp-evidence-placeholder">
-                                <FaCloudUploadAlt className="cp-evidence-placeholder-icon" />
-                                <p>No evidence uploaded yet. Click "Add Evidence" to upload documents, certificates, or other证明材料.</p>
-                              </div>
+                              {isLoadingEvidence ? (
+                                <div className="cp-evidence-loading">
+                                  <FaSpinner className="cp-spinner-small" />
+                                  <p>Loading evidence...</p>
+                                </div>
+                              ) : evidence.length > 0 ? (
+                                <div className="cp-evidence-items">
+                                  {evidence.map((item) => (
+                                    <div key={item.id} className="cp-evidence-item">
+                                      <div className="cp-evidence-item-header">
+                                        <div className="cp-evidence-item-icon">
+                                          {getEvidenceTypeIcon(item.evidence_type)}
+                                        </div>
+                                        <div className="cp-evidence-item-title">
+                                          <h6>{item.title}</h6>
+                                          <span className="cp-evidence-type">{item.evidence_type}</span>
+                                        </div>
+                                        <div className="cp-evidence-verification">
+                                          {getVerificationBadge(item.verification_status)}
+                                        </div>
+                                      </div>
+
+                                      <div className="cp-evidence-item-description">
+                                        <p>{item.description || item.submission_notes}</p>
+                                      </div>
+
+                                      {/* Evidence Link */}
+                                      {item.evidence_link && (
+                                        <div className="cp-evidence-link">
+                                          <FaLink className="cp-evidence-link-icon" />
+                                          <a 
+                                            href={item.evidence_link} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="cp-evidence-link-text"
+                                          >
+                                            View External Link <FaExternalLinkAlt className="cp-external-icon" />
+                                          </a>
+                                        </div>
+                                      )}
+
+                                      {/* Documents */}
+                                      {item.evidence_documents && item.evidence_documents.length > 0 && (
+                                        <div className="cp-evidence-documents">
+                                          <div className="cp-evidence-documents-title">
+                                            <FaDownload /> Documents ({item.evidence_documents.length})
+                                          </div>
+                                          <div className="cp-evidence-document-list">
+                                            {item.evidence_documents.map((doc, idx) => (
+                                              <div key={idx} className="cp-evidence-document-item">
+                                                {getFileIcon(doc)}
+                                                <span className="cp-evidence-document-name">{doc}</span>
+                                                <a 
+                                                  href={getDocumentUrl(doc)} 
+                                                  target="_blank" 
+                                                  rel="noopener noreferrer"
+                                                  className="cp-evidence-document-download"
+                                                  title="Download/View Document"
+                                                >
+                                                  <FaEye />
+                                                </a>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      <div className="cp-evidence-item-meta">
+                                        <span className="cp-evidence-submitted-by">
+                                          Submitted by: {item.submitted_by || 'N/A'}
+                                        </span>
+                                        <span className="cp-evidence-date">
+                                          {formatDate(item.created_at)}
+                                        </span>
+                                      </div>
+
+                                      {/* Review Comments (if any) */}
+                                      {item.review_comments && (
+                                        <div className="cp-evidence-review-comments">
+                                          <strong>Review Comments:</strong>
+                                          <p>{item.review_comments}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="cp-evidence-placeholder">
+                                  <FaCloudUploadAlt className="cp-evidence-placeholder-icon" />
+                                  <p>No evidence uploaded yet. Click "Add Evidence" to upload documents, certificates, or other证明材料.</p>
+                                </div>
+                              )}
                             </div>
                           </div>
 

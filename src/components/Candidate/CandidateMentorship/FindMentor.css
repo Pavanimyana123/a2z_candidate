@@ -1,0 +1,232 @@
+/* MentorRequestForm.css */
+.mrf-wrapper {
+  padding: 24px;
+  background: #f8fafc;
+  min-height: calc(100vh - 80px);
+}
+
+/* Header */
+.mrf-header {
+  margin-bottom: 24px;
+}
+
+.mrf-header h2 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.mrf-header p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* Candidate Info Card */
+.mrf-candidate-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.mrf-candidate-avatar {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 600;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.mrf-candidate-details {
+  flex: 1;
+}
+
+.mrf-candidate-details h5 {
+  margin: 0 0 4px 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.mrf-candidate-details p {
+  margin: 0 0 8px 0;
+  opacity: 0.9;
+  font-size: 14px;
+}
+
+.mrf-candidate-badge {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+/* Form Container */
+.mrf-form-container {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.form-label svg {
+  color: #4da6a0;
+}
+
+.form-control, .form-select {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: #4da6a0;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(77, 166, 160, 0.1);
+}
+
+.form-control.is-invalid, .form-select.is-invalid {
+  border-color: #dc3545;
+}
+
+.invalid-feedback {
+  font-size: 12px;
+  color: #dc3545;
+  margin-top: 4px;
+}
+
+.text-muted {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+  display: block;
+}
+
+.text-warning {
+  color: #f59e0b;
+  font-size: 12px;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Form Actions */
+.mrf-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.mrf-primary-btn {
+  background: linear-gradient(135deg, #4da6a0 0%, #3d8b86 100%);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.mrf-primary-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(77, 166, 160, 0.3);
+}
+
+.mrf-primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mrf-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Loading State */
+.mrf-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  padding: 24px;
+}
+
+.mrf-spinner-large {
+  font-size: 40px;
+  color: #4da6a0;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mrf-wrapper {
+    padding: 16px;
+  }
+
+  .mrf-candidate-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 16px;
+  }
+
+  .mrf-candidate-avatar {
+    margin-bottom: 8px;
+  }
+
+  .mrf-form-container {
+    padding: 16px;
+  }
+
+  .mrf-actions {
+    flex-direction: column;
+  }
+
+  .mrf-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .mrf-header h2 {
+    font-size: 22px;
+  }
+}
