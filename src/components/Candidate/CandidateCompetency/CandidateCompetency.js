@@ -6,12 +6,17 @@ import {
   FaCheckCircle,
   FaLock,
   FaChevronRight,
+  FaChevronDown,
   FaExclamationCircle,
   FaUpload,
   FaUserFriends,
   FaBookOpen,
   FaPlusCircle,
-  FaSpinner
+  FaSpinner,
+  FaStar,
+  FaChartBar,
+  FaFileAlt,
+  FaCloudUploadAlt
 } from "react-icons/fa";
 import { BASE_URL } from "../../../ApiUrl";
 import "./CandidateCompetency.css";
@@ -26,6 +31,7 @@ const CandidateCompetencyProgression = () => {
   const [currentLevelData, setCurrentLevelData] = useState(null);
   const [currentDepartmentData, setCurrentDepartmentData] = useState(null);
   const [error, setError] = useState(null);
+  const [expandedLevels, setExpandedLevels] = useState({});
 
   // Get candidate user_id from localStorage
   const getCandidateId = () => {
@@ -129,6 +135,43 @@ const CandidateCompetencyProgression = () => {
     navigate('/add-competence');
   };
 
+  const toggleLevelExpand = (levelNumber) => {
+    setExpandedLevels(prev => ({
+      ...prev,
+      [levelNumber]: !prev[levelNumber]
+    }));
+  };
+
+  // Updated handleAddEvidence function - navigates to the new page
+  // Updated handleAddEvidence function - passes competency data as query parameters
+// Updated handleAddEvidence function - passes competency data as query parameters
+const handleAddEvidence = (levelNum, competencyData) => {
+  const levelInfo = getLevelDisplay(levelNum);
+  
+  // competencyData contains the full competency object with id at root level
+  // From your API: { "id": 1, "candidate_name": "Pavani", ... }
+  const compId = competencyData?.id || '';
+  
+  console.log('Navigating to add-evidence with:', {
+    levelNum,
+    compId,
+    levelInfo
+  });
+  
+  // Navigate to AddEvidence page with query parameters
+  navigate(`/add-evidence?level=${levelNum}&competencyId=${compId}&levelName=${encodeURIComponent(levelInfo.display)}`);
+};
+
+  // Get competency data for a specific level
+  const getCompetencyForLevel = (levelNumber) => {
+    // Find level ID from level number
+    const level = levels.find(l => l.number === levelNumber);
+    if (!level) return null;
+    
+    // Find competency with this level ID
+    return competencies.find(comp => comp.level === level.id) || null;
+  };
+
   // Get level display name based on level number from the levels API
   const getLevelDisplay = (levelNumber) => {
     // Find the level with this number from the levels data
@@ -150,12 +193,6 @@ const CandidateCompetencyProgression = () => {
       5: { name: "Principal Surveyor", display: "Level 5 - Principal Surveyor" }
     };
     return levelMap[levelNumber] || { name: "Unknown", display: `Level ${levelNumber}` };
-  };
-
-  // Get department name from department ID
-  const getDepartmentName = (deptId) => {
-    const dept = departments.find(d => d.id === deptId);
-    return dept ? dept.name : "Unknown Department";
   };
 
   if (loading) {
@@ -201,8 +238,9 @@ const CandidateCompetencyProgression = () => {
     : { name: "Not Started", display: "No Competency Found" };
 
   const currentLevelNumber = currentLevelData?.number ?? 0;
-  const nextLevelNumber = currentLevelNumber + 1;
-  const nextLevelDisplay = getLevelDisplay(nextLevelNumber);
+
+  // Define all journey levels
+  const journeyLevels = [0, 1, 2, 3, 4, 5];
 
   return (
     <div className="ta-layout-wrapper">
@@ -295,115 +333,6 @@ const CandidateCompetencyProgression = () => {
             </div>
 
             {/* ================================================= */}
-            {/* PROGRESS TO NEXT LEVEL */}
-            {/* ================================================= */}
-            {/* {currentCompetency && currentLevelNumber < 5 && (
-              <div className="cp-section">
-                <div className="cp-progress-card">
-                  <div className="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                      <h4>Progress to {nextLevelDisplay.display}</h4>
-                      <p className="cp-muted">{nextLevelDisplay.name}</p>
-                    </div>
-
-                    <div className="text-end">
-                      <h3>0%</h3>
-                      <span className="cp-muted">0/5 requirements</span>
-                    </div>
-                  </div>
-
-                  <div className="cp-progress-bar">
-                    <div className="cp-progress-fill" style={{ width: "0%" }} />
-                  </div>
-
-                  <div className="cp-req-list mt-4">
-                    <Requirement
-                      label="Complete all department rotations"
-                      status="pending"
-                      value="0/6"
-                    />
-                    <Requirement
-                      label="Log required exposure hours"
-                      status="pending"
-                      value="0h"
-                    />
-                    <Requirement
-                      label="Pass level assessment"
-                      status="pending"
-                      value="Not taken"
-                    />
-                    <Requirement
-                      label="Obtain required certifications"
-                      status="pending"
-                      value="0/3"
-                    />
-                    <Requirement
-                      label="Achieve minimum score"
-                      status="pending"
-                      value={`0/${currentLevelData?.min_score_required || 0}`}
-                    />
-                  </div>
-
-                  <div className="cp-unlock-next">
-                    <h6>What you'll unlock at {nextLevelDisplay.display}</h6>
-                    <div className="cp-unlocks">
-                      {nextLevelNumber === 1 && (
-                        <>
-                          <span className="cp-pill lock">
-                            <FaLock /> Basic inspection work
-                          </span>
-                          <span className="cp-pill lock">
-                            <FaLock /> Training completion
-                          </span>
-                        </>
-                      )}
-                      {nextLevelNumber === 2 && (
-                        <>
-                          <span className="cp-pill lock">
-                            <FaLock /> Independent inspection work
-                          </span>
-                          <span className="cp-pill lock">
-                            <FaLock /> Certification sponsorship
-                          </span>
-                        </>
-                      )}
-                      {nextLevelNumber === 3 && (
-                        <>
-                          <span className="cp-pill lock">
-                            <FaLock /> Lead inspector role
-                          </span>
-                          <span className="cp-pill lock">
-                            <FaLock /> SIT mentorship eligibility
-                          </span>
-                        </>
-                      )}
-                      {nextLevelNumber === 4 && (
-                        <>
-                          <span className="cp-pill lock">
-                            <FaLock /> Senior leadership role
-                          </span>
-                          <span className="cp-pill lock">
-                            <FaLock /> Team management
-                          </span>
-                        </>
-                      )}
-                      {nextLevelNumber === 5 && (
-                        <>
-                          <span className="cp-pill lock">
-                            <FaLock /> Full authority
-                          </span>
-                          <span className="cp-pill lock">
-                            <FaLock /> Governance role
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )} */}
-
-            {/* ================================================= */}
             {/* COMPLETE JOURNEY OVERVIEW */}
             {/* ================================================= */}
             <div className="cp-section">
@@ -412,51 +341,173 @@ const CandidateCompetencyProgression = () => {
                 All levels from Trainee to Principal Surveyor
               </p>
 
-              <JourneyItem
-                level="0"
-                title="Level 0 - Trainee"
-                role="Trainee"
-                done={currentLevelNumber > 0}
-                current={currentLevelNumber === 0}
-              />
-              <JourneyItem
-                level="1"
-                title="Level 1 - Junior Surveyor"
-                role="Junior Surveyor"
-                done={currentLevelNumber > 1}
-                current={currentLevelNumber === 1}
-              />
-              <JourneyItem
-                level="2"
-                title="Level 2 - Associate Surveyor"
-                role="Associate Surveyor"
-                done={currentLevelNumber > 2}
-                current={currentLevelNumber === 2}
-              />
-              <JourneyItem
-                level="3"
-                title="Level 3 - Surveyor"
-                role="Surveyor"
-                done={currentLevelNumber > 3}
-                current={currentLevelNumber === 3}
-                locked={currentLevelNumber < 3}
-              />
-              <JourneyItem
-                level="4"
-                title="Level 4 - Senior Surveyor"
-                role="Senior Surveyor / Lead"
-                done={currentLevelNumber > 4}
-                current={currentLevelNumber === 4}
-                locked={currentLevelNumber < 4}
-              />
-              <JourneyItem
-                level="5"
-                title="Level 5 - Principal Surveyor"
-                role="Principal / Authority"
-                done={currentLevelNumber > 5}
-                current={currentLevelNumber === 5}
-                locked={currentLevelNumber < 5}
-              />
+              {journeyLevels.map((levelNum) => {
+                const levelInfo = getLevelDisplay(levelNum);
+                const competencyData = getCompetencyForLevel(levelNum);
+                const isExpanded = expandedLevels[levelNum] || false;
+                const isCurrent = currentLevelNumber === levelNum;
+                const isDone = currentLevelNumber > levelNum;
+                const isLocked = currentLevelNumber < levelNum;
+                
+                return (
+                  <div key={levelNum} className="cp-journey-container">
+                    <div 
+                      className={`cp-journey ${isDone ? "done" : isCurrent ? "current" : isLocked ? "locked" : ""}`}
+                      onClick={() => competencyData && toggleLevelExpand(levelNum)}
+                      style={{ cursor: competencyData ? 'pointer' : 'default' }}
+                    >
+                      <div className="cp-journey-left">
+                        <div className="cp-journey-badge">
+                          {isDone ? <FaCheckCircle /> : isLocked ? <FaLock /> : levelNum}
+                        </div>
+                        <div>
+                          <strong>{levelInfo.display}</strong>
+                          <p className="cp-muted mb-0">{levelInfo.name}</p>
+                        </div>
+                      </div>
+
+                      <div className="cp-journey-right">
+                        {isCurrent && <span className="cp-current-tag">Current</span>}
+                        {competencyData && !isLocked && (
+                          isExpanded ? <FaChevronDown /> : <FaChevronRight />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Expanded Details Section */}
+                    {isExpanded && competencyData && (
+                      <div className="cp-journey-details">
+                        <div className="cp-details-header">
+                          <h5>Competency Details - {levelInfo.name}</h5>
+                          <span className={`cp-status-badge ${competencyData.status}`}>
+                            {competencyData.status}
+                          </span>
+                        </div>
+                        
+                        <div className="cp-journey-details-content">
+                          {/* Competency Scores Section */}
+                          <div className="cp-scores-section">
+                            <h6 className="cp-section-subtitle">
+                              <FaStar className="cp-section-icon" /> Competency Scores
+                            </h6>
+                            <div className="cp-score-grid">
+                              <div className="cp-score-item">
+                                <div className="cp-score-label">
+                                  <FaStar className="cp-score-icon" />
+                                  <span>Overall Score</span>
+                                </div>
+                                <div className="cp-score-value">
+                                  {competencyData.overall_score?.toFixed(1) || 0}
+                                </div>
+                              </div>
+                              
+                              <div className="cp-score-item">
+                                <div className="cp-score-label">
+                                  <FaChartBar className="cp-score-icon" />
+                                  <span>Technical Knowledge</span>
+                                </div>
+                                <div className="cp-score-value">
+                                  {competencyData.technical_knowledge || 0}
+                                </div>
+                              </div>
+                              
+                              <div className="cp-score-item">
+                                <div className="cp-score-label">
+                                  <FaChartBar className="cp-score-icon" />
+                                  <span>Field Execution</span>
+                                </div>
+                                <div className="cp-score-value">
+                                  {competencyData.field_execution || 0}
+                                </div>
+                              </div>
+                              
+                              <div className="cp-score-item">
+                                <div className="cp-score-label">
+                                  <FaChartBar className="cp-score-icon" />
+                                  <span>Documentation Quality</span>
+                                </div>
+                                <div className="cp-score-value">
+                                  {competencyData.documentation_quality || 0}
+                                </div>
+                              </div>
+                              
+                              <div className="cp-score-item">
+                                <div className="cp-score-label">
+                                  <FaChartBar className="cp-score-icon" />
+                                  <span>Ethics & Independence</span>
+                                </div>
+                                <div className="cp-score-value">
+                                  {competencyData.ethics_independence || 0}
+                                </div>
+                              </div>
+                              
+                              <div className="cp-score-item">
+                                <div className="cp-score-label">
+                                  <FaChartBar className="cp-score-icon" />
+                                  <span>Communication</span>
+                                </div>
+                                <div className="cp-score-value">
+                                  {competencyData.communication || 0}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Evidence Section */}
+                          <div className="cp-evidence-section">
+                            <div className="cp-evidence-header">
+                              <h6 className="cp-section-subtitle">
+                                <FaFileAlt className="cp-section-icon" /> Evidence Details
+                              </h6>
+                              <button 
+                                className="cp-add-evidence-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddEvidence(levelNum, competencyData);
+                                }}
+                              >
+                                <FaPlusCircle className="cp-add-evidence-icon" />
+                                Add Evidence
+                              </button>
+                            </div>
+
+                            {/* Evidence List - Placeholder */}
+                            <div className="cp-evidence-list">
+                              <div className="cp-evidence-placeholder">
+                                <FaCloudUploadAlt className="cp-evidence-placeholder-icon" />
+                                <p>No evidence uploaded yet. Click "Add Evidence" to upload documents, certificates, or other证明材料.</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Comments Section */}
+                          {(competencyData.mentor_comments || competencyData.admin_comments) && (
+                            <div className="cp-comments-section">
+                              <h6 className="cp-section-subtitle">Comments</h6>
+                              {competencyData.mentor_comments && (
+                                <div className="cp-comment">
+                                  <strong>Mentor Comments:</strong>
+                                  <p>{competencyData.mentor_comments}</p>
+                                </div>
+                              )}
+                              {competencyData.admin_comments && (
+                                <div className="cp-comment">
+                                  <strong>Admin Comments:</strong>
+                                  <p>{competencyData.admin_comments}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <div className="cp-meta-info">
+                            <small>Last Updated: {new Date(competencyData.updated_at).toLocaleDateString()}</small>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* ================================================= */}
@@ -514,42 +565,5 @@ const CandidateCompetencyProgression = () => {
     </div>
   );
 };
-
-/* ================= SUB COMPONENTS ================= */
-
-const Requirement = ({ label, status, value }) => (
-  <div className={`cp-req ${status}`}>
-    <div className="d-flex align-items-center gap-2">
-      {status === "done" ? (
-        <FaCheckCircle className="cp-ok" />
-      ) : status === "partial" ? (
-        <FaExclamationCircle className="cp-warn" />
-      ) : (
-        <FaExclamationCircle className="cp-pending" />
-      )}
-      <strong>{label}</strong>
-    </div>
-    <span className="cp-req-value">{value}</span>
-  </div>
-);
-
-const JourneyItem = ({ level, title, role, done, current, locked }) => (
-  <div className={`cp-journey ${done ? "done" : current ? "current" : locked ? "locked" : ""}`}>
-    <div className="cp-journey-left">
-      <div className="cp-journey-badge">
-        {done ? <FaCheckCircle /> : locked ? <FaLock /> : level}
-      </div>
-      <div>
-        <strong>{title}</strong>
-        <p className="cp-muted mb-0">{role}</p>
-      </div>
-    </div>
-
-    <div className="cp-journey-right">
-      {current && <span className="cp-current-tag">Current</span>}
-      {!locked && !done && !current && <FaChevronRight />}
-    </div>
-  </div>
-);
 
 export default CandidateCompetencyProgression;
