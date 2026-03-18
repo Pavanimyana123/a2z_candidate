@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import MentorSidebar from "../Layout/MentorSidebar";
 import Header from "../Layout/MentorHeader";
 import { 
@@ -10,12 +11,14 @@ import {
   FaLevelUpAlt,
   FaClock,
   FaEnvelope,
-  FaPhone
+  FaPhone,
+  FaEye
 } from "react-icons/fa";
 import { BASE_URL } from "../../../ApiUrl";
 import "./MentorCandidates.css";
 
 const MentorCandidatesPage = () => {
+  const navigate = useNavigate();
   const [assignments, setAssignments] = useState([]);
   const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,7 +106,7 @@ const MentorCandidatesPage = () => {
     const completion = assignment.completion_percentage || 0;
     if (completion >= 75) return "Compliant";
     if (completion >= 40) return "At Risk";
-    return "Active"; // Changed from "Behind Schedule" to "Active"
+    return "Active";
   };
 
   // Check if eligible for promotion (if completion is 100%)
@@ -139,8 +142,20 @@ const MentorCandidatesPage = () => {
     total: filteredAssignments.length,
     compliant: filteredAssignments.filter(a => getCandidateStatus(a) === "Compliant").length,
     atRisk: filteredAssignments.filter(a => getCandidateStatus(a) === "At Risk").length,
-    active: filteredAssignments.filter(a => getCandidateStatus(a) === "Active").length, // Changed from behindSchedule to active
+    active: filteredAssignments.filter(a => getCandidateStatus(a) === "Active").length,
     promotionReady: filteredAssignments.filter(a => isPromotionEligible(a) === "Eligible").length
+  };
+
+  // Handle view competency
+  const handleViewCompetency = (assignment) => {
+    navigate('/mentor-candidate-competency', {
+      state: {
+        candidateId: assignment.candidate,
+        candidateName: assignment.candidate_name,
+        departmentName: assignment.department_name,
+        levelName: assignment.target_level_name
+      }
+    });
   };
 
   if (loading) {
@@ -235,7 +250,7 @@ const MentorCandidatesPage = () => {
                 <option value="all">All Status</option>
                 <option value="compliant">Compliant</option>
                 <option value="at risk">At Risk</option>
-                <option value="active">Active</option> {/* Changed from "behind schedule" to "active" */}
+                <option value="active">Active</option>
               </select>
 
               <button className="btn ta-candidates-export ms-auto">
@@ -243,7 +258,7 @@ const MentorCandidatesPage = () => {
               </button>
             </div>
 
-            {/* Stat Cards - FIXED */}
+            {/* Stat Cards */}
             <div className="row g-3 mb-4">
               <div className="col-md-3">
                 <div className="ta-candidates-stat">
@@ -268,8 +283,8 @@ const MentorCandidatesPage = () => {
 
               <div className="col-md-3">
                 <div className="ta-candidates-stat ta-stat-blue">
-                  <h3>{stats.active}</h3> {/* Changed from promotionReady to active */}
-                  <p>Active</p> {/* Changed from "Promotion Ready" to "Active" */}
+                  <h3>{stats.active}</h3>
+                  <p>Active</p>
                 </div>
               </div>
             </div>
@@ -299,6 +314,7 @@ const MentorCandidatesPage = () => {
                         <th>LEVEL</th>
                         <th>DEPARTMENT</th>
                         <th>STATUS</th>
+                        <th>ACTIONS</th>
                         {/* <th>PROMOTION</th> */}
                         {/* <th>PROGRESS</th> */}
                       </tr>
@@ -306,7 +322,6 @@ const MentorCandidatesPage = () => {
                     <tbody>
                       {filteredAssignments.map((assignment) => {
                         const candidateStatus = getCandidateStatus(assignment);
-                        const promotionStatus = isPromotionEligible(assignment);
                         
                         // Get initials from candidate name
                         const initials = assignment.candidate_name
@@ -347,7 +362,7 @@ const MentorCandidatesPage = () => {
                               </span>
                             </td>
 
-                            {/* Status - FIXED */}
+                            {/* Status */}
                             <td>
                               <span
                                 className={`ta-status ${
@@ -355,7 +370,7 @@ const MentorCandidatesPage = () => {
                                     ? "ta-status-green" 
                                     : candidateStatus === "At Risk"
                                     ? "ta-status-orange"
-                                    : "ta-status-blue" // Active will use blue color
+                                    : "ta-status-blue"
                                 }`}
                               >
                                 {candidateStatus === "Compliant" && <FaCheckCircle className="me-1" size={10} />}
@@ -365,36 +380,17 @@ const MentorCandidatesPage = () => {
                               </span>
                             </td>
 
-                            {/* Promotion */}
-                            {/* <td>
-                              {promotionStatus === "Eligible" ? (
-                                <span className="ta-status ta-status-green">
-                                  <FaCheckCircle className="me-1" size={10} />
-                                  Eligible
-                                </span>
-                              ) : (
-                                <span className="text-muted">—</span>
-                              )}
-                            </td> */}
-
-                            {/* Progress */}
-                            {/* <td>
-                              <div className="d-flex align-items-center gap-2">
-                                <div className="progress flex-grow-1" style={{ height: '6px', width: '80px' }}>
-                                  <div 
-                                    className="progress-bar" 
-                                    role="progressbar" 
-                                    style={{ width: `${assignment.completion_percentage || 0}%` }}
-                                    aria-valuenow={assignment.completion_percentage || 0} 
-                                    aria-valuemin="0" 
-                                    aria-valuemax="100"
-                                  />
-                                </div>
-                                <span className="small fw-semibold">
-                                  {assignment.completion_percentage || 0}%
-                                </span>
-                              </div>
-                            </td> */}
+                            {/* Actions */}
+                            <td>
+                              <button
+                                className="ta-view-competency-btn"
+                                onClick={() => handleViewCompetency(assignment)}
+                                title="View Candidate Competency"
+                              >
+                                <FaEye className="me-1" size={12} />
+                                View Competency
+                              </button>
+                            </td>
                           </tr>
                         );
                       })}

@@ -272,3 +272,65 @@
   font-size: 3rem;
   margin-bottom: 1rem;
 }
+
+/* Add this to your existing MentorCandidates.css */
+
+/* View Competency Button */
+.ta-view-competency-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+
+.ta-view-competency-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46a1 100%);
+}
+
+.ta-view-competency-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+
+.ta-view-competency-btn svg {
+  font-size: 12px;
+}
+
+/* Actions column styling */
+.ta-candidates-table-card td:last-child {
+  min-width: 140px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .ta-view-competency-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+  
+  .ta-candidates-table-card td:last-child {
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 576px) {
+  .ta-view-competency-btn {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+  
+  .ta-view-competency-btn svg {
+    margin-right: 2px;
+  }
+}
