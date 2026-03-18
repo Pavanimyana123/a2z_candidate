@@ -12,6 +12,7 @@ import {
   FaSignOutAlt,
   FaUserCircle,
   FaUser,
+  FaUserPlus, // Add this icon for Candidate Requests
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import "./Sidebar.css";
@@ -128,7 +129,17 @@ const MentorSidebar = () => {
             to="/mentor-candidates"
             className={`ta-menu-item ${isActive("/mentor-candidates") ? "active" : ""}`}
           >
-            <FaUserGraduate /> Candidates
+            <FaUserGraduate /> My Candidates
+          </Link>
+
+          {/* New Candidate Requests Menu Item */}
+          <Link
+            to="/mentor-requests"
+            className={`ta-menu-item ${isActive("/mentor-requests") ? "active" : ""}`}
+          >
+            <FaUserPlus /> Candidate Requests
+            {/* Optional: Add a badge for pending requests count */}
+            {/* <span className="ta-menu-badge">3</span> */}
           </Link>
 
           <Link

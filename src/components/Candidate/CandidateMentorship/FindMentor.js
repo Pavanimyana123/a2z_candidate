@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import CandidateSidebar from '../Layout/CandidateSidebar';
 import Header from '../Layout/CandidateHeader';
 import { FaSpinner, FaUserGraduate, FaUserTie, FaBuilding, FaLevelUpAlt } from 'react-icons/fa';
@@ -9,19 +9,20 @@ import { BASE_URL } from "../../../ApiUrl";
 
 const MentorRequestForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [mentors, setMentors] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [mentorSpecializations, setMentorSpecializations] = useState([]);
   const [levels, setLevels] = useState([]);
   const [candidateData, setCandidateData] = useState(null);
+  const [selectedMentorDetails, setSelectedMentorDetails] = useState(null);
   const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
     mentor_status: 'requested',
     responded_at: '',
-    start_date: new Date().toISOString().split('T')[0],
-    end_date: '',
     status: 'active',
     current_progress: 0,
     completion_percentage: 0,
@@ -31,7 +32,7 @@ const MentorRequestForm = () => {
     target_level: ''
   });
 
-  // Get candidate data from localStorage
+  // Get candidate data from localStorage and pre-fill from navigation state
   useEffect(() => {
     const getCandidateData = () => {
       try {
@@ -41,11 +42,27 @@ const MentorRequestForm = () => {
           console.log('Candidate data from localStorage:', parsed);
           setCandidateData(parsed);
           
-          // Set candidate ID in form
+          // Get selected mentor from location state if available
+          const selectedMentor = location.state?.selectedMentor;
+          const candidateIdFromState = location.state?.candidateId;
+          
+          // Set form data with candidate ID and pre-selected values
           setFormData(prev => ({
             ...prev,
-            candidate: parsed.user_id || ''
+            candidate: candidateIdFromState || parsed.user_id || '',
+            mentor: selectedMentor?.id || '',
+            department: selectedMentor?.department || '',
+            target_level: selectedMentor?.target_level || '',
+            mentor_status: 'requested',
+            status: 'active'
           }));
+
+          console.log('Pre-filled form data:', {
+            candidate: candidateIdFromState || parsed.user_id,
+            mentor: selectedMentor?.id,
+            department: selectedMentor?.department,
+            target_level: selectedMentor?.target_level
+          });
         } else {
           console.error('No candidate data found in localStorage');
           Swal.fire({
@@ -64,7 +81,7 @@ const MentorRequestForm = () => {
     };
 
     getCandidateData();
-  }, [navigate]);
+  }, [location.state, navigate]);
 
   // Fetch mentors on component mount
   useEffect(() => {
@@ -72,6 +89,25 @@ const MentorRequestForm = () => {
     fetchDepartments();
     fetchLevels();
   }, []);
+
+  // Find selected mentor details when mentor ID changes
+  useEffect(() => {
+    if (formData.mentor && mentors.length > 0) {
+      const mentor = mentors.find(m => m.id === parseInt(formData.mentor));
+      setSelectedMentorDetails(mentor);
+      if (mentor && mentor.specializations) {
+        setMentorSpecializations(mentor.specializations);
+        
+        // Auto-select the first specialization if there's only one
+        if (mentor.specializations.length === 1) {
+          setFormData(prev => ({
+            ...prev,
+            department: mentor.specializations[0].toString()
+          }));
+        }
+      }
+    }
+  }, [formData.mentor, mentors]);
 
   const fetchMentors = async () => {
     try {
@@ -182,27 +218,11 @@ const MentorRequestForm = () => {
     }
 
     if (!formData.department) {
-      newErrors.department = "Please select a department";
+      newErrors.department = "Please select a department/specialization";
     }
 
     if (!formData.target_level) {
       newErrors.target_level = "Please select a target level";
-    }
-
-    if (!formData.start_date) {
-      newErrors.start_date = "Start date is required";
-    }
-
-    if (formData.end_date && new Date(formData.end_date) < new Date(formData.start_date)) {
-      newErrors.end_date = "End date cannot be before start date";
-    }
-
-    if (formData.current_progress < 0 || formData.current_progress > 100) {
-      newErrors.current_progress = "Progress must be between 0 and 100";
-    }
-
-    if (formData.completion_percentage < 0 || formData.completion_percentage > 100) {
-      newErrors.completion_percentage = "Completion percentage must be between 0 and 100";
     }
 
     const isValid = Object.keys(newErrors).length === 0;
@@ -228,32 +248,23 @@ const MentorRequestForm = () => {
 
     setSubmitting(true);
 
-    // Prepare payload
+    // Prepare payload according to requirements
     const payload = {
-      mentor_status: formData.mentor_status,
-      start_date: formData.start_date,
-      status: formData.status,
-      current_progress: parseInt(formData.current_progress) || 0,
-      completion_percentage: parseInt(formData.completion_percentage) || 0,
-      mentor: parseInt(formData.mentor),
-      candidate: parseInt(formData.candidate),
-      department: parseInt(formData.department),
-      target_level: parseInt(formData.target_level)
+      mentor_status: "requested", // Always "requested"
+      responded_at: new Date().toISOString(), // Current timestamp
+      status: "active", // Always "active"
+      current_progress: 0, // Initial progress is 0
+      completion_percentage: 0, // Initial completion is 0
+      mentor: parseInt(formData.mentor), // Existing mentor ID
+      candidate: parseInt(formData.candidate), // Logged-in candidate ID
+      department: parseInt(formData.department), // Selected department/specialization
+      target_level: parseInt(formData.target_level) // Selected target level
     };
-
-    // Add optional fields if they have values
-    if (formData.end_date) {
-      payload.end_date = formData.end_date;
-    }
-
-    if (formData.mentor_status === 'accepted' && formData.responded_at) {
-      payload.responded_at = formData.responded_at;
-    }
 
     console.log('📦 Submitting payload:', payload);
 
     try {
-      const response = await fetch(`${BASE_URL}/api/mentor/mentorship-requests/`, {
+      const response = await fetch(`${BASE_URL}/api/mentor/mentorship-assignments/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -305,36 +316,6 @@ const MentorRequestForm = () => {
     navigate('/candidate-mentorship');
   };
 
-  // Get mentor status label and description
-  const getMentorStatusDetails = (status) => {
-    switch(status) {
-      case 'requested':
-        return {
-          label: 'Requested',
-          description: 'Pending Mentor Response',
-          color: '#f59e0b'
-        };
-      case 'accepted':
-        return {
-          label: 'Accepted',
-          description: 'Mentorship Active',
-          color: '#10b981'
-        };
-      case 'rejected':
-        return {
-          label: 'Rejected',
-          description: 'Mentor Declined',
-          color: '#ef4444'
-        };
-      default:
-        return {
-          label: 'Requested',
-          description: 'Pending Mentor Response',
-          color: '#f59e0b'
-        };
-    }
-  };
-
   // Get level display
   const getLevelDisplay = (level) => {
     return `${level.name} (Level ${level.number})`;
@@ -343,6 +324,18 @@ const MentorRequestForm = () => {
   // Get mentor display
   const getMentorDisplay = (mentor) => {
     return `${mentor.full_name} ${mentor.current_company ? `- ${mentor.current_company}` : ''} (Level ${mentor.mentor_level})`;
+  };
+
+  // Get department name by ID
+  const getDepartmentName = (deptId) => {
+    const dept = departments.find(d => d.id === parseInt(deptId));
+    return dept ? `${dept.name} (${dept.code})` : `Department ${deptId}`;
+  };
+
+  // Get department option for dropdown
+  const getDepartmentOption = (deptId) => {
+    const dept = departments.find(d => d.id === parseInt(deptId));
+    return dept ? `${dept.name} (${dept.code})` : `Department ${deptId}`;
   };
 
   return (
@@ -358,7 +351,7 @@ const MentorRequestForm = () => {
             <div className="mrf-header">
               <div>
                 <h2>Request Mentorship</h2>
-                <p>Fill in the details to request a mentor</p>
+                <p>Confirm your mentorship request details</p>
               </div>
             </div>
 
@@ -380,48 +373,45 @@ const MentorRequestForm = () => {
             <div className="mrf-form-container">
               <form onSubmit={handleSubmit}>
                 <div className="row">
-                  {/* Mentor Status */}
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">
-                      <FaUserTie className="me-2" />
-                      Mentor Status *
-                    </label>
-                    <select
-                      className="form-select"
-                      name="mentor_status"
-                      value={formData.mentor_status}
-                      onChange={handleChange}
-                      disabled={submitting}
-                    >
-                      <option value="requested">Requested - Pending Mentor Response</option>
-                      <option value="accepted">Accepted - Mentorship Active</option>
-                      <option value="rejected">Rejected - Mentor Declined</option>
-                    </select>
-                    <small className="text-muted">
-                      {getMentorStatusDetails(formData.mentor_status).description}
-                    </small>
-                  </div>
+                  {/* Hidden fields */}
+                  <input type="hidden" name="mentor_status" value="requested" />
+                  <input type="hidden" name="status" value="active" />
+                  <input type="hidden" name="current_progress" value="0" />
+                  <input type="hidden" name="completion_percentage" value="0" />
+                  <input type="hidden" name="candidate" value={formData.candidate} />
 
-                  {/* Mentor Selection */}
+                  {/* Mentor Selection - Read Only */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label">
                       <FaUserGraduate className="me-2" />
-                      Select Mentor *
+                      Selected Mentor *
                     </label>
-                    <select
-                      className={`form-select ${errors.mentor ? 'is-invalid' : ''}`}
-                      name="mentor"
-                      value={formData.mentor}
-                      onChange={handleChange}
-                      disabled={submitting || loading || mentors.length === 0}
-                    >
-                      <option value="">-- Select Mentor --</option>
-                      {mentors.map((mentor) => (
-                        <option key={mentor.id} value={mentor.id}>
-                          {getMentorDisplay(mentor)}
-                        </option>
-                      ))}
-                    </select>
+                    {selectedMentorDetails ? (
+                      <div className="mrf-readonly-field">
+                        <div className="mrf-mentor-info">
+                          <span className="mrf-mentor-name">{selectedMentorDetails.full_name}</span>
+                          {selectedMentorDetails.current_company && (
+                            <span className="mrf-mentor-company"> @ {selectedMentorDetails.current_company}</span>
+                          )}
+                          <span className="mrf-mentor-level">Level {selectedMentorDetails.mentor_level}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <select
+                        className={`form-select ${errors.mentor ? 'is-invalid' : ''}`}
+                        name="mentor"
+                        value={formData.mentor}
+                        onChange={handleChange}
+                        disabled={submitting || loading || mentors.length === 0}
+                      >
+                        <option value="">-- Select Mentor --</option>
+                        {mentors.map((mentor) => (
+                          <option key={mentor.id} value={mentor.id}>
+                            {getMentorDisplay(mentor)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                     {errors.mentor && (
                       <div className="invalid-feedback">{errors.mentor}</div>
                     )}
@@ -430,28 +420,70 @@ const MentorRequestForm = () => {
                     )}
                   </div>
 
-                  {/* Department */}
+                  {/* Department/Specialization Selection */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label">
                       <FaBuilding className="me-2" />
-                      Department *
+                      Select Specialization/Department *
                     </label>
-                    <select
-                      className={`form-select ${errors.department ? 'is-invalid' : ''}`}
-                      name="department"
-                      value={formData.department}
-                      onChange={handleChange}
-                      disabled={submitting || departments.length === 0}
-                    >
-                      <option value="">-- Select Department --</option>
-                      {departments.map((dept) => (
-                        <option key={dept.id} value={dept.id}>
-                          {dept.name} ({dept.code})
-                        </option>
-                      ))}
-                    </select>
+                    {selectedMentorDetails && mentorSpecializations.length > 0 ? (
+                      mentorSpecializations.length === 1 ? (
+                        // Single specialization - show as read-only
+                        <div className="mrf-readonly-field">
+                          <div className="mrf-specialization-info">
+                            <span className="mrf-specialization-name">
+                              {getDepartmentName(mentorSpecializations[0])}
+                            </span>
+                            <span className="mrf-specialization-badge">Auto-selected</span>
+                          </div>
+                          <input 
+                            type="hidden" 
+                            name="department" 
+                            value={mentorSpecializations[0]} 
+                          />
+                        </div>
+                      ) : (
+                        // Multiple specializations - show dropdown
+                        <select
+                          className={`form-select ${errors.department ? 'is-invalid' : ''}`}
+                          name="department"
+                          value={formData.department}
+                          onChange={handleChange}
+                          disabled={submitting}
+                        >
+                          <option value="">-- Select Specialization --</option>
+                          {mentorSpecializations.map((deptId) => (
+                            <option key={deptId} value={deptId}>
+                              {getDepartmentOption(deptId)}
+                            </option>
+                          ))}
+                        </select>
+                      )
+                    ) : (
+                      <select
+                        className={`form-select ${errors.department ? 'is-invalid' : ''}`}
+                        name="department"
+                        value={formData.department}
+                        onChange={handleChange}
+                        disabled={submitting || departments.length === 0}
+                      >
+                        <option value="">-- Select Department --</option>
+                        {departments.map((dept) => (
+                          <option key={dept.id} value={dept.id}>
+                            {dept.name} ({dept.code})
+                          </option>
+                        ))}
+                      </select>
+                    )}
                     {errors.department && (
                       <div className="invalid-feedback">{errors.department}</div>
+                    )}
+                    {selectedMentorDetails && mentorSpecializations.length > 0 && (
+                      <small className="text-muted">
+                        {mentorSpecializations.length === 1 
+                          ? "This is the only specialization this mentor offers"
+                          : "Select the department/specialization you want mentorship in"}
+                      </small>
                     )}
                   </div>
 
@@ -479,115 +511,41 @@ const MentorRequestForm = () => {
                       <div className="invalid-feedback">{errors.target_level}</div>
                     )}
                   </div>
-
-                  {/* Start Date */}
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">Start Date *</label>
-                    <input
-                      type="date"
-                      className={`form-control ${errors.start_date ? 'is-invalid' : ''}`}
-                      name="start_date"
-                      value={formData.start_date}
-                      onChange={handleChange}
-                      disabled={submitting}
-                    />
-                    {errors.start_date && (
-                      <div className="invalid-feedback">{errors.start_date}</div>
-                    )}
-                  </div>
-
-                  {/* End Date */}
-                  <div className="col-md-6 mb-3">
-                    <label className="form-label">End Date (Optional)</label>
-                    <input
-                      type="date"
-                      className={`form-control ${errors.end_date ? 'is-invalid' : ''}`}
-                      name="end_date"
-                      value={formData.end_date}
-                      onChange={handleChange}
-                      min={formData.start_date}
-                      disabled={submitting}
-                    />
-                    {errors.end_date && (
-                      <div className="invalid-feedback">{errors.end_date}</div>
-                    )}
-                  </div>
-
-                  {/* Status */}
-                  <div className="col-md-4 mb-3">
-                    <label className="form-label">Mentorship Status</label>
-                    <select
-                      className="form-select"
-                      name="status"
-                      value={formData.status}
-                      onChange={handleChange}
-                      disabled={submitting}
-                    >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="completed">Completed</option>
-                      <option value="on_hold">On Hold</option>
-                    </select>
-                  </div>
-
-                  {/* Current Progress */}
-                  <div className="col-md-4 mb-3">
-                    <label className="form-label">Current Progress (0-100)</label>
-                    <input
-                      type="number"
-                      className={`form-control ${errors.current_progress ? 'is-invalid' : ''}`}
-                      name="current_progress"
-                      value={formData.current_progress}
-                      onChange={handleChange}
-                      min="0"
-                      max="100"
-                      step="1"
-                      placeholder="Enter progress value"
-                      disabled={submitting}
-                    />
-                    {errors.current_progress && (
-                      <div className="invalid-feedback">{errors.current_progress}</div>
-                    )}
-                  </div>
-
-                  {/* Completion Percentage */}
-                  <div className="col-md-4 mb-3">
-                    <label className="form-label">Completion Percentage</label>
-                    <input
-                      type="number"
-                      className={`form-control ${errors.completion_percentage ? 'is-invalid' : ''}`}
-                      name="completion_percentage"
-                      value={formData.completion_percentage}
-                      onChange={handleChange}
-                      min="0"
-                      max="100"
-                      step="1"
-                      placeholder="Enter completion percentage"
-                      disabled={submitting}
-                    />
-                    {errors.completion_percentage && (
-                      <div className="invalid-feedback">{errors.completion_percentage}</div>
-                    )}
-                  </div>
-
-                  {/* Responded At (Hidden by default, shown when status is accepted) */}
-                  {formData.mentor_status === 'accepted' && (
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Response Date & Time</label>
-                      <input
-                        type="datetime-local"
-                        className="form-control"
-                        name="responded_at"
-                        value={formData.responded_at}
-                        onChange={handleChange}
-                        disabled={submitting}
-                      />
-                    </div>
-                  )}
                 </div>
 
+                {/* Summary Card */}
+                {selectedMentorDetails && (
+                  <div className="mrf-summary-card mt-4">
+                    <h6>Mentorship Request Summary</h6>
+                    <div className="mrf-summary-grid">
+                      <div className="mrf-summary-item">
+                        <span className="mrf-summary-label">Mentor:</span>
+                        <span className="mrf-summary-value">{selectedMentorDetails.full_name}</span>
+                      </div>
+                      <div className="mrf-summary-item">
+                        <span className="mrf-summary-label">Specialization:</span>
+                        <span className="mrf-summary-value">
+                          {formData.department ? getDepartmentName(formData.department) : 'Not selected'}
+                        </span>
+                      </div>
+                      <div className="mrf-summary-item">
+                        <span className="mrf-summary-label">Target Level:</span>
+                        <span className="mrf-summary-value">
+                          {formData.target_level ? 
+                            levels.find(l => l.id === parseInt(formData.target_level))?.name || 'Selected' 
+                            : 'Not selected'}
+                        </span>
+                      </div>
+                      <div className="mrf-summary-item">
+                        <span className="mrf-summary-label">Status:</span>
+                        <span className="mrf-summary-value mrf-status-badge">Requested</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Form Actions */}
-                <div className="mrf-actions">
+                <div className="mrf-actions mt-4">
                   <button 
                     type="button" 
                     className="btn btn-outline-secondary me-2"
@@ -599,7 +557,7 @@ const MentorRequestForm = () => {
                   <button 
                     type="submit" 
                     className="btn mrf-primary-btn"
-                    disabled={submitting || loading}
+                    disabled={submitting || loading || !formData.mentor || !formData.department || !formData.target_level}
                   >
                     {submitting ? (
                       <>

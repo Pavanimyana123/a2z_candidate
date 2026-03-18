@@ -25,7 +25,10 @@ const CandidateMentorship = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [yourMentor, setYourMentor] = useState(null);
-  const [specializationsMap, setSpecializationsMap] = useState({});
+  const [departmentsMap, setDepartmentsMap] = useState({});
+  const [levelsMap, setLevelsMap] = useState({});
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedTargetLevel, setSelectedTargetLevel] = useState("");
   const navigate = useNavigate();
 
   // Get candidate user ID from localStorage
@@ -44,23 +47,43 @@ const CandidateMentorship = () => {
 
   const candidateId = getCandidateId();
 
-  // Fetch specializations mapping (if needed)
-  const fetchSpecializations = async () => {
+  // Fetch departments mapping
+  const fetchDepartments = async () => {
     try {
-      const response = await fetch(`${BASE_URL}/api/specializations/`);
+      const response = await fetch(`${BASE_URL}/api/admin/departments/`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const result = await response.json();
       if (result.status && result.data) {
-        const specMap = {};
-        result.data.forEach(spec => {
-          specMap[spec.id] = spec.name;
+        const deptMap = {};
+        result.data.forEach(dept => {
+          deptMap[dept.id] = dept.name;
         });
-        setSpecializationsMap(specMap);
+        setDepartmentsMap(deptMap);
       }
     } catch (err) {
-      console.error('Error fetching specializations:', err);
+      console.error('Error fetching departments:', err);
+    }
+  };
+
+  // Fetch levels mapping
+  const fetchLevels = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/admin/levels/`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      if (result.status && result.data) {
+        const levelMap = {};
+        result.data.forEach(level => {
+          levelMap[level.id] = level;
+        });
+        setLevelsMap(levelMap);
+      }
+    } catch (err) {
+      console.error('Error fetching levels:', err);
     }
   };
 
@@ -96,14 +119,41 @@ const CandidateMentorship = () => {
   };
 
   useEffect(() => {
-    fetchSpecializations();
+    fetchDepartments();
+    fetchLevels();
     fetchMentors();
   }, []);
 
-  // Get specialization names from IDs
-  const getSpecializations = (specializationIds) => {
-    if (!specializationIds || !Array.isArray(specializationIds)) return [];
-    return specializationIds.map(id => specializationsMap[id] || `Specialization ${id}`).filter(Boolean);
+  // Handle Connect button click
+  const handleConnect = (mentor) => {
+    // Get the first department from mentor's specializations or use selected department
+    const mentorDepartment = mentor.specializations && mentor.specializations.length > 0 
+      ? mentor.specializations[0] 
+      : selectedDepartment || "";
+    
+    // Get target level (use mentor's level or selected target level)
+    const targetLevel = mentor.mentor_level || selectedTargetLevel || "";
+
+    // Navigate to form with mentor data
+    navigate('/find-mentor', {
+      state: {
+        selectedMentor: {
+          id: mentor.id,
+          name: mentor.full_name,
+          department: mentorDepartment,
+          target_level: targetLevel,
+          status: 'active',
+          mentor_status: 'requested'
+        },
+        candidateId: candidateId
+      }
+    });
+  };
+
+  // Get department names from IDs
+  const getDepartments = (departmentIds) => {
+    if (!departmentIds || !Array.isArray(departmentIds)) return [];
+    return departmentIds.map(id => departmentsMap[id] || `Department ${id}`).filter(Boolean);
   };
 
   // Get level badge color
@@ -183,13 +233,13 @@ const CandidateMentorship = () => {
               <p className="cm-sub">Connect with experienced professionals</p>
             </div>
 
-              <button 
-                className="btn cm-primary-btn"
-                onClick={() => navigate('/find-mentor')}
-              >
-                <FaUsers className="me-2" />
-                Find a Mentor
-              </button>
+            <button 
+              className="btn cm-primary-btn"
+              onClick={() => navigate('/find-mentor')}
+            >
+              <FaUsers className="me-2" />
+              Find a Mentor
+            </button>
           </div>
 
           {/* Your Mentor Section */}
@@ -233,10 +283,10 @@ const CandidateMentorship = () => {
                       )}
                     </p>
 
-                    {/* Specializations */}
+                    {/* Departments/Specializations */}
                     <div className="cm-specializations">
-                      {getSpecializations(yourMentor.specializations).map((spec, idx) => (
-                        <span key={idx} className="cm-tag">{spec}</span>
+                      {getDepartments(yourMentor.specializations).map((dept, idx) => (
+                        <span key={idx} className="cm-tag">{dept}</span>
                       ))}
                     </div>
 
@@ -296,38 +346,6 @@ const CandidateMentorship = () => {
             </div>
           )}
 
-          {/* Milestones Section */}
-          <div className="cm-card mb-4">
-            <div className="d-flex justify-content-between">
-              <div>
-                <h5>Your Milestones</h5>
-                <p className="cm-muted">Track your mentorship journey</p>
-              </div>
-
-              <div className="text-end">
-                <h4>6/8</h4>
-                <span className="cm-muted small">completed</span>
-              </div>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="cm-progress">
-              <div className="cm-progress-fill" style={{ width: '75%' }} />
-            </div>
-
-            {/* Completed Items */}
-            <Milestone title="Complete Safety Induction" date="Completed 20 Jun 2023" />
-            <Milestone title="First Field Inspection" date="Completed 15 Jul 2023" />
-            <Milestone title="Manufacturing Rotation" date="Completed 15 Oct 2023" />
-            <Milestone title="Coating Rotation" date="Completed 16 Jan 2024" />
-            <Milestone title="First Certification (API 510)" date="Completed 01 Aug 2023" />
-            <Milestone title="Level 2 Promotion" date="Completed 17 Jan 2024" />
-
-            {/* Pending */}
-            <PendingMilestone index="7" title="Complete QA/QC Rotation" />
-            <PendingMilestone index="8" title="Second Certification" />
-          </div>
-
           {/* Available Mentors */}
           {mentors.length > 0 && (
             <div className="cm-card">
@@ -339,21 +357,23 @@ const CandidateMentorship = () => {
               <div className="row g-4 mt-2">
                 {mentors.map((mentor) => {
                   const mentorLevelBadge = getLevelBadge(mentor.mentor_level);
-                  const specializations = getSpecializations(mentor.specializations);
+                  const departments = getDepartments(mentor.specializations);
                   
                   return (
                     <MentorCard
                       key={mentor.id}
+                      mentor={mentor}
                       initials={mentor.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                       name={mentor.full_name}
                       role={mentorLevelBadge.text}
                       company={mentor.current_company}
-                      specializations={specializations.slice(0, 2)} // Show first 2 specializations
+                      departments={departments.slice(0, 2)}
                       level={`Level ${mentor.mentor_level}`}
                       experience={formatExperience(mentor.years_of_experience)}
                       mentees={`${mentor.current_trainees || 0} mentees`}
                       backgroundVerified={mentor.background_verified}
                       mentorshipCertified={mentor.mentorship_certified}
+                      onConnect={() => handleConnect(mentor)}
                     />
                   );
                 })}
@@ -368,41 +388,19 @@ const CandidateMentorship = () => {
 
 /* ================= SUB COMPONENTS ================= */
 
-const Milestone = ({ title, date }) => (
-  <div className="cm-milestone">
-    <div className="d-flex align-items-center gap-3">
-      <div className="cm-check">
-        <FaCheckCircle />
-      </div>
-
-      <div>
-        <strong>{title}</strong>
-        <p className="cm-muted small">{date}</p>
-      </div>
-    </div>
-
-    <span className="cm-approved">Approved</span>
-  </div>
-);
-
-const PendingMilestone = ({ index, title }) => (
-  <div className="cm-pending">
-    <div className="cm-number">{index}</div>
-    <strong>{title}</strong>
-  </div>
-);
-
 const MentorCard = ({ 
+  mentor,
   initials, 
   name, 
   role, 
   company,
-  specializations, 
+  departments, 
   level, 
   experience,
   mentees,
   backgroundVerified,
-  mentorshipCertified
+  mentorshipCertified,
+  onConnect
 }) => (
   <div className="col-lg-4 col-md-6">
     <div className="cm-mentor-card">
@@ -429,11 +427,11 @@ const MentorCard = ({
         </div>
       </div>
 
-      {/* Specializations */}
-      {specializations.length > 0 && (
+      {/* Departments */}
+      {departments.length > 0 && (
         <div className="mt-2">
-          {specializations.map((spec, idx) => (
-            <span key={idx} className="cm-tag-light me-1">{spec}</span>
+          {departments.map((dept, idx) => (
+            <span key={idx} className="cm-tag-light me-1">{dept}</span>
           ))}
         </div>
       )}
@@ -456,7 +454,10 @@ const MentorCard = ({
         </div>
       </div>
 
-      <button className="btn cm-connect-btn w-100 mt-3">
+      <button 
+        className="btn cm-connect-btn w-100 mt-3"
+        onClick={onConnect}
+      >
         Connect
       </button>
     </div>
