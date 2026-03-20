@@ -25,7 +25,11 @@ import {
   FaBuilding,
   FaLevelUpAlt,
   FaUserFriends,
-  FaBookOpen
+  FaBookOpen,
+  FaCheck,
+  FaTimes,
+  FaUserCheck,
+  FaUserTimes
 } from "react-icons/fa";
 import { BASE_URL } from "../../../ApiUrl";
 import "./MentorCandidateCompetency.css";
@@ -44,6 +48,21 @@ const MentorCandidateCompetency = () => {
   const [currentDepartmentData, setCurrentDepartmentData] = useState(null);
   const [error, setError] = useState(null);
   const [candidateInfo, setCandidateInfo] = useState(null);
+  const [mentorInfo, setMentorInfo] = useState(null);
+  
+  // Get current mentor from localStorage
+  useEffect(() => {
+    try {
+      const mentorUser = localStorage.getItem('mentor_user');
+      if (mentorUser) {
+        const parsed = JSON.parse(mentorUser);
+        console.log('Mentor user from localStorage:', parsed);
+        setMentorInfo(parsed);
+      }
+    } catch (error) {
+      console.error('Error parsing mentor_user from localStorage:', error);
+    }
+  }, []);
 
   // Get candidate details from location state
   useEffect(() => {
@@ -56,6 +75,20 @@ const MentorCandidateCompetency = () => {
       });
     }
   }, [location.state]);
+
+  // Handle approve/reject navigation
+ // Handle approve/reject navigation
+const handleApproveReject = (competencyId, action) => {
+  // Navigate to MentorCompetencyReview with competencyId and action
+  navigate(`/mentor-competency-review/${competencyId}`, {
+    state: {
+      action: action,
+      candidateInfo: candidateInfo,
+      from: '/mentor-candidate-competency',
+      competencyData: currentCompetency
+    }
+  });
+};
 
   // Fetch evidence for a specific competency
   const fetchEvidenceForCompetency = async (competencyId) => {
@@ -246,10 +279,15 @@ const MentorCandidateCompetency = () => {
       case 'approved':
         return <span className="mcp-evidence-verified-badge"><FaCheckCircle /> Verified</span>;
       case 'rejected':
-        return <span className="mcp-evidence-rejected-badge">Rejected</span>;
+        return <span className="mcp-evidence-rejected-badge"><FaTimes /> Rejected</span>;
       default:
-        return <span className="mcp-evidence-pending-badge">Pending</span>;
+        return <span className="mcp-evidence-pending-badge"><FaSpinner /> Pending</span>;
     }
+  };
+
+  // Check if evidence can be verified (pending status)
+  const canVerify = (status) => {
+    return status !== 'approved' && status !== 'verified' && status !== 'rejected';
   };
 
   // Get evidence type icon
@@ -354,7 +392,7 @@ const MentorCandidateCompetency = () => {
               )}
             </div>
 
-            {/* Page Header */}
+            {/* Page Header with Action Buttons */}
             <div className="mcp-page-header">
               <div>
                 <h3 className="mcp-page-title">Candidate Competency Details</h3>
@@ -362,6 +400,24 @@ const MentorCandidateCompetency = () => {
                   View candidate's current competency level and evidence
                 </p>
               </div>
+              
+              {/* Approve/Reject Buttons for Overall Competency */}
+              {/* {currentCompetency && currentCompetency.status !== 'approved' && currentCompetency.status !== 'rejected' && (
+                <div className="mcp-header-actions">
+                  <button
+                    className="mcp-header-btn mcp-header-approve"
+                    onClick={() => handleApproveReject(currentCompetency.id, 'approve')}
+                  >
+                    <FaUserCheck /> Approve Competency
+                  </button>
+                  <button
+                    className="mcp-header-btn mcp-header-reject"
+                    onClick={() => handleApproveReject(currentCompetency.id, 'reject')}
+                  >
+                    <FaUserTimes /> Reject Competency
+                  </button>
+                </div>
+              )} */}
             </div>
 
             {/* ================================================= */}
@@ -402,7 +458,7 @@ const MentorCandidateCompetency = () => {
                       <FaStar className="mcp-section-icon" /> Competency Scores
                     </h6>
                     <div className="mcp-score-grid">
-                      <div className="mcp-score-item">
+                      {/* <div className="mcp-score-item">
                         <div className="mcp-score-label">
                           <FaStar className="mcp-score-icon" />
                           <span>Overall Score</span>
@@ -410,7 +466,7 @@ const MentorCandidateCompetency = () => {
                         <div className="mcp-score-value">
                           {currentCompetency.overall_score?.toFixed(1) || 0}
                         </div>
-                      </div>
+                      </div> */}
                       
                       <div className="mcp-score-item">
                         <div className="mcp-score-label">
@@ -553,11 +609,36 @@ const MentorCandidateCompetency = () => {
                                 </span>
                               </div>
 
-                              {/* Review Comments (if any) */}
+                              {/* Review Comments (if any) - Only display existing comments */}
                               {item.review_comments && (
                                 <div className="mcp-evidence-review-comments">
                                   <strong>Review Comments:</strong>
                                   <p>{item.review_comments}</p>
+                                </div>
+                              )}
+
+                              {/* Action Buttons for Evidence - Only show for pending evidence */}
+                              {canVerify(item.verification_status) && currentCompetency.status !== 'approved' && currentCompetency.status !== 'rejected' && (
+                                <div className="mcp-evidence-actions">
+                                  <button
+                                    className="mcp-verify-btn mcp-approve-btn"
+                                    onClick={() => handleApproveReject(currentCompetency.id, 'approve')}
+                                  >
+                                    <FaCheck /> Approve
+                                  </button>
+                                  <button
+                                    className="mcp-verify-btn mcp-reject-btn"
+                                    onClick={() => handleApproveReject(currentCompetency.id, 'reject')}
+                                  >
+                                    <FaTimes /> Reject
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* Show message if evidence is already verified */}
+                              {!canVerify(item.verification_status) && (
+                                <div className="mcp-evidence-verified-message">
+                                  <FaCheckCircle /> This evidence has been {item.verification_status}
                                 </div>
                               )}
                             </div>

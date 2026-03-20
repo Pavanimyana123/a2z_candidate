@@ -28,6 +28,7 @@ import MentorLayout from "./components/Mentor/Layout/MentorLayout";
 import MentorDashboard from "./components/Mentor/MentorDashboard/MentorDashboard"
 import MentorCandidates from "./components/Mentor/MentorCandidates/MentorCandidates";
 import MentorCandidatesCompetency from "./components/Mentor/MentorCandidates/MentorCandidateCompetency"
+import MentorCompetencyReview from "./components/Mentor/MentorCandidates/MentorCompetencyReview";
 import MentorRequests from "./components/Mentor/MentorRequests/MentorRequests";
 import MentorLogBook from "./components/Mentor/MentorLogBook/MentorLogBook";
 import MentorEvidence from "./components/Mentor/MentorEvidence/MentorEvidence";
@@ -93,6 +94,7 @@ function App() {
               <Route path="/mentor-dashboard" element={<MentorDashboard />} />
               <Route path="/mentor-candidates" element={<MentorCandidates />} />
               <Route path="/mentor-candidate-competency" element={<MentorCandidatesCompetency />} />
+              <Route path="/mentor-competency-review/:competencyId" element={<MentorCompetencyReview />} />
                <Route path="/mentor-requests" element={<MentorRequests />} />
               <Route path="/mentor-logbook" element={<MentorLogBook />} />
               <Route path="/mentor-evidence" element={<MentorEvidence />} />
