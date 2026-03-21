@@ -111,6 +111,7 @@ function App() {
                <Route path="/candidate-competence" element={<CandidateCompetency />} />
                <Route path="/add-competence" element={<CompetenceForm />} />
                 <Route path="/add-evidence" element={<AddEvidence />} />
+                <Route path="/add-evidence/:id" element={<AddEvidence />} />
                <Route path="/candidate-rotation" element={<CandidateRotation />} />
                <Route path="/candidate-compliance" element={<CandidateCompliance />} />
                 <Route path="/candidate-certificate" element={<CandidateCertifications />} />

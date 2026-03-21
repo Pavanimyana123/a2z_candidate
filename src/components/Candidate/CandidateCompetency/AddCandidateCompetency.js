@@ -1,18 +1,27 @@
 // CompetenceForm.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Sidebar from '../Layout/CandidateSidebar';
 import Header from '../Layout/CandidateHeader';
 import "./AddCandidateCompetency.css";
 import Swal from 'sweetalert2';
 import { BASE_URL } from "../../../ApiUrl";
+import { FaSpinner } from 'react-icons/fa';
 
 const CompetenceForm = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  
+  const mode = queryParams.get('mode');
+  const competencyId = queryParams.get('competencyId');
+  const levelId = queryParams.get('levelId');
+  const departmentId = queryParams.get('departmentId');
+  
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [levels, setLevels] = useState([]);
-  const [fetchLoading, setFetchLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   // Get candidate user_id from localStorage
@@ -31,9 +40,9 @@ const CompetenceForm = () => {
 
   const [formData, setFormData] = useState({
     competency_name: '',
-    candidate: getCandidateId(), // Auto-filled from localStorage (hidden)
-    department: '',
-    level: ''
+    candidate: getCandidateId(),
+    department: departmentId ? parseInt(departmentId) : '',
+    level: levelId ? parseInt(levelId) : ''
   });
 
   // Fetch departments on component mount
@@ -42,9 +51,46 @@ const CompetenceForm = () => {
     fetchLevels();
   }, []);
 
+  // Fetch competency data if in edit mode
+  useEffect(() => {
+    if (mode === 'edit' && competencyId) {
+      fetchCompetencyData();
+    }
+  }, [mode, competencyId]);
+
+  const fetchCompetencyData = async () => {
+    setFetchLoading(true);
+    try {
+      const response = await fetch(`${BASE_URL}/api/candidate/competencies/${competencyId}/`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch competency data');
+      }
+      const result = await response.json();
+      
+      if (result.status && result.data) {
+        const data = result.data;
+        setFormData({
+          competency_name: data.competency_name,
+          candidate: data.candidate,
+          department: data.department,
+          level: data.level
+        });
+        console.log('✅ Competency data loaded for editing:', data);
+      }
+    } catch (error) {
+      console.error('Error fetching competency data:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to load competency data for editing.',
+      });
+    } finally {
+      setFetchLoading(false);
+    }
+  };
+
   const fetchDepartments = async () => {
     try {
-      setFetchLoading(true);
       const response = await fetch(`${BASE_URL}/api/admin/departments/`);
       
       if (!response.ok) {
@@ -68,8 +114,6 @@ const CompetenceForm = () => {
         timer: 3000,
         showConfirmButton: true
       });
-    } finally {
-      setFetchLoading(false);
     }
   };
 
@@ -89,14 +133,16 @@ const CompetenceForm = () => {
         setLevels(activeLevels);
         console.log('✅ Levels fetched successfully:', activeLevels);
         
-        // Find and set default level (level with number 0 - Trainee)
-        const defaultLevel = activeLevels.find(level => level.number === 0);
-        if (defaultLevel) {
-          setFormData(prev => ({
-            ...prev,
-            level: defaultLevel.id // Store the ID, not the display text
-          }));
-          console.log('✅ Default level set:', defaultLevel.name, 'with ID:', defaultLevel.id);
+        // Find and set default level only if not in edit mode and no level pre-selected
+        if (mode !== 'edit' && !formData.level) {
+          const defaultLevel = activeLevels.find(level => level.number === 0);
+          if (defaultLevel) {
+            setFormData(prev => ({
+              ...prev,
+              level: defaultLevel.id
+            }));
+            console.log('✅ Default level set:', defaultLevel.name, 'with ID:', defaultLevel.id);
+          }
         }
       } else {
         throw new Error(result.message || 'Failed to fetch levels');
@@ -116,11 +162,8 @@ const CompetenceForm = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     
-    // For department and level, we want to store the ID as integer
-    // The value from select is already the ID (since we set value={dept.id})
     let processedValue = value;
     
-    // If it's department or level, convert to integer
     if (name === 'department' || name === 'level') {
       processedValue = value ? parseInt(value) : '';
     }
@@ -134,26 +177,21 @@ const CompetenceForm = () => {
 
     // Update competency_name when department or level changes
     if (name === 'department' || name === 'level') {
-      // Get the current values (using the updated value for the changed field)
       const currentDeptId = name === 'department' ? processedValue : formData.department;
       const currentLevelId = name === 'level' ? processedValue : formData.level;
       
       updateCompetencyName(currentDeptId, currentLevelId);
     }
     
-    // Clear error for this field
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
   const updateCompetencyName = (deptId, levelId) => {
-    // Only proceed if both IDs are valid numbers
     if (!deptId || !levelId) return;
     
-    // Find department by id
     const selectedDept = departments.find(d => d.id === deptId);
-    // Find level by id
     const selectedLevel = levels.find(l => l.id === levelId);
     
     if (selectedDept && selectedLevel) {
@@ -174,22 +212,18 @@ const CompetenceForm = () => {
 
     if (!formData.competency_name?.trim()) {
       newErrors.competency_name = "Competency name is required";
-      console.log('Validation failed: Competency name is empty');
     }
 
     if (!formData.candidate) {
       newErrors.candidate = "Candidate ID is required";
-      console.log('Validation failed: Candidate ID is empty');
     }
 
     if (!formData.department) {
       newErrors.department = "Department is required";
-      console.log('Validation failed: Department is empty');
     }
 
     if (!formData.level) {
       newErrors.level = "Level is required";
-      console.log('Validation failed: Level is empty');
     }
 
     const isValid = Object.keys(newErrors).length === 0;
@@ -205,10 +239,9 @@ const CompetenceForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log('='.repeat(50));
-    console.log('COMPETENCE FORM SUBMISSION STARTED');
+    console.log(`COMPETENCE FORM ${mode === 'edit' ? 'UPDATE' : 'CREATION'} STARTED`);
     console.log('='.repeat(50));
     
-    console.log('Validating form...');
     if (!validateForm()) {
       console.log('❌ Form validation failed. Submission aborted.');
       
@@ -225,25 +258,28 @@ const CompetenceForm = () => {
     console.log('✅ Form validation passed. Preparing payload...');
     setLoading(true);
 
-    // Prepare payload with proper integer IDs
     const payload = {
       competency_name: formData.competency_name,
-      candidate: parseInt(formData.candidate), // Ensure integer
-      department: parseInt(formData.department), // Ensure integer
-      level: parseInt(formData.level) // Ensure integer
+      candidate: parseInt(formData.candidate),
+      department: parseInt(formData.department),
+      level: parseInt(formData.level)
     };
 
     console.log('📦 Payload prepared for submission:');
     console.log(JSON.stringify(payload, null, 2));
     
-    const url = `${BASE_URL}/api/candidate/competencies/`;
+    const url = mode === 'edit' 
+      ? `${BASE_URL}/api/candidate/competencies/${competencyId}/`
+      : `${BASE_URL}/api/candidate/competencies/`;
+    
+    const method = mode === 'edit' ? 'PUT' : 'POST';
     
     console.log(`📍 API Endpoint: ${url}`);
-    console.log(`📤 Sending POST request...`);
+    console.log(`📤 Sending ${method} request...`);
 
     try {
       const response = await fetch(url, {
-        method: 'POST',
+        method: method,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -257,7 +293,6 @@ const CompetenceForm = () => {
       if (!response.ok) {
         console.error('❌ Server returned error:', responseData);
         
-        // Handle field-specific validation errors from server
         if (responseData && responseData.errors) {
           const serverErrors = {};
           Object.keys(responseData.errors).forEach(key => {
@@ -269,33 +304,30 @@ const CompetenceForm = () => {
           throw new Error('Please check the form for errors');
         }
         
-        throw new Error(responseData?.message || 'Failed to create competence');
+        throw new Error(responseData?.message || `Failed to ${mode === 'edit' ? 'update' : 'create'} competence`);
       }
 
-      console.log('✅ Competence created successfully!');
+      console.log(`✅ Competence ${mode === 'edit' ? 'updated' : 'created'} successfully!`);
       console.log('📋 Server response:', responseData);
       
-      // Show success message
       await Swal.fire({
         icon: 'success',
-        title: 'Created!',
-        text: 'Competence has been created successfully.',
+        title: mode === 'edit' ? 'Updated!' : 'Created!',
+        text: mode === 'edit' ? 'Competence has been updated successfully.' : 'Competence has been created successfully.',
         timer: 2000,
         showConfirmButton: false
       });
       
       console.log('🔄 Navigating back...');
-      navigate(-1); // Go back to previous page
+      navigate('/candidate-competence');
     } catch (err) {
-      console.error('❌ Error creating competence:');
-      console.error('Error name:', err.name);
+      console.error(`❌ Error ${mode === 'edit' ? 'updating' : 'creating'} competence:`);
       console.error('Error message:', err.message);
-      console.error('Full error object:', err);
       
       Swal.fire({
         icon: 'error',
-        title: 'Creation Failed',
-        text: err.message || 'Failed to create competence. Please try again.',
+        title: mode === 'edit' ? 'Update Failed' : 'Creation Failed',
+        text: err.message || `Failed to ${mode === 'edit' ? 'update' : 'create'} competence. Please try again.`,
         timer: 3000,
         showConfirmButton: true
       });
@@ -308,27 +340,23 @@ const CompetenceForm = () => {
 
   const handleCancel = () => {
     console.log('Cancel button clicked - navigating back');
-    navigate(-1);
+    navigate('/candidate-competence');
   };
 
-  // Get department display name with code
   const getDepartmentDisplay = (dept) => {
     return `${dept.name} (${dept.code})`;
   };
 
-  // Get level display name with number
   const getLevelDisplay = (level) => {
     return `${level.name} (Level ${level.number})`;
   };
 
-  // Helper to get current department name for display
   const getCurrentDepartmentName = () => {
     if (!formData.department) return '';
     const dept = departments.find(d => d.id === formData.department);
     return dept ? getDepartmentDisplay(dept) : '';
   };
 
-  // Helper to get current level name for display
   const getCurrentLevelName = () => {
     if (!formData.level) return '';
     const level = levels.find(l => l.id === formData.level);
@@ -343,10 +371,8 @@ const CompetenceForm = () => {
           <Header />
           <div className="ta-content-area">
             <div className="competence-loading-container">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-              <p className="competence-loading-text">Loading departments...</p>
+              <FaSpinner className="competence-spinner-large" />
+              <p>Loading competency data...</p>
             </div>
           </div>
         </div>
@@ -366,8 +392,12 @@ const CompetenceForm = () => {
             {/* Header */}
             <div className="competence-form-header">
               <div>
-                <h2 className="competence-form-title">Add New Competence</h2>
-                <p className="competence-form-subtitle">Fill in the competence details below</p>
+                <h2 className="competence-form-title">
+                  {mode === 'edit' ? 'Edit Competence' : 'Add New Competence'}
+                </h2>
+                <p className="competence-form-subtitle">
+                  {mode === 'edit' ? 'Update the competence details below' : 'Fill in the competence details below'}
+                </p>
               </div>
               <button 
                 className="competence-cancel-btn"
@@ -381,14 +411,14 @@ const CompetenceForm = () => {
             {/* Form */}
             <div className="competence-form-container">
               <form onSubmit={handleSubmit} className="competence-form">
-                {/* Hidden Candidate ID field - sent in payload but not shown */}
+                {/* Hidden Candidate ID field */}
                 <input
                   type="hidden"
                   name="candidate"
                   value={formData.candidate}
                 />
 
-                {/* First Row - Competency Name (Full Width) */}
+                {/* Competency Name Field - Full Width */}
                 <div className="competence-form-row">
                   <div className="competence-form-group competence-full-width">
                     <label className="competence-form-label">
@@ -412,9 +442,8 @@ const CompetenceForm = () => {
                   </div>
                 </div>
 
-                {/* Second Row - Department and Level (Two Columns) */}
+                {/* Department and Level Fields - Two Columns */}
                 <div className="competence-form-row">
-                  {/* Department Dropdown - Fixed: using id */}
                   <div className="competence-form-group competence-half-width">
                     <label className="competence-form-label">
                       Department <span className="competence-required-star">*</span>
@@ -424,6 +453,7 @@ const CompetenceForm = () => {
                       name="department"
                       value={formData.department || ''}
                       onChange={handleChange}
+                      disabled={loading}
                     >
                       <option value="">Select Department</option>
                       {departments.map((dept) => (
@@ -445,7 +475,6 @@ const CompetenceForm = () => {
                     )}
                   </div>
 
-                  {/* Level Dropdown - Fixed: using id */}
                   <div className="competence-form-group competence-half-width">
                     <label className="competence-form-label">
                       Level <span className="competence-required-star">*</span>
@@ -455,6 +484,7 @@ const CompetenceForm = () => {
                       name="level"
                       value={formData.level || ''}
                       onChange={handleChange}
+                      disabled={loading}
                     >
                       <option value="">Select Level</option>
                       {levels.map((level) => (
@@ -497,10 +527,10 @@ const CompetenceForm = () => {
                   >
                     {loading ? (
                       <>
-                        <span className="competence-spinner" aria-hidden="true"></span>
-                        Creating...
+                        <FaSpinner className="competence-spinner" />
+                        {mode === 'edit' ? 'Updating...' : 'Creating...'}
                       </>
-                    ) : 'Add Competence'}
+                    ) : mode === 'edit' ? 'Update Competence' : 'Add Competence'}
                   </button>
                 </div>
               </form>

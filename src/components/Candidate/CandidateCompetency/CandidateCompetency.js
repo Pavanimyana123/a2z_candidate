@@ -26,9 +26,12 @@ import {
   FaFile,
   FaDownload,
   FaExternalLinkAlt,
-  FaEye
+  FaEye,
+  FaEdit,
+  FaTrash
 } from "react-icons/fa";
 import { BASE_URL } from "../../../ApiUrl";
+import Swal from "sweetalert2";
 import "./CandidateCompetency.css";
 
 const CandidateCompetencyProgression = () => {
@@ -37,7 +40,7 @@ const CandidateCompetencyProgression = () => {
   const [competencies, setCompetencies] = useState([]);
   const [levels, setLevels] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [evidenceMap, setEvidenceMap] = useState({}); // Map competencyId -> evidence array
+  const [evidenceMap, setEvidenceMap] = useState({});
   const [loadingEvidence, setLoadingEvidence] = useState({});
   const [currentCompetency, setCurrentCompetency] = useState(null);
   const [currentLevelData, setCurrentLevelData] = useState(null);
@@ -87,18 +90,96 @@ const CandidateCompetencyProgression = () => {
     }
   };
 
+  // Fetch all competencies
+  const fetchAllCompetencies = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/candidate/competencies/`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      
+      if (result.status && result.data) {
+        setCompetencies(result.data);
+        
+        // Fetch evidence for all competencies
+        for (const comp of result.data) {
+          await fetchEvidenceForCompetency(comp.id);
+        }
+        
+        // Find current competency
+        const userCompetency = result.data.find(
+          comp => comp.candidate === parseInt(candidateId) || comp.candidate === candidateId
+        );
+        
+        if (userCompetency) {
+          setCurrentCompetency(userCompetency);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching competencies:', err);
+      throw err;
+    }
+  };
+
+  // Handle edit competency
+  const handleEditCompetency = (competencyData) => {
+    // Navigate to add-competence page with edit mode and competency ID
+    navigate(`/add-competence?mode=edit&competencyId=${competencyData.id}&levelId=${competencyData.level}&departmentId=${competencyData.department}`);
+  };
+
+  // Handle delete competency
+  const handleDeleteCompetency = async (competencyData) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: `Delete competency "${competencyData.competency_name}"? This will also delete all associated evidence. This action cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const response = await fetch(`${BASE_URL}/api/candidate/competencies/${competencyData.id}/`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (response.ok) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Deleted!',
+            text: 'Competency has been deleted successfully.',
+            timer: 2000,
+            showConfirmButton: false
+          });
+          
+          // Refresh all data
+          await fetchAllCompetencies();
+        } else {
+          throw new Error('Failed to delete competency');
+        }
+      } catch (error) {
+        console.error('Error deleting competency:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: 'Failed to delete competency. Please try again.',
+        });
+      }
+    }
+  };
+
   // Fetch competencies, levels, and departments on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
-        // Fetch competencies
-        const competenciesResponse = await fetch(`${BASE_URL}/api/candidate/competencies/`);
-        if (!competenciesResponse.ok) {
-          throw new Error(`HTTP error! status: ${competenciesResponse.status}`);
-        }
-        const competenciesResult = await competenciesResponse.json();
         
         // Fetch levels
         const levelsResponse = await fetch(`${BASE_URL}/api/admin/levels/`);
@@ -114,26 +195,6 @@ const CandidateCompetencyProgression = () => {
         }
         const departmentsResult = await departmentsResponse.json();
 
-        if (competenciesResult.status && competenciesResult.data) {
-          setCompetencies(competenciesResult.data);
-          
-          // Find competency for current candidate
-          const userCompetency = competenciesResult.data.find(
-            comp => comp.candidate === parseInt(candidateId) || comp.candidate === candidateId
-          );
-          
-          if (userCompetency) {
-            setCurrentCompetency(userCompetency);
-            // Fetch evidence for current competency
-            await fetchEvidenceForCompetency(userCompetency.id);
-          }
-
-          // Fetch evidence for all competencies
-          for (const comp of competenciesResult.data) {
-            await fetchEvidenceForCompetency(comp.id);
-          }
-        }
-
         if (levelsResult.status && levelsResult.data) {
           setLevels(levelsResult.data);
         }
@@ -141,6 +202,9 @@ const CandidateCompetencyProgression = () => {
         if (departmentsResult.status && departmentsResult.data) {
           setDepartments(departmentsResult.data);
         }
+
+        // Fetch competencies
+        await fetchAllCompetencies();
 
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -158,7 +222,6 @@ const CandidateCompetencyProgression = () => {
   // Update current level data when competency or levels change
   useEffect(() => {
     if (currentCompetency && levels.length > 0) {
-      // Find level by ID
       const levelInfo = levels.find(level => level.id === currentCompetency.level);
       if (levelInfo) {
         setCurrentLevelData(levelInfo);
@@ -191,7 +254,6 @@ const CandidateCompetencyProgression = () => {
   const handleAddEvidence = (levelNum, competencyData) => {
     const levelInfo = getLevelDisplay(levelNum);
     
-    // competencyData contains the full competency object with id at root level
     const compId = competencyData?.id || '';
     
     console.log('Navigating to add-evidence with:', {
@@ -202,6 +264,61 @@ const CandidateCompetencyProgression = () => {
     
     // Navigate to AddEvidence page with query parameters
     navigate(`/add-evidence?level=${levelNum}&competencyId=${compId}&levelName=${encodeURIComponent(levelInfo.display)}`);
+  };
+
+  // Handle edit evidence
+  const handleEditEvidence = (evidence, levelNum, competencyData) => {
+    const levelInfo = getLevelDisplay(levelNum);
+    
+    // Navigate to AddEvidence page with edit mode and evidence ID
+    navigate(`/add-evidence?mode=edit&evidenceId=${evidence.id}&level=${levelNum}&competencyId=${competencyData.id}&levelName=${encodeURIComponent(levelInfo.display)}`);
+  };
+
+  // Handle delete evidence
+  const handleDeleteEvidence = async (evidence, competencyId) => {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: `Delete "${evidence.title}"? This action cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const response = await fetch(`${BASE_URL}/api/candidate/competency-evidence/${evidence.id}/`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (response.ok) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Deleted!',
+            text: 'Evidence has been deleted successfully.',
+            timer: 2000,
+            showConfirmButton: false
+          });
+          
+          // Refresh evidence for this competency
+          await fetchEvidenceForCompetency(competencyId);
+        } else {
+          throw new Error('Failed to delete evidence');
+        }
+      } catch (error) {
+        console.error('Error deleting evidence:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: 'Failed to delete evidence. Please try again.',
+        });
+      }
+    }
   };
 
   // Get competency data for a specific level
@@ -502,80 +619,36 @@ const CandidateCompetencyProgression = () => {
                       <div className="cp-journey-details">
                         <div className="cp-details-header">
                           <h5>Competency Details - {levelInfo.name}</h5>
-                          <span className={`cp-status-badge ${competencyData.status || 'draft'}`}>
-                            {competencyData.status || 'Draft'}
-                          </span>
+                          <div className="cp-details-actions">
+                            <button 
+                              className="cp-edit-competency-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditCompetency(competencyData);
+                              }}
+                              title="Edit Competency"
+                            >
+                              <FaEdit /> Edit
+                            </button>
+                            <button 
+                              className="cp-delete-competency-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteCompetency(competencyData);
+                              }}
+                              title="Delete Competency"
+                            >
+                              <FaTrash /> Delete
+                            </button>
+                            <span className={`cp-status-badge ${competencyData.status || 'draft'}`}>
+                              {competencyData.status || 'Draft'}
+                            </span>
+                          </div>
                         </div>
                         
                         <div className="cp-journey-details-content">
-                          {/* Competency Scores Section */}
-                          <div className="cp-scores-section">
-                            <h6 className="cp-section-subtitle">
-                              <FaStar className="cp-section-icon" /> Competency Scores
-                            </h6>
-                            <div className="cp-score-grid">
-                              <div className="cp-score-item">
-                                <div className="cp-score-label">
-                                  <FaStar className="cp-score-icon" />
-                                  <span>Overall Score</span>
-                                </div>
-                                <div className="cp-score-value">
-                                  {competencyData.overall_score?.toFixed(1) || 0}
-                                </div>
-                              </div>
-                              
-                              <div className="cp-score-item">
-                                <div className="cp-score-label">
-                                  <FaChartBar className="cp-score-icon" />
-                                  <span>Technical Knowledge</span>
-                                </div>
-                                <div className="cp-score-value">
-                                  {competencyData.technical_knowledge || 0}
-                                </div>
-                              </div>
-                              
-                              <div className="cp-score-item">
-                                <div className="cp-score-label">
-                                  <FaChartBar className="cp-score-icon" />
-                                  <span>Field Execution</span>
-                                </div>
-                                <div className="cp-score-value">
-                                  {competencyData.field_execution || 0}
-                                </div>
-                              </div>
-                              
-                              <div className="cp-score-item">
-                                <div className="cp-score-label">
-                                  <FaChartBar className="cp-score-icon" />
-                                  <span>Documentation Quality</span>
-                                </div>
-                                <div className="cp-score-value">
-                                  {competencyData.documentation_quality || 0}
-                                </div>
-                              </div>
-                              
-                              <div className="cp-score-item">
-                                <div className="cp-score-label">
-                                  <FaChartBar className="cp-score-icon" />
-                                  <span>Ethics & Independence</span>
-                                </div>
-                                <div className="cp-score-value">
-                                  {competencyData.ethics_independence || 0}
-                                </div>
-                              </div>
-                              
-                              <div className="cp-score-item">
-                                <div className="cp-score-label">
-                                  <FaChartBar className="cp-score-icon" />
-                                  <span>Communication</span>
-                                </div>
-                                <div className="cp-score-value">
-                                  {competencyData.communication || 0}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
+                          {/* Competency Scores Section - Removed as requested */}
+                          
                           {/* Evidence Section */}
                           <div className="cp-evidence-section">
                             <div className="cp-evidence-header">
@@ -612,6 +685,28 @@ const CandidateCompetencyProgression = () => {
                                         <div className="cp-evidence-item-title">
                                           <h6>{item.title}</h6>
                                           <span className="cp-evidence-type">{item.evidence_type}</span>
+                                        </div>
+                                        <div className="cp-evidence-actions">
+                                          <button 
+                                            className="cp-edit-evidence-btn"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleEditEvidence(item, levelNum, competencyData);
+                                            }}
+                                            title="Edit Evidence"
+                                          >
+                                            <FaEdit />
+                                          </button>
+                                          <button 
+                                            className="cp-delete-evidence-btn"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDeleteEvidence(item, competencyData.id);
+                                            }}
+                                            title="Delete Evidence"
+                                          >
+                                            <FaTrash />
+                                          </button>
                                         </div>
                                         <div className="cp-evidence-verification">
                                           {getVerificationBadge(item.verification_status)}

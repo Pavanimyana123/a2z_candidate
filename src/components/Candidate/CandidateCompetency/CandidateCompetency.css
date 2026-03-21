@@ -1506,3 +1506,547 @@
     gap: 4px;
   }
 }
+
+
+/* Evidence Action Buttons */
+.cp-evidence-actions {
+  display: flex;
+  gap: 8px;
+  margin-right: 12px;
+}
+
+.cp-evidence-edit-btn,
+.cp-evidence-delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cp-evidence-edit-btn {
+  color: #3498db;
+}
+
+.cp-evidence-edit-btn:hover {
+  background-color: rgba(52, 152, 219, 0.1);
+  transform: scale(1.05);
+}
+
+.cp-evidence-delete-btn {
+  color: #e74c3c;
+}
+
+.cp-evidence-delete-btn:hover {
+  background-color: rgba(231, 76, 60, 0.1);
+  transform: scale(1.05);
+}
+
+.cp-evidence-item-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.cp-evidence-item-title {
+  flex: 1;
+}
+
+.cp-evidence-item-title h6 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.cp-evidence-type {
+  font-size: 12px;
+  color: #7f8c8d;
+  text-transform: capitalize;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .cp-evidence-item-header {
+    flex-direction: column;
+  }
+  
+  .cp-evidence-actions {
+    order: 2;
+    margin-top: 8px;
+  }
+  
+  .cp-evidence-verification {
+    order: 1;
+  }
+}
+
+
+.cp-evidence-actions {
+  display: flex;
+  gap: 8px;
+  margin-right: 12px;
+}
+
+.cp-evidence-edit-btn,
+.cp-evidence-delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cp-evidence-edit-btn {
+  color: #3498db;
+}
+
+.cp-evidence-edit-btn:hover {
+  background-color: rgba(52, 152, 219, 0.1);
+  transform: scale(1.05);
+}
+
+.cp-evidence-delete-btn {
+  color: #e74c3c;
+}
+
+.cp-evidence-delete-btn:hover {
+  background-color: rgba(231, 76, 60, 0.1);
+  transform: scale(1.05);
+}
+
+.cp-evidence-item-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.cp-evidence-item-title {
+  flex: 1;
+}
+
+.cp-evidence-item-title h6 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.cp-evidence-type {
+  font-size: 12px;
+  color: #7f8c8d;
+  text-transform: capitalize;
+}
+
+@media (max-width: 768px) {
+  .cp-evidence-item-header {
+    flex-direction: column;
+  }
+  
+  .cp-evidence-actions {
+    order: 2;
+    margin-top: 8px;
+  }
+  
+  .cp-evidence-verification {
+    order: 1;
+  }
+}
+
+
+/* Evidence Item Actions */
+.cp-evidence-item-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cp-evidence-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.cp-edit-evidence-btn,
+.cp-delete-evidence-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  color: #6c757d;
+}
+
+.cp-edit-evidence-btn:hover {
+  color: #007bff;
+  background: rgba(0, 123, 255, 0.1);
+}
+
+.cp-delete-evidence-btn:hover {
+  color: #dc3545;
+  background: rgba(220, 53, 69, 0.1);
+}
+
+/* Modal Styles */
+.cp-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.cp-modal-content {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.cp-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.cp-modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.cp-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.cp-modal-close:hover {
+  background: #f8f9fa;
+  color: #000;
+}
+
+.cp-modal-body {
+  padding: 20px;
+}
+
+.cp-modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #dee2e6;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Existing Documents */
+.aev-existing-documents {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.aev-existing-documents ul {
+  margin: 8px 0 0 20px;
+  padding: 0;
+}
+
+.aev-existing-documents li {
+  margin: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aev-existing-documents svg {
+  color: #6c757d;
+}
+
+
+/* Evidence Action Buttons */
+.cp-evidence-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  align-items: center;
+}
+
+.cp-edit-evidence-btn,
+.cp-delete-evidence-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cp-edit-evidence-btn {
+  color: #3498db;
+}
+
+.cp-edit-evidence-btn:hover {
+  background-color: rgba(52, 152, 219, 0.1);
+  transform: scale(1.05);
+}
+
+.cp-delete-evidence-btn {
+  color: #e74c3c;
+}
+
+.cp-delete-evidence-btn:hover {
+  background-color: rgba(231, 76, 60, 0.1);
+  transform: scale(1.05);
+}
+
+.cp-evidence-item-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .cp-evidence-item-header {
+    flex-direction: column;
+  }
+  
+  .cp-evidence-actions {
+    order: 2;
+    margin-top: 8px;
+    margin-left: 0;
+  }
+  
+  .cp-evidence-verification {
+    order: 1;
+  }
+}
+
+
+/* Competency Action Buttons in Details Header */
+.cp-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f1f5f9;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cp-details-header h5 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.cp-details-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cp-edit-competency-btn,
+.cp-delete-competency-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+}
+
+.cp-edit-competency-btn {
+  color: #3b82f6;
+  background: #eff6ff;
+}
+
+.cp-edit-competency-btn:hover {
+  background: #dbeafe;
+  transform: translateY(-1px);
+}
+
+.cp-delete-competency-btn {
+  color: #ef4444;
+  background: #fee2e2;
+}
+
+.cp-delete-competency-btn:hover {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .cp-details-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .cp-details-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .cp-edit-competency-btn,
+  .cp-delete-competency-btn {
+    padding: 6px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cp-edit-competency-btn,
+  .cp-delete-competency-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+
+/* Competency Action Buttons */
+.cp-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f1f5f9;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cp-details-header h5 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.cp-details-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cp-edit-competency-btn,
+.cp-delete-competency-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+}
+
+.cp-edit-competency-btn {
+  color: #3498db;
+  background: #eef2ff;
+}
+
+.cp-edit-competency-btn:hover {
+  background: #dbeafe;
+  transform: translateY(-1px);
+}
+
+.cp-delete-competency-btn {
+  color: #e74c3c;
+  background: #fee2e2;
+}
+
+.cp-delete-competency-btn:hover {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
+/* Competence Form Loading Spinner */
+.competence-spinner-large {
+  font-size: 48px;
+  color: #667eea;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+.competence-spinner {
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+.competence-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .cp-details-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .cp-details-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .cp-edit-competency-btn,
+  .cp-delete-competency-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+}
