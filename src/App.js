@@ -110,6 +110,7 @@ function App() {
               <Route path="/candidate-professionality" element={<CandidateProfessionalIdentity />} />
               <Route path="/candidate-digital" element={<CandidateDigitalLogbook />} />
               <Route path="/candidate/logbook/add" element={<AddLogbookEntry />} />
+              <Route path="/candidate/logbook/edit/:id" element={<AddLogbookEntry />} />
                <Route path="/candidate-competence" element={<CandidateCompetency />} />
                <Route path="/add-competence" element={<CompetenceForm />} />
                 <Route path="/add-evidence" element={<AddEvidence />} />

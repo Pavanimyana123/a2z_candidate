@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import CandidateSidebar from '../Layout/CandidateSidebar';
 import Header from '../Layout/CandidateHeader';
 import "./AddCandidateLogEntry.css";
@@ -9,7 +9,11 @@ import { FaArrowLeft, FaCloudUploadAlt, FaTrash, FaFile, FaSpinner } from 'react
 
 const AddLogbookEntry = () => {
   const navigate = useNavigate();
+  const { id } = useParams(); // Get ID from URL for edit mode
+  const isEditMode = !!id;
+  
   const [loading, setLoading] = useState(false);
+  const [fetchingData, setFetchingData] = useState(false);
   const [error, setError] = useState('');
   const [errors, setErrors] = useState({});
   const [competencies, setCompetencies] = useState([]);
@@ -87,6 +91,99 @@ const AddLogbookEntry = () => {
     }
   }, []);
 
+  // Fetch entry data if in edit mode
+  useEffect(() => {
+    if (isEditMode && id) {
+      fetchLogbookEntry();
+    }
+  }, [isEditMode, id]);
+
+  const fetchLogbookEntry = async () => {
+    try {
+      setFetchingData(true);
+      const response = await fetch(`${BASE_URL}/api/candidate/digital-logbook/${id}/`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        credentials: "include"
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+
+      if (result.status && result.data) {
+        const entryData = result.data;
+        
+        // Prepare form data with existing values
+        setFormData({
+          title: entryData.title || '',
+          description: entryData.description || '',
+          work_description: entryData.work_description || '',
+          work_location: entryData.work_location || '',
+          ship_name: entryData.ship_name || '',
+          ship_type: entryData.ship_type || '',
+          ship_type_other: entryData.ship_type_other || '',
+          work_type: entryData.work_type || '',
+          work_type_other: entryData.work_type_other || '',
+          months: entryData.months || 0,
+          weeks: entryData.weeks || 0,
+          days: entryData.days || 0,
+          hours: entryData.hours || 0,
+          minutes: entryData.minutes || 0,
+          start_date: entryData.start_date || '',
+          end_date: entryData.end_date || '',
+          work_environment: entryData.work_environment || '',
+          work_environment_other: entryData.work_environment_other || '',
+          weather_conditions: entryData.weather_conditions || '',
+          weather_conditions_other: entryData.weather_conditions_other || '',
+          team_size: entryData.team_size || 1,
+          team_role: entryData.team_role || '',
+          team_role_other: entryData.team_role_other || '',
+          equipment_used: entryData.equipment_used || '',
+          safety_precautions: entryData.safety_precautions || '',
+          incidents_occurred: entryData.incidents_occurred || false,
+          incident_description: entryData.incident_description || '',
+          quality_checks: entryData.quality_checks || false,
+          quality_standards: entryData.quality_standards || '',
+          inspection_required: entryData.inspection_required || false,
+          inspection_passed: entryData.inspection_passed || false,
+          certificates_required: entryData.certificates_required || '',
+          certificates_obtained: entryData.certificates_obtained || '',
+          compliance_standards: entryData.compliance_standards || '',
+          evidence_type: entryData.evidence_type || 'document',
+          evidence_type_other: entryData.evidence_type_other || '',
+          evidence_link: entryData.evidence_link || '',
+          submitted_by: entryData.submitted_by || formData.submitted_by,
+          submission_notes: entryData.submission_notes || '',
+          supervisor_name: entryData.supervisor_name || '',
+          supervisor_contact: entryData.supervisor_contact || '',
+          client_name: entryData.client_name || '',
+          competency: entryData.competency || ''
+        });
+        
+        console.log('✅ Logbook entry loaded for editing:', entryData);
+      } else {
+        throw new Error(result.message || 'Failed to fetch logbook entry');
+      }
+    } catch (err) {
+      console.error('Error fetching logbook entry:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Failed to Load Entry',
+        text: err.message || 'An error occurred while loading the logbook entry',
+        timer: 3000,
+        showConfirmButton: true
+      });
+      navigate('/candidate-digital');
+    } finally {
+      setFetchingData(false);
+    }
+  };
+
   const fetchCompetencies = async () => {
     try {
       setLoadingCompetencies(true);
@@ -138,12 +235,9 @@ const AddLogbookEntry = () => {
     }
   };
 
-  // ============================================================
-  // FIXED: handleFileChange with 10MB limit and better messaging
-  // ============================================================
   const handleFileChange = (e, fileType) => {
     const file = e.target.files[0];
-    const maxSize = 10 * 1024 * 1024; // 10MB — keep well under server limit
+    const maxSize = 10 * 1024 * 1024; // 10MB
 
     if (!file) return;
 
@@ -151,7 +245,7 @@ const AddLogbookEntry = () => {
       Swal.fire({
         icon: 'warning',
         title: 'File Too Large',
-        text: `"${file.name}" is ${(file.size / (1024 * 1024)).toFixed(1)}MB. Maximum allowed is 10MB per file. Please compress or resize the file and try again.`,
+        text: `"${file.name}" is ${(file.size / (1024 * 1024)).toFixed(1)}MB. Maximum allowed is 10MB per file.`,
         showConfirmButton: true
       });
       e.target.value = '';
@@ -274,9 +368,6 @@ const AddLogbookEntry = () => {
     return isValid;
   };
 
-  // ============================================================
-  // FIXED: handleSubmit with pre-flight size check and better error handling
-  // ============================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -291,8 +382,7 @@ const AddLogbookEntry = () => {
       return;
     }
 
-    // Pre-flight size check — reject before even sending
-    const MAX_TOTAL = 20 * 1024 * 1024; // 20MB total payload safety limit
+    const MAX_TOTAL = 20 * 1024 * 1024;
     const files = [evidenceFile, photoFile, videoFile, documentFile].filter(Boolean);
     const totalFileSize = files.reduce((sum, f) => sum + f.size, 0);
 
@@ -311,11 +401,15 @@ const AddLogbookEntry = () => {
 
     const formDataToSend = new FormData();
 
-    // Add all text fields (skip empty strings to keep payload lean)
+    const excludedFields = ['evidence_documents', 'verification_status'];
+
     Object.keys(formData).forEach(key => {
+      if (excludedFields.includes(key)) {
+        return;
+      }
+      
       const val = formData[key];
       if (val !== null && val !== undefined && val !== '') {
-        // formDataToSend.append(key, typeof val === 'boolean' ? val.toString() : val);
         formDataToSend.append(key, val ?? "");
       }
     });
@@ -325,29 +419,26 @@ const AddLogbookEntry = () => {
     if (videoFile) formDataToSend.append('video_files', videoFile);
     if (documentFile) formDataToSend.append('document_files', documentFile);
 
-    console.log('📦 Submitting logbook entry');
+    const url = isEditMode 
+      ? `${BASE_URL}/api/candidate/digital-logbook/${id}/`
+      : `${BASE_URL}/api/candidate/digital-logbook/`;
+    
+    const method = isEditMode ? 'PUT' : 'POST';
+
+    console.log(`📦 ${isEditMode ? 'Updating' : 'Creating'} logbook entry`);
+    console.log(`Method: ${method}, URL: ${url}`);
     console.log(`Total file size: ${(totalFileSize / (1024 * 1024)).toFixed(2)}MB`);
-    for (let pair of formDataToSend.entries()) {
-      if (pair[1] instanceof File) {
-        console.log(`${pair[0]}: ${pair[1].name} (${(pair[1].size / 1024 / 1024).toFixed(2)} MB)`);
-      } else {
-        console.log(`${pair[0]}: ${pair[1]}`);
-      }
-    }
 
     try {
       let response;
       try {
-        response = await fetch(`${BASE_URL}/api/candidate/digital-logbook/`, {
-          method: 'POST',
+        response = await fetch(url, {
+          method: method,
           headers: { 'Accept': 'application/json' },
           body: formDataToSend,
           credentials: "include"
         });
       } catch (networkErr) {
-        // fetch() itself threw — CORS block or no network
-        // If we pre-validated size above, a remaining 413 causes CORS failure
-        // because the server drops the connection before adding CORS headers.
         console.error('Network/CORS error:', networkErr);
         throw new Error(
           'Request blocked — this is usually caused by the file upload being too large ' +
@@ -355,7 +446,6 @@ const AddLogbookEntry = () => {
         );
       }
 
-      // Handle HTTP-level errors
       if (!response.ok) {
         if (response.status === 413) {
           throw new Error(
@@ -379,14 +469,14 @@ const AddLogbookEntry = () => {
         }
 
         throw new Error(
-          responseData?.message || `Failed to create logbook entry (Status: ${response.status})`
+          responseData?.message || `Failed to ${isEditMode ? 'update' : 'create'} logbook entry (Status: ${response.status})`
         );
       }
 
       await Swal.fire({
         icon: 'success',
-        title: 'Created!',
-        text: 'Logbook entry has been created successfully.',
+        title: isEditMode ? 'Updated!' : 'Created!',
+        text: `Logbook entry has been ${isEditMode ? 'updated' : 'created'} successfully.`,
         timer: 2000,
         showConfirmButton: false
       });
@@ -395,11 +485,11 @@ const AddLogbookEntry = () => {
 
     } catch (err) {
       console.error('❌ Error:', err);
-      setError(err.message || 'Failed to create logbook entry.');
+      setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} logbook entry.`);
       Swal.fire({
         icon: 'error',
-        title: 'Creation Failed',
-        text: err.message || 'Failed to create logbook entry.',
+        title: isEditMode ? 'Update Failed' : 'Creation Failed',
+        text: err.message || `Failed to ${isEditMode ? 'update' : 'create'} logbook entry.`,
         showConfirmButton: true
       });
     } finally {
@@ -411,7 +501,7 @@ const AddLogbookEntry = () => {
     navigate('/candidate-digital');
   };
 
-  // Dropdown options with correct backend values
+  // Dropdown options
   const shipTypeOptions = [
     { value: 'cargo', label: 'Cargo Vessel' },
     { value: 'container', label: 'Container Ship' },
@@ -481,7 +571,7 @@ const AddLogbookEntry = () => {
     { value: 'other', label: 'Other' }
   ];
 
-  if (loadingCompetencies) {
+  if (loadingCompetencies || fetchingData) {
     return (
       <div className="ta-layout-wrapper">
         <CandidateSidebar />
@@ -491,7 +581,7 @@ const AddLogbookEntry = () => {
             <div className="ale-wrapper">
               <div className="text-center p-5">
                 <FaSpinner className="fa-spin fa-3x" />
-                <p className="mt-2">Loading competencies...</p>
+                <p className="mt-2">{fetchingData ? 'Loading entry...' : 'Loading competencies...'}</p>
               </div>
             </div>
           </div>
@@ -518,7 +608,7 @@ const AddLogbookEntry = () => {
                   <FaArrowLeft /> Back
                 </button>
                 <div>
-                  <h2>Add New Logbook Entry</h2>
+                  <h2>{isEditMode ? 'Edit Logbook Entry' : 'Add New Logbook Entry'}</h2>
                   <p>Record your field activities, inspections, and work details</p>
                 </div>
               </div>
@@ -1332,9 +1422,9 @@ const AddLogbookEntry = () => {
                     {loading ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Creating...
+                        {isEditMode ? 'Updating...' : 'Creating...'}
                       </>
-                    ) : 'Create Entry'}
+                    ) : (isEditMode ? 'Update Entry' : 'Create Entry')}
                   </button>
                 </div>
               </form>
