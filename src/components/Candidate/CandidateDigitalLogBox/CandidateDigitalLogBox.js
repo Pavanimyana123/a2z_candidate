@@ -13,8 +13,12 @@ import {
   FaCalendarAlt
 } from "react-icons/fa";
 import "./CandidateDigitalLogBox.css";
+import { useNavigate } from 'react-router-dom';
 
 const CandidateDigitalLogbook = () => {
+
+  const navigate = useNavigate();
+
   return (
     <div className="ta-layout-wrapper">
       <CandidateSidebar />
@@ -33,10 +37,12 @@ const CandidateDigitalLogbook = () => {
                   Record and track your field activities and evidence
                 </p>
               </div>
-
-              <button className="btn cdl-primary-btn">
-                <FaPlus /> New Entry
-              </button>
+                <button 
+                  className="btn cdl-primary-btn"
+                  onClick={() => navigate('/candidate/logbook/add')}
+                >
+                  <FaPlus /> New Entry
+                </button>
             </div>
 
             {/* ================= STATS ================= */}

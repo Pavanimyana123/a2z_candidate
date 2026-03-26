@@ -40,6 +40,7 @@ import MentorReports from "./components/Mentor/MentorReports/MentorReports";
 import CandidateDashboard from "./components/Candidate/CandidateDasboard/CandidateDashboard"
 import CandidateProfessionalIdentity from "./components/Candidate/CandidateProfessionality/CandidateProfessionality";
 import CandidateDigitalLogbook from "./components/Candidate/CandidateDigitalLogBox/CandidateDigitalLogBox";
+import AddLogbookEntry from "./components/Candidate/CandidateDigitalLogBox/AddCandidateLogEntry";
 import CandidateCompetency from "./components/Candidate/CandidateCompetency/CandidateCompetency";
 import CompetenceForm from "./components/Candidate/CandidateCompetency/AddCandidateCompetency";
 import AddEvidence from "./components/Candidate/CandidateEvidance/CandidateEvidance";
@@ -108,6 +109,7 @@ function App() {
               <Route path="/candidate-dashboard" element={<CandidateDashboard />} />
               <Route path="/candidate-professionality" element={<CandidateProfessionalIdentity />} />
               <Route path="/candidate-digital" element={<CandidateDigitalLogbook />} />
+              <Route path="/candidate/logbook/add" element={<AddLogbookEntry />} />
                <Route path="/candidate-competence" element={<CandidateCompetency />} />
                <Route path="/add-competence" element={<CompetenceForm />} />
                 <Route path="/add-evidence" element={<AddEvidence />} />
