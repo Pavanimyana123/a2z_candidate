@@ -42,6 +42,7 @@ const CandidateCompetencyProgression = () => {
   const [departments, setDepartments] = useState([]);
   const [evidenceMap, setEvidenceMap] = useState({});
   const [loadingEvidence, setLoadingEvidence] = useState({});
+  const [selectedCompetencyId, setSelectedCompetencyId] = useState(null);
   const [currentCompetency, setCurrentCompetency] = useState(null);
   const [currentLevelData, setCurrentLevelData] = useState(null);
   const [currentDepartmentData, setCurrentDepartmentData] = useState(null);
@@ -107,13 +108,16 @@ const CandidateCompetencyProgression = () => {
           await fetchEvidenceForCompetency(comp.id);
         }
         
-        // Find current competency
-        const userCompetency = result.data.find(
-          comp => comp.candidate === parseInt(candidateId) || comp.candidate === candidateId
-        );
-        
-        if (userCompetency) {
-          setCurrentCompetency(userCompetency);
+        // Set default selected competency (first one or based on candidate)
+        if (result.data.length > 0) {
+          // Try to find a competency with the current candidate ID
+          const userCompetency = result.data.find(
+            comp => comp.candidate === parseInt(candidateId) || comp.candidate === candidateId
+          );
+          
+          const defaultCompetency = userCompetency || result.data[0];
+          setSelectedCompetencyId(defaultCompetency.id);
+          setCurrentCompetency(defaultCompetency);
         }
       }
     } catch (err) {
@@ -122,9 +126,20 @@ const CandidateCompetencyProgression = () => {
     }
   };
 
+  // Handle competency selection change
+  const handleCompetencyChange = (e) => {
+    const competencyId = parseInt(e.target.value);
+    const selectedComp = competencies.find(comp => comp.id === competencyId);
+    if (selectedComp) {
+      setSelectedCompetencyId(competencyId);
+      setCurrentCompetency(selectedComp);
+      // Reset expanded levels when changing competency
+      setExpandedLevels({});
+    }
+  };
+
   // Handle edit competency
   const handleEditCompetency = (competencyData) => {
-    // Navigate to add-competence page with edit mode and competency ID
     navigate(`/add-competence?mode=edit&competencyId=${competencyData.id}&levelId=${competencyData.level}&departmentId=${competencyData.department}`);
   };
 
@@ -262,7 +277,6 @@ const CandidateCompetencyProgression = () => {
       levelInfo
     });
     
-    // Navigate to AddEvidence page with query parameters
     navigate(`/add-evidence?level=${levelNum}&competencyId=${compId}&levelName=${encodeURIComponent(levelInfo.display)}`);
   };
 
@@ -270,7 +284,6 @@ const CandidateCompetencyProgression = () => {
   const handleEditEvidence = (evidence, levelNum, competencyData) => {
     const levelInfo = getLevelDisplay(levelNum);
     
-    // Navigate to AddEvidence page with edit mode and evidence ID
     navigate(`/add-evidence?mode=edit&evidenceId=${evidence.id}&level=${levelNum}&competencyId=${competencyData.id}&levelName=${encodeURIComponent(levelInfo.display)}`);
   };
 
@@ -327,8 +340,12 @@ const CandidateCompetencyProgression = () => {
     const level = levels.find(l => l.number === levelNumber);
     if (!level) return null;
     
-    // Find competency with this level ID
-    return competencies.find(comp => comp.level === level.id) || null;
+    // Find competency with this level ID - but only for current selected competency
+    // We need to check if this level matches the current competency's level
+    if (currentCompetency && currentCompetency.level === level.id) {
+      return currentCompetency;
+    }
+    return null;
   };
 
   // Get level display name based on level number from the levels API
@@ -504,6 +521,33 @@ const CandidateCompetencyProgression = () => {
                 Add Competence
               </button>
             </div>
+
+            {/* Competency Selector Dropdown */}
+            {/* Competency Selector Dropdown - Right Aligned */}
+
+            {/* Competency Selector Dropdown with Heading */}
+{competencies.length > 0 && (
+  <div className="cp-competency-selector-section">
+    <div className="cp-competency-selector-container">
+      <label className="cp-competency-selector-heading">
+        Choose Competency
+      </label>
+      <div className="cp-competency-selector-wrapper">
+        <select 
+          className="cp-competency-selector"
+          value={selectedCompetencyId || ''}
+          onChange={handleCompetencyChange}
+        >
+          {competencies.map((comp) => (
+            <option key={comp.id} value={comp.id}>
+              {comp.competency_name} {comp.status === 'draft' ? '(Draft)' : ''}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  </div>
+)}
 
             {/* ================================================= */}
             {/* CURRENT LEVEL SECTION */}

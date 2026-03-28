@@ -2050,3 +2050,84 @@
     font-size: 12px;
   }
 }
+
+
+/* Competency Selector Styles - Right Aligned with Heading */
+.cp-competency-selector-section {
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cp-competency-selector-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cp-competency-selector-heading {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.cp-competency-selector-wrapper {
+  width: 200px;
+}
+
+.cp-competency-selector {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  outline: none;
+}
+
+.cp-competency-selector:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
+}
+
+.cp-competency-selector:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .cp-competency-selector-section {
+    justify-content: stretch;
+  }
+  
+  .cp-competency-selector-container {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .cp-competency-selector-wrapper {
+    width: 180px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cp-competency-selector-container {
+    gap: 8px;
+  }
+  
+  .cp-competency-selector-heading {
+    font-size: 13px;
+  }
+  
+  .cp-competency-selector-wrapper {
+    width: 160px;
+  }
+}
+
+

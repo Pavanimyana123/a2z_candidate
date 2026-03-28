@@ -153,7 +153,8 @@ const MentorCandidatesPage = () => {
         candidateId: assignment.candidate,
         candidateName: assignment.candidate_name,
         departmentName: assignment.department_name,
-        levelName: assignment.target_level_name
+        levelName: assignment.target_level_name,
+         assignmentId: assignment.id  // Add this line
       }
     });
   };
