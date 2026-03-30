@@ -2152,3 +2152,88 @@ textarea.mcp-form-control {
     width: 100%;
   }
 }
+
+
+/* Assign Marks Button Styles */
+.mcp-header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.mcp-assign-marks-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mcp-assign-marks-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46a0 100%);
+}
+
+.mcp-assign-marks-btn:active {
+  transform: translateY(0);
+}
+
+/* No Scores Message Styles */
+.mcp-no-scores-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  background: #fef9e6;
+  border-radius: 1rem;
+  text-align: center;
+  border: 1px dashed #fbbf24;
+}
+
+.mcp-no-scores-icon {
+  font-size: 3rem;
+  color: #f59e0b;
+  margin-bottom: 1rem;
+}
+
+.mcp-no-scores-message p {
+  color: #92400e;
+  font-size: 0.95rem;
+  margin: 0;
+  max-width: 400px;
+}
+
+/* Update existing styles for consistency */
+.mcp-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .mcp-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .mcp-header-actions {
+    justify-content: flex-start;
+  }
+  
+  .mcp-assign-marks-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

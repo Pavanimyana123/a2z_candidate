@@ -29,7 +29,8 @@ import {
   FaCheck,
   FaTimes,
   FaUserCheck,
-  FaUserTimes
+  FaUserTimes,
+  FaEdit
 } from "react-icons/fa";
 import { BASE_URL } from "../../../ApiUrl";
 import "./MentorCandidateCompetency.css";
@@ -39,8 +40,10 @@ const MentorCandidateCompetency = () => {
   const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [competencies, setCompetencies] = useState([]);
+  const [filteredCompetencies, setFilteredCompetencies] = useState([]);
   const [levels, setLevels] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [mentorAssignments, setMentorAssignments] = useState([]);
   const [evidenceMap, setEvidenceMap] = useState({});
   const [loadingEvidence, setLoadingEvidence] = useState({});
   const [currentCompetency, setCurrentCompetency] = useState(null);
@@ -49,6 +52,7 @@ const MentorCandidateCompetency = () => {
   const [error, setError] = useState(null);
   const [candidateInfo, setCandidateInfo] = useState(null);
   const [mentorInfo, setMentorInfo] = useState(null);
+  const [digitalLogbookData, setDigitalLogbookData] = useState(null);
   
   // Get current mentor from localStorage
   useEffect(() => {
@@ -76,19 +80,78 @@ const MentorCandidateCompetency = () => {
     }
   }, [location.state]);
 
-  // Handle approve/reject navigation
- // Handle approve/reject navigation
-const handleApproveReject = (competencyId, action) => {
-  // Navigate to MentorCompetencyReview with competencyId and action
-  navigate(`/mentor-competency-review/${competencyId}`, {
-    state: {
-      action: action,
-      candidateInfo: candidateInfo,
-      from: '/mentor-candidate-competency',
-      competencyData: currentCompetency
+  // Fetch digital logbook data
+  const fetchDigitalLogbook = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/candidate/digital-logbook/`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      if (result.status && result.data) {
+        setDigitalLogbookData(result.data);
+        console.log('Digital logbook data fetched:', result.data);
+      }
+    } catch (err) {
+      console.error('Error fetching digital logbook:', err);
     }
-  });
-};
+  };
+
+  useEffect(() => {
+    fetchDigitalLogbook();
+  }, []);
+
+  // Handle assign marks navigation
+  const handleAssignMarks = (competencyId) => {
+    // Find the matching digital logbook entry
+    const logbookEntry = digitalLogbookData?.find(entry => 
+      entry.competency === parseInt(competencyId)
+    );
+    
+    navigate(`/mentor-competency-review/${competencyId}`, {
+      state: {
+        action: 'approve',
+        candidateInfo: candidateInfo,
+        from: '/mentor-candidate-competency',
+        competencyData: currentCompetency,
+        logbookId: logbookEntry?.id
+      }
+    });
+  };
+
+  // Handle approve/reject navigation
+  const handleApproveReject = (competencyId, action) => {
+    // Find the matching digital logbook entry
+    const logbookEntry = digitalLogbookData?.find(entry => 
+      entry.competency === parseInt(competencyId)
+    );
+    
+    navigate(`/mentor-competency-review/${competencyId}`, {
+      state: {
+        action: action,
+        candidateInfo: candidateInfo,
+        from: '/mentor-candidate-competency',
+        competencyData: currentCompetency,
+        logbookId: logbookEntry?.id
+      }
+    });
+  };
+
+  // Check if marks have been assigned (all scores are zero or competency is in draft)
+  const hasMarksAssigned = (competency) => {
+    if (!competency) return false;
+    // If any score is greater than 0, marks have been assigned
+    const hasAnyScore = competency.technical_knowledge > 0 ||
+                        competency.field_execution > 0 ||
+                        competency.documentation_quality > 0 ||
+                        competency.ethics_independence > 0 ||
+                        competency.communication > 0;
+    
+    // Also check if status is approved or rejected (finalized)
+    const isFinalized = competency.status === 'approved' || competency.status === 'rejected';
+    
+    return hasAnyScore || isFinalized;
+  };
 
   // Fetch evidence for a specific competency
   const fetchEvidenceForCompetency = async (competencyId) => {
@@ -116,13 +179,60 @@ const handleApproveReject = (competencyId, action) => {
     }
   };
 
-  // Fetch competencies, levels, and departments on component mount
+  // Function to get department name from ID
+  const getDepartmentName = (deptId) => {
+    const department = departments.find(dept => dept.id === deptId);
+    return department ? department.name : null;
+  };
+
+  // Filter competencies based on mentor assignments
+  const filterCompetenciesByMentorAssignment = (allCompetencies, assignments, allDepartments) => {
+    if (!assignments.length || !allCompetencies.length) return allCompetencies;
+
+    // Create a map of candidate assignments
+    const candidateAssignments = {};
+    
+    assignments.forEach(assignment => {
+      const candidateId = assignment.candidate;
+      const departmentName = assignment.department_name;
+      
+      // Store the department name for this candidate
+      if (!candidateAssignments[candidateId]) {
+        candidateAssignments[candidateId] = [];
+      }
+      candidateAssignments[candidateId].push(departmentName);
+    });
+
+    // Filter competencies: only keep those whose department name matches the candidate's assigned department
+    const filtered = allCompetencies.filter(competency => {
+      const competencyDepartmentName = getDepartmentName(competency.department);
+      const candidateAssignmentsList = candidateAssignments[competency.candidate] || [];
+      
+      // Check if competency department name matches any of the candidate's assigned departments
+      return candidateAssignmentsList.includes(competencyDepartmentName);
+    });
+
+    console.log('Filtered competencies:', filtered);
+    console.log('Original competencies count:', allCompetencies.length);
+    console.log('Filtered competencies count:', filtered.length);
+
+    return filtered;
+  };
+
+  // Fetch competencies, levels, departments, and mentor assignments on component mount
   useEffect(() => {
     const fetchData = async () => {
       if (!candidateInfo?.id) return;
 
       try {
         setLoading(true);
+        
+        // Fetch mentor assignments
+        const assignmentsResponse = await fetch(`${BASE_URL}/api/mentor/mentorship-assignments/`);
+        if (!assignmentsResponse.ok) {
+          throw new Error(`HTTP error! status: ${assignmentsResponse.status}`);
+        }
+        const assignmentsResult = await assignmentsResponse.json();
         
         // Fetch competencies
         const competenciesResponse = await fetch(`${BASE_URL}/api/candidate/competencies/`);
@@ -145,25 +255,18 @@ const handleApproveReject = (competencyId, action) => {
         }
         const departmentsResult = await departmentsResponse.json();
 
+        if (assignmentsResult.status && assignmentsResult.data) {
+          setMentorAssignments(assignmentsResult.data);
+          console.log('Mentor assignments:', assignmentsResult.data);
+        }
+
         if (competenciesResult.status && competenciesResult.data) {
-          // Filter competencies for this specific candidate
+          // First, filter competencies for this specific candidate
           const candidateCompetencies = competenciesResult.data.filter(
             comp => comp.candidate === parseInt(candidateInfo.id)
           );
           
           setCompetencies(candidateCompetencies);
-          
-          // Find current competency for this candidate (assuming the highest level or most recent)
-          if (candidateCompetencies.length > 0) {
-            // Sort by level to find the highest level competency
-            const sortedCompetencies = [...candidateCompetencies].sort((a, b) => b.level - a.level);
-            setCurrentCompetency(sortedCompetencies[0]);
-          }
-
-          // Fetch evidence for all competencies
-          for (const comp of candidateCompetencies) {
-            await fetchEvidenceForCompetency(comp.id);
-          }
         }
 
         if (levelsResult.status && levelsResult.data) {
@@ -184,6 +287,39 @@ const handleApproveReject = (competencyId, action) => {
 
     fetchData();
   }, [candidateInfo]);
+
+  // Apply filtering after all data is loaded
+  useEffect(() => {
+    if (competencies.length > 0 && departments.length > 0 && mentorAssignments.length > 0) {
+      const filtered = filterCompetenciesByMentorAssignment(competencies, mentorAssignments, departments);
+      setFilteredCompetencies(filtered);
+      
+      // Set current competency to the first filtered competency (or highest level)
+      if (filtered.length > 0) {
+        // Sort by level to find the highest level competency
+        const sortedCompetencies = [...filtered].sort((a, b) => b.level - a.level);
+        setCurrentCompetency(sortedCompetencies[0]);
+        
+        // Fetch evidence for filtered competencies
+        for (const comp of filtered) {
+          fetchEvidenceForCompetency(comp.id);
+        }
+      } else {
+        setCurrentCompetency(null);
+      }
+    } else if (competencies.length > 0 && departments.length > 0) {
+      // If no mentor assignments, show all competencies (or handle as needed)
+      setFilteredCompetencies(competencies);
+      if (competencies.length > 0) {
+        const sortedCompetencies = [...competencies].sort((a, b) => b.level - a.level);
+        setCurrentCompetency(sortedCompetencies[0]);
+        
+        for (const comp of competencies) {
+          fetchEvidenceForCompetency(comp.id);
+        }
+      }
+    }
+  }, [competencies, departments, mentorAssignments]);
 
   // Update current level data when competency or levels change
   useEffect(() => {
@@ -359,6 +495,9 @@ const handleApproveReject = (competencyId, action) => {
   // Get evidence for current competency
   const evidence = currentCompetency ? evidenceMap[currentCompetency.id] || [] : [];
   const isLoadingEvidence = currentCompetency ? loadingEvidence[currentCompetency.id] : false;
+  
+  // Check if marks are assigned
+  const marksAssigned = hasMarksAssigned(currentCompetency);
 
   return (
     <div className="ta-layout-wrapper">
@@ -401,23 +540,17 @@ const handleApproveReject = (competencyId, action) => {
                 </p>
               </div>
               
-              {/* Approve/Reject Buttons for Overall Competency */}
-              {/* {currentCompetency && currentCompetency.status !== 'approved' && currentCompetency.status !== 'rejected' && (
+              {/* Assign Marks Button - Show only if marks are not assigned */}
+              {currentCompetency && !marksAssigned && filteredCompetencies.length > 0 && (
                 <div className="mcp-header-actions">
                   <button
-                    className="mcp-header-btn mcp-header-approve"
-                    onClick={() => handleApproveReject(currentCompetency.id, 'approve')}
+                    className="mcp-assign-marks-btn"
+                    onClick={() => handleAssignMarks(currentCompetency.id)}
                   >
-                    <FaUserCheck /> Approve Competency
-                  </button>
-                  <button
-                    className="mcp-header-btn mcp-header-reject"
-                    onClick={() => handleApproveReject(currentCompetency.id, 'reject')}
-                  >
-                    <FaUserTimes /> Reject Competency
+                    <FaEdit /> Assign Marks
                   </button>
                 </div>
-              )} */}
+              )}
             </div>
 
             {/* ================================================= */}
@@ -428,19 +561,19 @@ const handleApproveReject = (competencyId, action) => {
                 <div className="mcp-current-left">
                   <span className="mcp-label">Current Level</span>
                   <h2>
-                    {currentCompetency 
+                    {currentCompetency && filteredCompetencies.length > 0
                       ? levelDisplay.display
                       : "No Competency Found"}
                   </h2>
                   <p>
-                    {currentCompetency 
+                    {currentCompetency && filteredCompetencies.length > 0
                       ? `${currentDepartmentData ? currentDepartmentData.name : ''}`
-                      : "Candidate hasn't started any competency yet"}
+                      : "No valid competencies found for assigned department"}
                   </p>
                 </div>
 
                 <div className="mcp-current-level">
-                  {currentLevelNumber}
+                  {filteredCompetencies.length > 0 ? currentLevelNumber : 0}
                 </div>
               </div>
             </div>
@@ -448,7 +581,7 @@ const handleApproveReject = (competencyId, action) => {
             {/* ================================================= */}
             {/* CURRENT LEVEL DETAILS */}
             {/* ================================================= */}
-            {currentCompetency ? (
+            {currentCompetency && filteredCompetencies.length > 0 ? (
               <div className="mcp-section">
                 <div className="mcp-current-level-details">
                   
@@ -457,67 +590,64 @@ const handleApproveReject = (competencyId, action) => {
                     <h6 className="mcp-section-subtitle">
                       <FaStar className="mcp-section-icon" /> Competency Scores
                     </h6>
-                    <div className="mcp-score-grid">
-                      {/* <div className="mcp-score-item">
-                        <div className="mcp-score-label">
-                          <FaStar className="mcp-score-icon" />
-                          <span>Overall Score</span>
+                    {marksAssigned ? (
+                      <div className="mcp-score-grid">
+                        <div className="mcp-score-item">
+                          <div className="mcp-score-label">
+                            <FaChartBar className="mcp-score-icon" />
+                            <span>Technical Knowledge</span>
+                          </div>
+                          <div className="mcp-score-value">
+                            {currentCompetency.technical_knowledge || 0}
+                          </div>
                         </div>
-                        <div className="mcp-score-value">
-                          {currentCompetency.overall_score?.toFixed(1) || 0}
+                        
+                        <div className="mcp-score-item">
+                          <div className="mcp-score-label">
+                            <FaChartBar className="mcp-score-icon" />
+                            <span>Field Execution</span>
+                          </div>
+                          <div className="mcp-score-value">
+                            {currentCompetency.field_execution || 0}
+                          </div>
                         </div>
-                      </div> */}
-                      
-                      <div className="mcp-score-item">
-                        <div className="mcp-score-label">
-                          <FaChartBar className="mcp-score-icon" />
-                          <span>Technical Knowledge</span>
+                        
+                        <div className="mcp-score-item">
+                          <div className="mcp-score-label">
+                            <FaChartBar className="mcp-score-icon" />
+                            <span>Documentation Quality</span>
+                          </div>
+                          <div className="mcp-score-value">
+                            {currentCompetency.documentation_quality || 0}
+                          </div>
                         </div>
-                        <div className="mcp-score-value">
-                          {currentCompetency.technical_knowledge || 0}
+                        
+                        <div className="mcp-score-item">
+                          <div className="mcp-score-label">
+                            <FaChartBar className="mcp-score-icon" />
+                            <span>Ethics & Independence</span>
+                          </div>
+                          <div className="mcp-score-value">
+                            {currentCompetency.ethics_independence || 0}
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div className="mcp-score-item">
-                        <div className="mcp-score-label">
-                          <FaChartBar className="mcp-score-icon" />
-                          <span>Field Execution</span>
-                        </div>
-                        <div className="mcp-score-value">
-                          {currentCompetency.field_execution || 0}
-                        </div>
-                      </div>
-                      
-                      <div className="mcp-score-item">
-                        <div className="mcp-score-label">
-                          <FaChartBar className="mcp-score-icon" />
-                          <span>Documentation Quality</span>
-                        </div>
-                        <div className="mcp-score-value">
-                          {currentCompetency.documentation_quality || 0}
-                        </div>
-                      </div>
-                      
-                      <div className="mcp-score-item">
-                        <div className="mcp-score-label">
-                          <FaChartBar className="mcp-score-icon" />
-                          <span>Ethics & Independence</span>
-                        </div>
-                        <div className="mcp-score-value">
-                          {currentCompetency.ethics_independence || 0}
-                        </div>
-                      </div>
-                      
-                      <div className="mcp-score-item">
-                        <div className="mcp-score-label">
-                          <FaChartBar className="mcp-score-icon" />
-                          <span>Communication</span>
-                        </div>
-                        <div className="mcp-score-value">
-                          {currentCompetency.communication || 0}
+                        
+                        <div className="mcp-score-item">
+                          <div className="mcp-score-label">
+                            <FaChartBar className="mcp-score-icon" />
+                            <span>Communication</span>
+                          </div>
+                          <div className="mcp-score-value">
+                            {currentCompetency.communication || 0}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="mcp-no-scores-message">
+                        <FaEdit className="mcp-no-scores-icon" />
+                        <p>Marks not assigned yet. Click the "Assign Marks" button to evaluate this competency.</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Evidence Section */}
@@ -617,8 +747,8 @@ const handleApproveReject = (competencyId, action) => {
                                 </div>
                               )}
 
-                              {/* Action Buttons for Evidence - Only show for pending evidence */}
-                              {canVerify(item.verification_status) && currentCompetency.status !== 'approved' && currentCompetency.status !== 'rejected' && (
+                              {/* Action Buttons for Evidence - Only show for pending evidence when marks not assigned yet */}
+                              {canVerify(item.verification_status) && !marksAssigned && (
                                 <div className="mcp-evidence-actions">
                                   <button
                                     className="mcp-verify-btn mcp-approve-btn"
@@ -681,7 +811,7 @@ const handleApproveReject = (competencyId, action) => {
               <div className="mcp-no-competency">
                 <FaExclamationCircle className="mcp-no-competency-icon" />
                 <h4>No Competency Found</h4>
-                <p>This candidate hasn't started any competency yet.</p>
+                <p>This candidate doesn't have any competency records for their assigned department.</p>
               </div>
             )}
           </div>
