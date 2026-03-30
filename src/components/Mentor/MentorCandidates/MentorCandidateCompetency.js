@@ -10,6 +10,7 @@ import {
   FaChartBar,
   FaFileAlt,
   FaCloudUploadAlt,
+  FaClipboardList,
   FaLink,
   FaFilePdf,
   FaFileImage,
@@ -28,9 +29,12 @@ import {
   FaBookOpen,
   FaCheck,
   FaTimes,
-  FaUserCheck,
-  FaUserTimes,
-  FaEdit
+  FaEdit,
+  FaClock,
+  FaCalendarAlt,
+  FaMapMarkerAlt,
+  FaShip,
+  FaHardHat
 } from "react-icons/fa";
 import { BASE_URL } from "../../../ApiUrl";
 import "./MentorCandidateCompetency.css";
@@ -52,7 +56,9 @@ const MentorCandidateCompetency = () => {
   const [error, setError] = useState(null);
   const [candidateInfo, setCandidateInfo] = useState(null);
   const [mentorInfo, setMentorInfo] = useState(null);
-  const [digitalLogbookData, setDigitalLogbookData] = useState(null);
+  const [digitalLogbookData, setDigitalLogbookData] = useState([]);
+  const [selectedLogbook, setSelectedLogbook] = useState(null);
+  const [showLogbookModal, setShowLogbookModal] = useState(false);
   
   // Get current mentor from localStorage
   useEffect(() => {
@@ -89,67 +95,62 @@ const MentorCandidateCompetency = () => {
       }
       const result = await response.json();
       if (result.status && result.data) {
-        setDigitalLogbookData(result.data);
-        console.log('Digital logbook data fetched:', result.data);
+        // Filter logbook entries for this candidate
+        const candidateLogbooks = result.data.filter(entry => 
+          entry.candidate_name === candidateInfo?.name
+        );
+        setDigitalLogbookData(candidateLogbooks);
+        console.log('Digital logbook data fetched:', candidateLogbooks);
       }
     } catch (err) {
       console.error('Error fetching digital logbook:', err);
     }
   };
 
+  // Fetch digital logbook when candidate info is available
   useEffect(() => {
-    fetchDigitalLogbook();
-  }, []);
+    if (candidateInfo?.name) {
+      fetchDigitalLogbook();
+    }
+  }, [candidateInfo]);
 
-  // Handle assign marks navigation
-  const handleAssignMarks = (competencyId) => {
-    // Find the matching digital logbook entry
-    const logbookEntry = digitalLogbookData?.find(entry => 
-      entry.competency === parseInt(competencyId)
-    );
-    
-    navigate(`/mentor-competency-review/${competencyId}`, {
+  // Handle assign marks navigation for a specific logbook
+  const handleAssignMarks = (logbookEntry) => {
+    navigate(`/mentor-competency-review/${logbookEntry.competency}`, {
       state: {
         action: 'approve',
         candidateInfo: candidateInfo,
         from: '/mentor-candidate-competency',
-        competencyData: currentCompetency,
-        logbookId: logbookEntry?.id
+        logbookId: logbookEntry.id,
+        competencyId: logbookEntry.competency,
+        logbookData: logbookEntry
       }
     });
   };
 
-  // Handle approve/reject navigation
-  const handleApproveReject = (competencyId, action) => {
-    // Find the matching digital logbook entry
-    const logbookEntry = digitalLogbookData?.find(entry => 
-      entry.competency === parseInt(competencyId)
-    );
-    
-    navigate(`/mentor-competency-review/${competencyId}`, {
+  // Handle approve/reject for a specific logbook
+  const handleApproveReject = (logbookEntry, action) => {
+    navigate(`/mentor-competency-review/${logbookEntry.competency}`, {
       state: {
         action: action,
         candidateInfo: candidateInfo,
         from: '/mentor-candidate-competency',
-        competencyData: currentCompetency,
-        logbookId: logbookEntry?.id
+        logbookId: logbookEntry.id,
+        competencyId: logbookEntry.competency,
+        logbookData: logbookEntry
       }
     });
   };
 
-  // Check if marks have been assigned (all scores are zero or competency is in draft)
+  // Check if marks have been assigned for a competency
   const hasMarksAssigned = (competency) => {
     if (!competency) return false;
-    // If any score is greater than 0, marks have been assigned
     const hasAnyScore = competency.technical_knowledge > 0 ||
                         competency.field_execution > 0 ||
                         competency.documentation_quality > 0 ||
                         competency.ethics_independence > 0 ||
                         competency.communication > 0;
-    
-    // Also check if status is approved or rejected (finalized)
     const isFinalized = competency.status === 'approved' || competency.status === 'rejected';
-    
     return hasAnyScore || isFinalized;
   };
 
@@ -189,32 +190,23 @@ const MentorCandidateCompetency = () => {
   const filterCompetenciesByMentorAssignment = (allCompetencies, assignments, allDepartments) => {
     if (!assignments.length || !allCompetencies.length) return allCompetencies;
 
-    // Create a map of candidate assignments
     const candidateAssignments = {};
     
     assignments.forEach(assignment => {
       const candidateId = assignment.candidate;
       const departmentName = assignment.department_name;
       
-      // Store the department name for this candidate
       if (!candidateAssignments[candidateId]) {
         candidateAssignments[candidateId] = [];
       }
       candidateAssignments[candidateId].push(departmentName);
     });
 
-    // Filter competencies: only keep those whose department name matches the candidate's assigned department
     const filtered = allCompetencies.filter(competency => {
       const competencyDepartmentName = getDepartmentName(competency.department);
       const candidateAssignmentsList = candidateAssignments[competency.candidate] || [];
-      
-      // Check if competency department name matches any of the candidate's assigned departments
       return candidateAssignmentsList.includes(competencyDepartmentName);
     });
-
-    console.log('Filtered competencies:', filtered);
-    console.log('Original competencies count:', allCompetencies.length);
-    console.log('Filtered competencies count:', filtered.length);
 
     return filtered;
   };
@@ -227,28 +219,24 @@ const MentorCandidateCompetency = () => {
       try {
         setLoading(true);
         
-        // Fetch mentor assignments
         const assignmentsResponse = await fetch(`${BASE_URL}/api/mentor/mentorship-assignments/`);
         if (!assignmentsResponse.ok) {
           throw new Error(`HTTP error! status: ${assignmentsResponse.status}`);
         }
         const assignmentsResult = await assignmentsResponse.json();
         
-        // Fetch competencies
         const competenciesResponse = await fetch(`${BASE_URL}/api/candidate/competencies/`);
         if (!competenciesResponse.ok) {
           throw new Error(`HTTP error! status: ${competenciesResponse.status}`);
         }
         const competenciesResult = await competenciesResponse.json();
         
-        // Fetch levels
         const levelsResponse = await fetch(`${BASE_URL}/api/admin/levels/`);
         if (!levelsResponse.ok) {
           throw new Error(`HTTP error! status: ${levelsResponse.status}`);
         }
         const levelsResult = await levelsResponse.json();
 
-        // Fetch departments
         const departmentsResponse = await fetch(`${BASE_URL}/api/admin/departments/`);
         if (!departmentsResponse.ok) {
           throw new Error(`HTTP error! status: ${departmentsResponse.status}`);
@@ -257,15 +245,12 @@ const MentorCandidateCompetency = () => {
 
         if (assignmentsResult.status && assignmentsResult.data) {
           setMentorAssignments(assignmentsResult.data);
-          console.log('Mentor assignments:', assignmentsResult.data);
         }
 
         if (competenciesResult.status && competenciesResult.data) {
-          // First, filter competencies for this specific candidate
           const candidateCompetencies = competenciesResult.data.filter(
             comp => comp.candidate === parseInt(candidateInfo.id)
           );
-          
           setCompetencies(candidateCompetencies);
         }
 
@@ -294,13 +279,10 @@ const MentorCandidateCompetency = () => {
       const filtered = filterCompetenciesByMentorAssignment(competencies, mentorAssignments, departments);
       setFilteredCompetencies(filtered);
       
-      // Set current competency to the first filtered competency (or highest level)
       if (filtered.length > 0) {
-        // Sort by level to find the highest level competency
         const sortedCompetencies = [...filtered].sort((a, b) => b.level - a.level);
         setCurrentCompetency(sortedCompetencies[0]);
         
-        // Fetch evidence for filtered competencies
         for (const comp of filtered) {
           fetchEvidenceForCompetency(comp.id);
         }
@@ -308,7 +290,6 @@ const MentorCandidateCompetency = () => {
         setCurrentCompetency(null);
       }
     } else if (competencies.length > 0 && departments.length > 0) {
-      // If no mentor assignments, show all competencies (or handle as needed)
       setFilteredCompetencies(competencies);
       if (competencies.length > 0) {
         const sortedCompetencies = [...competencies].sort((a, b) => b.level - a.level);
@@ -345,6 +326,16 @@ const MentorCandidateCompetency = () => {
     navigate('/mentor-candidates');
   };
 
+  const handleViewLogbook = (logbook) => {
+    setSelectedLogbook(logbook);
+    setShowLogbookModal(true);
+  };
+
+  const closeModal = () => {
+    setShowLogbookModal(false);
+    setSelectedLogbook(null);
+  };
+
   // Get level display name based on level number
   const getLevelDisplay = (levelNumber) => {
     const levelFromData = levels.find(l => l.number === levelNumber);
@@ -373,39 +364,8 @@ const MentorCandidateCompetency = () => {
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     });
-  };
-
-  // Get file icon based on file extension
-  const getFileIcon = (filename) => {
-    if (!filename) return <FaFile />;
-    
-    const ext = filename.split('.').pop().toLowerCase();
-    
-    switch(ext) {
-      case 'pdf':
-        return <FaFilePdf style={{ color: '#e74c3c' }} />;
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-      case 'svg':
-        return <FaFileImage style={{ color: '#2ecc71' }} />;
-      case 'doc':
-      case 'docx':
-        return <FaFileWord style={{ color: '#2980b9' }} />;
-      case 'xls':
-      case 'xlsx':
-        return <FaFileExcel style={{ color: '#27ae60' }} />;
-      case 'ppt':
-      case 'pptx':
-        return <FaFilePowerpoint style={{ color: '#e67e22' }} />;
-      default:
-        return <FaFile />;
-    }
   };
 
   // Get verification status badge
@@ -413,39 +373,12 @@ const MentorCandidateCompetency = () => {
     switch(status) {
       case 'verified':
       case 'approved':
-        return <span className="mcp-evidence-verified-badge"><FaCheckCircle /> Verified</span>;
+        return <span className="mcp-evidence-verified-badge"><FaCheckCircle /> Approved</span>;
       case 'rejected':
         return <span className="mcp-evidence-rejected-badge"><FaTimes /> Rejected</span>;
       default:
         return <span className="mcp-evidence-pending-badge"><FaSpinner /> Pending</span>;
     }
-  };
-
-  // Check if evidence can be verified (pending status)
-  const canVerify = (status) => {
-    return status !== 'approved' && status !== 'verified' && status !== 'rejected';
-  };
-
-  // Get evidence type icon
-  const getEvidenceTypeIcon = (type) => {
-    switch(type) {
-      case 'certificate':
-        return <FaFileAlt className="mcp-evidence-type-icon certificate" />;
-      case 'work_sample':
-        return <FaFileImage className="mcp-evidence-type-icon work-sample" />;
-      case 'reference':
-        return <FaUserFriends className="mcp-evidence-type-icon reference" />;
-      case 'training':
-        return <FaBookOpen className="mcp-evidence-type-icon training" />;
-      default:
-        return <FaFileAlt className="mcp-evidence-type-icon" />;
-    }
-  };
-
-  // Get full document URL
-  const getDocumentUrl = (documentName) => {
-    if (!documentName) return '#';
-    return `${BASE_URL}/media/evidence/${documentName}`;
   };
 
   if (loading) {
@@ -496,8 +429,20 @@ const MentorCandidateCompetency = () => {
   const evidence = currentCompetency ? evidenceMap[currentCompetency.id] || [] : [];
   const isLoadingEvidence = currentCompetency ? loadingEvidence[currentCompetency.id] : false;
   
-  // Check if marks are assigned
+  // Check if marks are assigned for current competency
   const marksAssigned = hasMarksAssigned(currentCompetency);
+
+  // Group logbook entries by competency ID
+  const logbooksByCompetency = digitalLogbookData.reduce((acc, logbook) => {
+    if (!acc[logbook.competency]) {
+      acc[logbook.competency] = [];
+    }
+    acc[logbook.competency].push(logbook);
+    return acc;
+  }, {});
+
+  // Get logbooks for current competency
+  const currentLogbooks = currentCompetency ? logbooksByCompetency[currentCompetency.id] || [] : [];
 
   return (
     <div className="ta-layout-wrapper">
@@ -531,7 +476,7 @@ const MentorCandidateCompetency = () => {
               )}
             </div>
 
-            {/* Page Header with Action Buttons */}
+            {/* Page Header */}
             <div className="mcp-page-header">
               <div>
                 <h3 className="mcp-page-title">Candidate Competency Details</h3>
@@ -539,18 +484,6 @@ const MentorCandidateCompetency = () => {
                   View candidate's current competency level and evidence
                 </p>
               </div>
-              
-              {/* Assign Marks Button - Show only if marks are not assigned */}
-              {currentCompetency && !marksAssigned && filteredCompetencies.length > 0 && (
-                <div className="mcp-header-actions">
-                  <button
-                    className="mcp-assign-marks-btn"
-                    onClick={() => handleAssignMarks(currentCompetency.id)}
-                  >
-                    <FaEdit /> Assign Marks
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* ================================================= */}
@@ -585,6 +518,103 @@ const MentorCandidateCompetency = () => {
               <div className="mcp-section">
                 <div className="mcp-current-level-details">
                   
+                  {/* Digital Logbook Entries Section */}
+                  {currentLogbooks.length > 0 && (
+                    <div className="mcp-digital-logbook-section">
+                      <h5 className="mcp-section-subtitle">
+                        <FaFileAlt className="mcp-section-icon" /> Digital Logbook Entries ({currentLogbooks.length})
+                      </h5>
+                      
+                      <div className="mcp-logbook-entries">
+                        {currentLogbooks.map((logbook, index) => (
+                          <div key={logbook.id} className="mcp-logbook-entry-card">
+                            <div className="mcp-logbook-entry-header">
+                              <div className="mcp-logbook-entry-title">
+                                <FaClipboardList />
+                                <span>Entry #{index + 1}</span>
+                              </div>
+                              {getVerificationBadge(logbook.verification_status)}
+                            </div>
+                            
+                            <div className="mcp-logbook-entry-details">
+                              <div className="mcp-logbook-detail-row">
+                                <FaMapMarkerAlt />
+                                <strong>Location:</strong> {logbook.work_location}
+                              </div>
+                              <div className="mcp-logbook-detail-row">
+                                <FaShip />
+                                <strong>Ship:</strong> {logbook.ship_name}
+                              </div>
+                              <div className="mcp-logbook-detail-row">
+                                <FaHardHat />
+                                <strong>Work Type:</strong> {logbook.work_type}
+                              </div>
+                              <div className="mcp-logbook-detail-row">
+                                <FaCalendarAlt />
+                                <strong>Period:</strong> {logbook.start_date} to {logbook.end_date}
+                              </div>
+                              <div className="mcp-logbook-detail-row">
+                                <FaClock />
+                                <strong>Duration:</strong> {logbook.total_duration}
+                              </div>
+                            </div>
+                            
+                            {logbook.reviewed_by && (
+                              <div className="mcp-logbook-review-info">
+                                <strong>Reviewed by:</strong> {logbook.reviewed_by}
+                                {logbook.reviewed_at && (
+                                  <span> on {new Date(logbook.reviewed_at).toLocaleDateString()}</span>
+                                )}
+                              </div>
+                            )}
+                            
+                            {logbook.review_comments && (
+                              <div className="mcp-logbook-comments">
+                                <strong>Comments:</strong>
+                                <p>{logbook.review_comments}</p>
+                              </div>
+                            )}
+                            
+                            <div className="mcp-logbook-actions">
+                              <button
+                                className="mcp-logbook-view-btn"
+                                onClick={() => handleViewLogbook(logbook)}
+                              >
+                                <FaEye /> View Full Details
+                              </button>
+                              
+                              {logbook.verification_status === 'pending' && (
+                                <>
+                                  <button
+                                    className="mcp-logbook-approve-btn"
+                                    onClick={() => handleApproveReject(logbook, 'approve')}
+                                  >
+                                    <FaCheck /> Approve
+                                  </button>
+                                  <button
+                                    className="mcp-logbook-reject-btn"
+                                    onClick={() => handleApproveReject(logbook, 'reject')}
+                                  >
+                                    <FaTimes /> Reject
+                                  </button>
+                                </>
+                              )}
+                              
+                              {logbook.verification_status !== 'pending' && !marksAssigned && (
+                                <button
+                                  className="mcp-logbook-assign-marks-btn"
+                                  onClick={() => handleAssignMarks(logbook)}
+                                >
+                                  <FaEdit /> Assign Marks
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Competency Scores Section */}
                   <div className="mcp-scores-section">
                     <h6 className="mcp-section-subtitle">
@@ -645,7 +675,7 @@ const MentorCandidateCompetency = () => {
                     ) : (
                       <div className="mcp-no-scores-message">
                         <FaEdit className="mcp-no-scores-icon" />
-                        <p>Marks not assigned yet. Click the "Assign Marks" button to evaluate this competency.</p>
+                        <p>Marks not assigned yet. Approve a digital logbook entry to assign marks.</p>
                       </div>
                     )}
                   </div>
@@ -674,7 +704,7 @@ const MentorCandidateCompetency = () => {
                             <div key={item.id} className="mcp-evidence-item">
                               <div className="mcp-evidence-item-header">
                                 <div className="mcp-evidence-item-icon">
-                                  {getEvidenceTypeIcon(item.evidence_type)}
+                                  <FaFileAlt />
                                 </div>
                                 <div className="mcp-evidence-item-title">
                                   <h6>{item.title}</h6>
@@ -689,47 +719,6 @@ const MentorCandidateCompetency = () => {
                                 <p>{item.description || item.submission_notes}</p>
                               </div>
 
-                              {/* Evidence Link */}
-                              {item.evidence_link && (
-                                <div className="mcp-evidence-link">
-                                  <FaLink className="mcp-evidence-link-icon" />
-                                  <a 
-                                    href={item.evidence_link} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="mcp-evidence-link-text"
-                                  >
-                                    View External Link <FaExternalLinkAlt className="mcp-external-icon" />
-                                  </a>
-                                </div>
-                              )}
-
-                              {/* Documents */}
-                              {item.evidence_documents && item.evidence_documents.length > 0 && (
-                                <div className="mcp-evidence-documents">
-                                  <div className="mcp-evidence-documents-title">
-                                    <FaDownload /> Documents ({item.evidence_documents.length})
-                                  </div>
-                                  <div className="mcp-evidence-document-list">
-                                    {item.evidence_documents.map((doc, idx) => (
-                                      <div key={idx} className="mcp-evidence-document-item">
-                                        {getFileIcon(doc)}
-                                        <span className="mcp-evidence-document-name">{doc}</span>
-                                        <a 
-                                          href={getDocumentUrl(doc)} 
-                                          target="_blank" 
-                                          rel="noopener noreferrer"
-                                          className="mcp-evidence-document-download"
-                                          title="Download/View Document"
-                                        >
-                                          <FaEye />
-                                        </a>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-
                               <div className="mcp-evidence-item-meta">
                                 <span className="mcp-evidence-submitted-by">
                                   Submitted by: {item.submitted_by || 'N/A'}
@@ -738,39 +727,6 @@ const MentorCandidateCompetency = () => {
                                   {formatDate(item.created_at)}
                                 </span>
                               </div>
-
-                              {/* Review Comments (if any) - Only display existing comments */}
-                              {item.review_comments && (
-                                <div className="mcp-evidence-review-comments">
-                                  <strong>Review Comments:</strong>
-                                  <p>{item.review_comments}</p>
-                                </div>
-                              )}
-
-                              {/* Action Buttons for Evidence - Only show for pending evidence when marks not assigned yet */}
-                              {canVerify(item.verification_status) && !marksAssigned && (
-                                <div className="mcp-evidence-actions">
-                                  <button
-                                    className="mcp-verify-btn mcp-approve-btn"
-                                    onClick={() => handleApproveReject(currentCompetency.id, 'approve')}
-                                  >
-                                    <FaCheck /> Approve
-                                  </button>
-                                  <button
-                                    className="mcp-verify-btn mcp-reject-btn"
-                                    onClick={() => handleApproveReject(currentCompetency.id, 'reject')}
-                                  >
-                                    <FaTimes /> Reject
-                                  </button>
-                                </div>
-                              )}
-
-                              {/* Show message if evidence is already verified */}
-                              {!canVerify(item.verification_status) && (
-                                <div className="mcp-evidence-verified-message">
-                                  <FaCheckCircle /> This evidence has been {item.verification_status}
-                                </div>
-                              )}
                             </div>
                           ))}
                         </div>
@@ -782,25 +738,6 @@ const MentorCandidateCompetency = () => {
                       )}
                     </div>
                   </div>
-
-                  {/* Comments Section */}
-                  {(currentCompetency.mentor_comments || currentCompetency.admin_comments) && (
-                    <div className="mcp-comments-section">
-                      <h6 className="mcp-section-subtitle">Comments</h6>
-                      {currentCompetency.mentor_comments && (
-                        <div className="mcp-comment">
-                          <strong>Mentor Comments:</strong>
-                          <p>{currentCompetency.mentor_comments}</p>
-                        </div>
-                      )}
-                      {currentCompetency.admin_comments && (
-                        <div className="mcp-comment">
-                          <strong>Admin Comments:</strong>
-                          <p>{currentCompetency.admin_comments}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
 
                   <div className="mcp-meta-info">
                     <small>Last Updated: {new Date(currentCompetency.updated_at).toLocaleDateString()}</small>
@@ -817,6 +754,81 @@ const MentorCandidateCompetency = () => {
           </div>
         </div>
       </div>
+
+      {/* Logbook Detail Modal */}
+      {showLogbookModal && selectedLogbook && (
+        <div className="mcp-modal-overlay" onClick={closeModal}>
+          <div className="mcp-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mcp-modal-header">
+              <h3>Digital Logbook Details</h3>
+              <button className="mcp-modal-close" onClick={closeModal}>×</button>
+            </div>
+            <div className="mcp-modal-body">
+              <div className="mcp-logbook-full-details">
+                <div className="mcp-logbook-detail-group">
+                  <h4>Work Information</h4>
+                  <p><strong>Location:</strong> {selectedLogbook.work_location}</p>
+                  <p><strong>Ship Name:</strong> {selectedLogbook.ship_name}</p>
+                  <p><strong>Ship Type:</strong> {selectedLogbook.ship_type}</p>
+                  <p><strong>Work Type:</strong> {selectedLogbook.work_type}</p>
+                  <p><strong>Duration:</strong> {selectedLogbook.total_duration}</p>
+                  <p><strong>Period:</strong> {selectedLogbook.start_date} to {selectedLogbook.end_date}</p>
+                </div>
+                
+                <div className="mcp-logbook-detail-group">
+                  <h4>Work Environment</h4>
+                  <p><strong>Environment:</strong> {selectedLogbook.work_environment}</p>
+                  <p><strong>Weather:</strong> {selectedLogbook.weather_conditions}</p>
+                  <p><strong>Team Size:</strong> {selectedLogbook.team_size}</p>
+                  <p><strong>Team Role:</strong> {selectedLogbook.team_role}</p>
+                  <p><strong>Equipment Used:</strong> {selectedLogbook.equipment_used}</p>
+                </div>
+                
+                {selectedLogbook.work_description && (
+                  <div className="mcp-logbook-detail-group">
+                    <h4>Work Description</h4>
+                    <p>{selectedLogbook.work_description}</p>
+                  </div>
+                )}
+                
+                {selectedLogbook.evidence_documents && selectedLogbook.evidence_documents.length > 0 && (
+                  <div className="mcp-logbook-detail-group">
+                    <h4>Evidence Documents ({selectedLogbook.evidence_documents.length})</h4>
+                    {selectedLogbook.evidence_documents.map((doc, idx) => (
+                      <div key={idx} className="mcp-logbook-document">
+                        <FaFile />
+                        <span>{doc.filename}</span>
+                        <a href={`${BASE_URL}${doc.path}`} target="_blank" rel="noopener noreferrer">
+                          <FaEye /> View
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="mcp-logbook-detail-group">
+                  <h4>Verification Status</h4>
+                  <p><strong>Status:</strong> {selectedLogbook.verification_status}</p>
+                  {selectedLogbook.reviewed_by && (
+                    <p><strong>Reviewed by:</strong> {selectedLogbook.reviewed_by}</p>
+                  )}
+                  {selectedLogbook.reviewed_at && (
+                    <p><strong>Reviewed at:</strong> {new Date(selectedLogbook.reviewed_at).toLocaleString()}</p>
+                  )}
+                  {selectedLogbook.review_comments && (
+                    <p><strong>Comments:</strong> {selectedLogbook.review_comments}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div className="mcp-modal-footer">
+              <button className="mcp-modal-btn mcp-modal-cancel" onClick={closeModal}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
