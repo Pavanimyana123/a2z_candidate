@@ -15,7 +15,8 @@ import {
   FaUserTie,
   FaStar,
   FaCertificate,
-  FaCheck
+  FaCheck,
+  FaUserCheck
 } from "react-icons/fa";
 import { BASE_URL } from "../../../ApiUrl";
 import "./CandidateMentorship.css";
@@ -25,10 +26,14 @@ const CandidateMentorship = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [yourMentor, setYourMentor] = useState(null);
+  const [yourMentorDetails, setYourMentorDetails] = useState(null);
   const [departmentsMap, setDepartmentsMap] = useState({});
   const [levelsMap, setLevelsMap] = useState({});
   const [selectedDepartment, setSelectedDepartment] = useState("");
   const [selectedTargetLevel, setSelectedTargetLevel] = useState("");
+  const [assignedMentors, setAssignedMentors] = useState([]);
+  const [assignedDepartments, setAssignedDepartments] = useState(new Set());
+  const [connectedMentorIds, setConnectedMentorIds] = useState(new Set());
   const navigate = useNavigate();
 
   // Get candidate user ID from localStorage
@@ -46,6 +51,70 @@ const CandidateMentorship = () => {
   };
 
   const candidateId = getCandidateId();
+
+  // Fetch complete mentor details
+  const fetchMentorDetails = async (mentorId) => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/mentor/mentors/${mentorId}/`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      if (result.status && result.data) {
+        return result.data;
+      }
+    } catch (err) {
+      console.error('Error fetching mentor details:', err);
+    }
+    return null;
+  };
+
+  // Fetch mentorship assignments
+  const fetchMentorshipAssignments = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/mentor/mentorship-assignments/`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      
+      if (result.status && result.data) {
+        // Filter assignments for current candidate
+        const candidateAssignments = result.data.filter(
+          assignment => assignment.candidate.toString() === candidateId
+        );
+        setAssignedMentors(candidateAssignments);
+        
+        // Extract unique department names from assignments
+        const deptSet = new Set();
+        const mentorIdSet = new Set();
+        candidateAssignments.forEach(assignment => {
+          if (assignment.department_name) {
+            deptSet.add(assignment.department_name);
+          }
+          if (assignment.mentor) {
+            mentorIdSet.add(assignment.mentor);
+          }
+        });
+        setAssignedDepartments(deptSet);
+        setConnectedMentorIds(mentorIdSet);
+        
+        // If there are assignments, set the first one as "Your Mentor" and fetch details
+        if (candidateAssignments.length > 0) {
+          const firstAssignment = candidateAssignments[0];
+          setYourMentor(firstAssignment);
+          
+          // Fetch complete mentor details
+          const mentorDetails = await fetchMentorDetails(firstAssignment.mentor);
+          if (mentorDetails) {
+            setYourMentorDetails(mentorDetails);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching mentorship assignments:', err);
+    }
+  };
 
   // Fetch departments mapping
   const fetchDepartments = async () => {
@@ -100,13 +169,24 @@ const CandidateMentorship = () => {
       const result = await response.json();
       
       if (result.status && result.data) {
-        setMentors(result.data);
+        // Filter mentors to only show those whose department matches assigned department
+        let filteredMentors = result.data;
         
-        // For demo purposes, assign first mentor as "Your Mentor"
-        // In a real app, you'd fetch this based on candidate's assigned mentor
-        if (result.data.length > 0) {
-          setYourMentor(result.data[0]);
+        if (assignedDepartments.size > 0) {
+          // Filter mentors who have specializations matching assigned departments
+          filteredMentors = result.data.filter(mentor => {
+            if (mentor.specializations && Array.isArray(mentor.specializations)) {
+              // Check if any of mentor's specializations match assigned departments
+              return mentor.specializations.some(specId => {
+                const deptName = departmentsMap[specId];
+                return deptName && assignedDepartments.has(deptName);
+              });
+            }
+            return false;
+          });
         }
+        
+        setMentors(filteredMentors);
       } else {
         throw new Error(result.message || 'Failed to fetch mentors');
       }
@@ -119,10 +199,19 @@ const CandidateMentorship = () => {
   };
 
   useEffect(() => {
-    fetchDepartments();
-    fetchLevels();
-    fetchMentors();
+    const loadData = async () => {
+      await fetchDepartments();
+      await fetchLevels();
+      await fetchMentorshipAssignments();
+    };
+    loadData();
   }, []);
+
+  useEffect(() => {
+    if (Object.keys(departmentsMap).length > 0) {
+      fetchMentors();
+    }
+  }, [assignedDepartments, departmentsMap]);
 
   // Handle Connect button click
   const handleConnect = (mentor) => {
@@ -156,6 +245,11 @@ const CandidateMentorship = () => {
     return departmentIds.map(id => departmentsMap[id] || `Department ${id}`).filter(Boolean);
   };
 
+  // Check if mentor is already connected
+  const isMentorConnected = (mentorId) => {
+    return connectedMentorIds.has(mentorId);
+  };
+
   // Get level badge color
   const getLevelBadge = (level) => {
     switch(level) {
@@ -177,7 +271,7 @@ const CandidateMentorship = () => {
     return `${exp} years`;
   };
 
-  if (loading) {
+  if (loading && assignedDepartments.size === 0) {
     return (
       <div className="cm-layout-wrapper">
         <CandidateSidebar />
@@ -194,7 +288,7 @@ const CandidateMentorship = () => {
     );
   }
 
-  if (error) {
+  if (error && assignedDepartments.size === 0) {
     return (
       <div className="cm-layout-wrapper">
         <CandidateSidebar />
@@ -215,7 +309,7 @@ const CandidateMentorship = () => {
     );
   }
 
-  const levelBadge = yourMentor ? getLevelBadge(yourMentor.mentor_level) : null;
+  const levelBadge = yourMentorDetails ? getLevelBadge(yourMentorDetails.mentor_level) : null;
 
   return (
     <div className="cm-layout-wrapper">
@@ -242,27 +336,27 @@ const CandidateMentorship = () => {
             </button>
           </div>
 
-          {/* Your Mentor Section */}
-          {yourMentor && (
+          {/* Your Mentor Section - Now with complete details */}
+          {yourMentor && yourMentorDetails && (
             <div className="cm-card mb-4">
               <h5>Your Mentor</h5>
               <p className="cm-muted">Your assigned senior guide</p>
 
               <div className="cm-mentor-box">
-                <div className="d-flex align-items-center gap-3">
+                <div className="d-flex align-items-start gap-3">
                   <div className="cm-avatar">
-                    {yourMentor.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                    {yourMentorDetails.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'NA'}
                   </div>
 
-                  <div>
-                    <div className="d-flex align-items-center gap-2 mb-1">
-                      <h6 className="mb-0">{yourMentor.full_name}</h6>
-                      {yourMentor.background_verified && (
+                  <div className="flex-grow-1">
+                    <div className="d-flex align-items-center gap-2 mb-2">
+                      <h6 className="mb-0">{yourMentorDetails.full_name}</h6>
+                      {yourMentorDetails.background_verified && (
                         <span className="cm-verified-badge" title="Background Verified">
                           <FaCheckCircle />
                         </span>
                       )}
-                      {yourMentor.mentorship_certified && (
+                      {yourMentorDetails.mentorship_certified && (
                         <span className="cm-certified-badge" title="Mentorship Certified">
                           <FaCertificate />
                         </span>
@@ -272,41 +366,67 @@ const CandidateMentorship = () => {
                     <p className="cm-muted mb-2">
                       <span 
                         className="cm-level-badge"
-                        style={{ backgroundColor: levelBadge.bg, color: levelBadge.color }}
+                        style={{ backgroundColor: levelBadge?.bg, color: levelBadge?.color }}
                       >
-                        {levelBadge.text}
+                        {levelBadge?.text}
                       </span>
-                      {yourMentor.current_company && (
+                      {yourMentorDetails.current_company && (
                         <span className="cm-company ms-2">
-                          <FaBuilding className="me-1" /> {yourMentor.current_company}
+                          <FaBuilding className="me-1" /> {yourMentorDetails.current_company}
                         </span>
                       )}
                     </p>
 
-                    {/* Departments/Specializations */}
-                    <div className="cm-specializations">
-                      {getDepartments(yourMentor.specializations).map((dept, idx) => (
-                        <span key={idx} className="cm-tag">{dept}</span>
-                      ))}
+                    {/* Department Badge */}
+                    <div className="mb-2">
+                      <span className="cm-department-badge">
+                        {yourMentor.department_name}
+                      </span>
+                      <span className="cm-target-level ms-2">
+                        Target: {yourMentor.target_level_name}
+                      </span>
                     </div>
 
+                    {/* Specializations/Departments */}
+                    {yourMentorDetails.specializations && yourMentorDetails.specializations.length > 0 && (
+                      <div className="cm-specializations mb-2">
+                        {getDepartments(yourMentorDetails.specializations).slice(0, 2).map((dept, idx) => (
+                          <span key={idx} className="cm-tag me-1">{dept}</span>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Contact Info */}
-                    <div className="cm-contact-info mt-2">
-                      {yourMentor.email && (
+                    <div className="cm-contact-info mb-2">
+                      {yourMentorDetails.email && (
                         <span className="cm-contact-item">
-                          <FaEnvelope /> {yourMentor.email}
+                          <FaEnvelope /> {yourMentorDetails.email}
                         </span>
                       )}
-                      {yourMentor.phone_number && (
-                        <span className="cm-contact-item">
-                          <FaPhone /> {yourMentor.phone_number}
+                      {yourMentorDetails.phone_number && (
+                        <span className="cm-contact-item ms-3">
+                          <FaPhone /> {yourMentorDetails.phone_number}
                         </span>
                       )}
                     </div>
+
+                    {/* Progress */}
+                    {/* <div className="cm-progress-info mt-2">
+                      <div className="d-flex justify-content-between mb-1">
+                        <small>Progress</small>
+                        <small>{yourMentor.completion_percentage || 0}%</small>
+                      </div>
+                      <div className="cm-progress-bar">
+                        <div 
+                          className="cm-progress-fill" 
+                          style={{ width: `${yourMentor.completion_percentage || 0}%` }}
+                        ></div>
+                      </div>
+                    </div> */}
                   </div>
                 </div>
 
-                <div className="d-flex gap-2">
+                <div className="d-flex gap-2 mt-3">
                   <button className="btn cm-outline-btn">
                     <FaCommentDots className="me-2" />
                     Message
@@ -325,39 +445,45 @@ const CandidateMentorship = () => {
                   <FaUserTie className="cm-stat-icon" />
                   <div>
                     <span className="cm-stat-label">Experience</span>
-                    <span className="cm-stat-value">{formatExperience(yourMentor.years_of_experience)}</span>
+                    <span className="cm-stat-value">{formatExperience(yourMentorDetails.years_of_experience)}</span>
                   </div>
                 </div>
                 <div className="cm-stat-item">
                   <FaUsers className="cm-stat-icon" />
                   <div>
                     <span className="cm-stat-label">Trainees</span>
-                    <span className="cm-stat-value">{yourMentor.current_trainees || 0} / {yourMentor.max_trainees || 0}</span>
+                    <span className="cm-stat-value">{yourMentorDetails.current_trainees || 0} / {yourMentorDetails.max_trainees || 0}</span>
                   </div>
                 </div>
                 <div className="cm-stat-item">
                   <FaStar className="cm-stat-icon" />
                   <div>
                     <span className="cm-stat-label">Mentor Level</span>
-                    <span className="cm-stat-value">Level {yourMentor.mentor_level}</span>
+                    <span className="cm-stat-value">Level {yourMentorDetails.mentor_level}</span>
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Available Mentors */}
-          {mentors.length > 0 && (
+          {/* Available Mentors - Only show those from assigned departments */}
+          {mentors.length > 0 && assignedDepartments.size > 0 && (
             <div className="cm-card">
               <h5>Available Mentors</h5>
               <p className="cm-muted">
-                Senior professionals you can connect with
+                Senior professionals from {Array.from(assignedDepartments).join(', ')} department
               </p>
 
               <div className="row g-4 mt-2">
                 {mentors.map((mentor) => {
                   const mentorLevelBadge = getLevelBadge(mentor.mentor_level);
                   const departments = getDepartments(mentor.specializations);
+                  const isConnected = isMentorConnected(mentor.id);
+                  
+                  // Don't show the current mentor in available mentors list
+                  if (yourMentor && mentor.id === yourMentor.mentor) {
+                    return null;
+                  }
                   
                   return (
                     <MentorCard
@@ -373,11 +499,35 @@ const CandidateMentorship = () => {
                       mentees={`${mentor.current_trainees || 0} mentees`}
                       backgroundVerified={mentor.background_verified}
                       mentorshipCertified={mentor.mentorship_certified}
+                      isConnected={isConnected}
                       onConnect={() => handleConnect(mentor)}
                     />
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* No mentors available message */}
+          {mentors.length === 0 && assignedDepartments.size > 0 && (
+            <div className="cm-card text-center py-5">
+              <FaUsers className="cm-empty-icon" />
+              <h5>No Available Mentors</h5>
+              <p className="cm-muted">
+                No mentors are currently available in your assigned departments.
+                Please check back later.
+              </p>
+            </div>
+          )}
+
+          {/* No assignment message */}
+          {assignedDepartments.size === 0 && (
+            <div className="cm-card text-center py-5">
+              <FaExclamationCircle className="cm-empty-icon" />
+              <h5>No Mentor Assigned</h5>
+              <p className="cm-muted">
+                You don't have any mentor assigned yet. Please contact your administrator.
+              </p>
             </div>
           )}
         </div>
@@ -400,6 +550,7 @@ const MentorCard = ({
   mentees,
   backgroundVerified,
   mentorshipCertified,
+  isConnected,
   onConnect
 }) => (
   <div className="col-lg-4 col-md-6">
@@ -455,10 +606,18 @@ const MentorCard = ({
       </div>
 
       <button 
-        className="btn cm-connect-btn w-100 mt-3"
+        className={`btn ${isConnected ? 'cm-connected-btn' : 'cm-connect-btn'} w-100 mt-3`}
         onClick={onConnect}
+        disabled={isConnected}
       >
-        Connect
+        {isConnected ? (
+          <>
+            <FaCheck className="me-2" />
+            Connected
+          </>
+        ) : (
+          'Connect'
+        )}
       </button>
     </div>
   </div>
