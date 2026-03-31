@@ -164,12 +164,20 @@ const Sidebar = () => {
             <FaBuilding /> Departments
           </Link>
 
+
           <Link
+              to="/department-level"
+              className={`ta-menu-item ${isActive("/department-level") ? "active" : ""}`}
+            >
+              <FaLayerGroup /> Department Level
+            </Link>
+
+          {/* <Link
             to="/rotation"
             className={`ta-menu-item ${isActive("/rotation") ? "active" : ""}`}
           >
             <FaSyncAlt /> Rotation Program
-          </Link>
+          </Link> */}
         </div>
 
         {/* COMPLIANCE */}

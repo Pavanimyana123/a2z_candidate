@@ -14,6 +14,8 @@ import LevelsManagement from "./components/Admin/LevelManagement/LevelManagement
 import AddLevel from "./components/Admin/LevelManagement/AddLevel";
 import DepartmentManagement from "./components/Admin/DepartmentManagement/DepartmentManagement";
 import AddDepartment from "./components/Admin/DepartmentManagement/AddDepartmentManagament";
+import DepartmentLevel from "./components/Admin/DepartmentLevel/DepartmentLevel";
+import AddDepartmentLevel from "./components/Admin/DepartmentLevel/AddDepartmentLevel";
 import RotationProgram from "./components/Admin/RotationProgram/RotationProgram";
 import ComplianceManagement from "./components/Admin/ComplianceManagement/ComplianceManagement";
 import AuditLogs from "./components/Admin/AuditLogs/AuditLogs";
@@ -77,6 +79,9 @@ function App() {
             <Route path="/department" element={<DepartmentManagement />} />
             <Route path="/department/add" element={<AddDepartment />} />
             <Route path="/department/edit/:id" element={<AddDepartment />} />
+            <Route path="/department-level" element={<DepartmentLevel />} />
+            <Route path="/add-department-level" element={<AddDepartmentLevel />} />
+             <Route path="/edit-department-level/:id" element={<AddDepartmentLevel />} />
             <Route path="/rotation" element={<RotationProgram />} />
             <Route path="/compliance" element={<ComplianceManagement />} />
             <Route path="/certificate" element={<Certifications />} />

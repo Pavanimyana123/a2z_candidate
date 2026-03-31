@@ -138,8 +138,6 @@ const MentorSidebar = () => {
             className={`ta-menu-item ${isActive("/mentor-requests") ? "active" : ""}`}
           >
             <FaUserPlus /> Candidate Requests
-            {/* Optional: Add a badge for pending requests count */}
-            {/* <span className="ta-menu-badge">3</span> */}
           </Link>
 
           <Link
@@ -156,12 +154,12 @@ const MentorSidebar = () => {
             <FaEye /> Evidence Review
           </Link>
 
-          <Link
+          {/* <Link
             to="/mentor-rotation"
             className={`ta-menu-item ${isActive("/mentor-rotation") ? "active" : ""}`}
           >
             <FaSyncAlt /> Rotation Tracking
-          </Link>
+          </Link> */}
 
           <Link
             to="/mentor-compliance"

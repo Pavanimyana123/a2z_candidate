@@ -147,12 +147,12 @@ const CandidateSidebar = () => {
             <FaCheckCircle /> Competency
           </Link>
 
-          <Link
+          {/* <Link
             to="/candidate-rotation"
             className={`ta-menu-item ${isActive("/candidate-rotation") ? "active" : ""}`}
           >
             <FaCertificate /> Rotation Program
-          </Link>
+          </Link> */}
         </div>
 
         {/* COMPLIANCE */}
