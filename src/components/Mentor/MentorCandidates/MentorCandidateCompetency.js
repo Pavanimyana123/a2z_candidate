@@ -59,6 +59,7 @@ const MentorCandidateCompetency = () => {
   const [digitalLogbookData, setDigitalLogbookData] = useState([]);
   const [selectedLogbook, setSelectedLogbook] = useState(null);
   const [showLogbookModal, setShowLogbookModal] = useState(false);
+  const [currentMentorAssignments, setCurrentMentorAssignments] = useState([]);
   
   // Get current mentor from localStorage
   useEffect(() => {
@@ -81,7 +82,8 @@ const MentorCandidateCompetency = () => {
         id: location.state.candidateId,
         name: location.state.candidateName,
         department: location.state.departmentName,
-        level: location.state.levelName
+        level: location.state.levelName,
+        assignmentId: location.state.assignmentId
       });
     }
   }, [location.state]);
@@ -95,12 +97,13 @@ const MentorCandidateCompetency = () => {
       }
       const result = await response.json();
       if (result.status && result.data) {
-        // Filter logbook entries for this candidate
+        // Filter logbook entries for this candidate AND specific department
         const candidateLogbooks = result.data.filter(entry => 
-          entry.candidate_name === candidateInfo?.name
+          entry.candidate_name === candidateInfo?.name &&
+          entry.department_name === candidateInfo?.department
         );
         setDigitalLogbookData(candidateLogbooks);
-        console.log('Digital logbook data fetched:', candidateLogbooks);
+        console.log('Digital logbook data fetched for department:', candidateInfo?.department, candidateLogbooks);
       }
     } catch (err) {
       console.error('Error fetching digital logbook:', err);
@@ -109,7 +112,7 @@ const MentorCandidateCompetency = () => {
 
   // Fetch digital logbook when candidate info is available
   useEffect(() => {
-    if (candidateInfo?.name) {
+    if (candidateInfo?.name && candidateInfo?.department) {
       fetchDigitalLogbook();
     }
   }, [candidateInfo]);
@@ -186,29 +189,22 @@ const MentorCandidateCompetency = () => {
     return department ? department.name : null;
   };
 
-  // Filter competencies based on mentor assignments
-  const filterCompetenciesByMentorAssignment = (allCompetencies, assignments, allDepartments) => {
-    if (!assignments.length || !allCompetencies.length) return allCompetencies;
-
-    const candidateAssignments = {};
+  // Filter competencies based on current mentor's specific assignment department
+  const filterCompetenciesByMentorAssignment = (allCompetencies, mentorAssignmentsList, candidateDept) => {
+    if (!allCompetencies.length) return [];
     
-    assignments.forEach(assignment => {
-      const candidateId = assignment.candidate;
-      const departmentName = assignment.department_name;
-      
-      if (!candidateAssignments[candidateId]) {
-        candidateAssignments[candidateId] = [];
-      }
-      candidateAssignments[candidateId].push(departmentName);
+    console.log('Filtering competencies for department:', candidateDept);
+    console.log('All competencies:', allCompetencies);
+    
+    // First, filter competencies by candidate and department
+    const filteredByDept = allCompetencies.filter(competency => {
+      const competencyDeptName = getDepartmentName(competency.department);
+      console.log(`Competency ID ${competency.id}: department ID ${competency.department} -> name ${competencyDeptName}, candidate department: ${candidateDept}`);
+      return competencyDeptName === candidateDept;
     });
-
-    const filtered = allCompetencies.filter(competency => {
-      const competencyDepartmentName = getDepartmentName(competency.department);
-      const candidateAssignmentsList = candidateAssignments[competency.candidate] || [];
-      return candidateAssignmentsList.includes(competencyDepartmentName);
-    });
-
-    return filtered;
+    
+    console.log('Filtered by department:', filteredByDept);
+    return filteredByDept;
   };
 
   // Fetch competencies, levels, departments, and mentor assignments on component mount
@@ -245,6 +241,19 @@ const MentorCandidateCompetency = () => {
 
         if (assignmentsResult.status && assignmentsResult.data) {
           setMentorAssignments(assignmentsResult.data);
+          
+          // Filter assignments for current mentor and candidate
+          const currentMentorId = mentorInfo?.id || mentorInfo?.user_id;
+          const mentorSpecificAssignments = assignmentsResult.data.filter(assignment => {
+            const mentorMatch = currentMentorId ? Number(assignment.mentor) === Number(currentMentorId) : true;
+            const candidateMatch = assignment.candidate === parseInt(candidateInfo.id);
+            const isActive = assignment.mentor_status === 'accepted' && assignment.status === 'active';
+            
+            return mentorMatch && candidateMatch && isActive;
+          });
+          
+          console.log('Current mentor assignments for this candidate:', mentorSpecificAssignments);
+          setCurrentMentorAssignments(mentorSpecificAssignments);
         }
 
         if (competenciesResult.status && competenciesResult.data) {
@@ -271,36 +280,34 @@ const MentorCandidateCompetency = () => {
     };
 
     fetchData();
-  }, [candidateInfo]);
+  }, [candidateInfo, mentorInfo]);
 
-  // Apply filtering after all data is loaded
+  // Apply filtering after all data is loaded - filter by the department from candidateInfo
   useEffect(() => {
-    if (competencies.length > 0 && departments.length > 0 && mentorAssignments.length > 0) {
-      const filtered = filterCompetenciesByMentorAssignment(competencies, mentorAssignments, departments);
+    if (competencies.length > 0 && departments.length > 0 && candidateInfo?.department) {
+      // Filter competencies based on the candidate's department from the assignment
+      const filtered = filterCompetenciesByMentorAssignment(
+        competencies, 
+        currentMentorAssignments, 
+        candidateInfo.department
+      );
       setFilteredCompetencies(filtered);
       
       if (filtered.length > 0) {
+        // Sort by level (highest first) and pick the most recent one
         const sortedCompetencies = [...filtered].sort((a, b) => b.level - a.level);
         setCurrentCompetency(sortedCompetencies[0]);
         
+        // Fetch evidence for each filtered competency
         for (const comp of filtered) {
           fetchEvidenceForCompetency(comp.id);
         }
       } else {
+        console.log('No competencies found for department:', candidateInfo.department);
         setCurrentCompetency(null);
       }
-    } else if (competencies.length > 0 && departments.length > 0) {
-      setFilteredCompetencies(competencies);
-      if (competencies.length > 0) {
-        const sortedCompetencies = [...competencies].sort((a, b) => b.level - a.level);
-        setCurrentCompetency(sortedCompetencies[0]);
-        
-        for (const comp of competencies) {
-          fetchEvidenceForCompetency(comp.id);
-        }
-      }
     }
-  }, [competencies, departments, mentorAssignments]);
+  }, [competencies, departments, candidateInfo, currentMentorAssignments]);
 
   // Update current level data when competency or levels change
   useEffect(() => {
@@ -500,8 +507,8 @@ const MentorCandidateCompetency = () => {
                   </h2>
                   <p>
                     {currentCompetency && filteredCompetencies.length > 0
-                      ? `${currentDepartmentData ? currentDepartmentData.name : ''}`
-                      : "No valid competencies found for assigned department"}
+                      ? `${currentDepartmentData ? currentDepartmentData.name : candidateInfo?.department || ''}`
+                      : `No valid competencies found for ${candidateInfo?.department || 'assigned'} department`}
                   </p>
                 </div>
 
@@ -748,7 +755,7 @@ const MentorCandidateCompetency = () => {
               <div className="mcp-no-competency">
                 <FaExclamationCircle className="mcp-no-competency-icon" />
                 <h4>No Competency Found</h4>
-                <p>This candidate doesn't have any competency records for their assigned department.</p>
+                <p>This candidate doesn't have any competency records for the {candidateInfo?.department || 'assigned'} department.</p>
               </div>
             )}
           </div>
