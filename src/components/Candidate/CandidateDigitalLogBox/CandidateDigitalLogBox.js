@@ -1,3 +1,4 @@
+// CandidateDigitalLogbook.jsx (Updated with Approved count)
 import React, { useState, useEffect } from "react";
 import CandidateSidebar from "../Layout/CandidateSidebar";
 import Header from "../Layout/CandidateHeader";
@@ -13,7 +14,9 @@ import {
   FaSpinner,
   FaFile,
   FaEdit,
-  FaTrash
+  FaTrash,
+  FaBook,
+  FaThumbsUp
 } from "react-icons/fa";
 import "./CandidateDigitalLogBox.css";
 import { useNavigate } from 'react-router-dom';
@@ -28,7 +31,8 @@ const CandidateDigitalLogbook = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [stats, setStats] = useState({
     totalHours: 0,
-    validatedHours: 0,
+    totalLogbooks: 0,
+    approvedCount: 0,
     pendingCount: 0,
     totalPhotos: 0
   });
@@ -114,7 +118,6 @@ const CandidateDigitalLogbook = () => {
           showConfirmButton: false
         });
 
-        // Refresh the list after deletion
         fetchLogEntries();
       } catch (err) {
         console.error('Error deleting entry:', err);
@@ -130,42 +133,36 @@ const CandidateDigitalLogbook = () => {
 
   const calculateStats = (entries) => {
     let totalHours = 0;
-    let validatedHours = 0;
+    let totalLogbooks = entries.length; // Count total number of logbook entries
+    let approvedCount = 0;
     let pendingCount = 0;
     let totalPhotos = 0;
 
     entries.forEach(entry => {
-      // Calculate total hours from the total_hours field or from duration components
-      if (entry.total_hours) {
-        totalHours += entry.total_hours;
-      } else {
-        // Fallback calculation if total_hours not provided
-        const hours = (entry.months * 30 * 24) + (entry.weeks * 7 * 24) + (entry.days * 24) + entry.hours + (entry.minutes / 60);
-        totalHours += hours;
+      // Fix: Only use hours value, don't add days and months
+      const hoursOnly = entry.hours || 0;
+      totalHours += hoursOnly;
+
+      // Count approved entries (verification_status === 'approved')
+      if (entry.verification_status === 'approved') {
+        approvedCount++;
       }
 
-      // Calculate validated hours (assuming verified entries)
-      if (entry.verification_status === 'verified') {
-        validatedHours += entry.total_hours || 0;
-      }
-
-      // Count pending entries
+      // Count pending entries (pending review count)
       if (entry.verification_status === 'pending') {
         pendingCount++;
       }
 
-      // Count evidence files
-      if (entry.photo_files && Array.isArray(entry.photo_files)) {
-        totalPhotos += entry.photo_files.length;
-      }
-      if (entry.evidence_files && Array.isArray(entry.evidence_files)) {
-        totalPhotos += entry.evidence_files.length;
+      // Count evidence items
+      if (entry.evidence_documents && Array.isArray(entry.evidence_documents)) {
+        totalPhotos += entry.evidence_documents.length;
       }
     });
 
     setStats({
-      totalHours: Math.round(totalHours),
-      validatedHours: Math.round(validatedHours),
+      totalHours: totalHours,
+      totalLogbooks: totalLogbooks,
+      approvedCount: approvedCount,
       pendingCount: pendingCount,
       totalPhotos: totalPhotos
     });
@@ -181,36 +178,33 @@ const CandidateDigitalLogbook = () => {
     });
   };
 
-  // Function to calculate total hours from entry
+  // Fix: Get only hours value
   const getTotalHours = (entry) => {
-    if (entry.total_hours) {
-      return Math.round(entry.total_hours);
-    } else {
-      const hours = (entry.months * 30 * 24) + (entry.weeks * 7 * 24) + (entry.days * 24) + entry.hours + (entry.minutes / 60);
-      return Math.round(hours);
-    }
+    return entry.hours || 0;
   };
 
   const getFileCount = (entry) => {
-    let count = 0;
-    if (entry.photo_files && entry.photo_files.length) count += entry.photo_files.length;
-    if (entry.video_files && entry.video_files.length) count += entry.video_files.length;
-    if (entry.document_files && entry.document_files.length) count += entry.document_files.length;
-    if (entry.evidence_files && entry.evidence_files.length) count += entry.evidence_files.length;
-    return count;
+    if (entry.evidence_documents && Array.isArray(entry.evidence_documents)) {
+      return entry.evidence_documents.length;
+    }
+    return 0;
+  };
+
+  // Fix: Get filename without path
+  const getFileName = (filePath) => {
+    if (!filePath) return '';
+    return filePath.split('/').pop();
   };
 
   const filteredEntries = logEntries.filter(entry => {
-    // Search filter
     const matchesSearch = searchTerm === "" || 
       entry.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entry.work_description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entry.work_location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       entry.ship_name?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Status filter
     const matchesStatus = statusFilter === "all" || 
-      (statusFilter === "validated" && entry.verification_status === "verified") ||
+      (statusFilter === "approved" && entry.verification_status === "approved") ||
       (statusFilter === "pending" && entry.verification_status === "pending");
 
     return matchesSearch && matchesStatus;
@@ -245,7 +239,6 @@ const CandidateDigitalLogbook = () => {
         <div className="ta-content-area">
           <div className="container-fluid cdl-wrapper">
 
-            {/* ================= HEADER ================= */}
             <div className="d-flex justify-content-between align-items-start mb-4">
               <div>
                 <h3 className="cdl-title">Digital Logbook</h3>
@@ -261,17 +254,22 @@ const CandidateDigitalLogbook = () => {
               </button>
             </div>
 
-            {/* ================= STATS ================= */}
             <div className="row g-4 mb-4">
-              <StatCard 
+              {/* <StatCard 
                 icon={<FaClock />} 
                 value={`${stats.totalHours}h`} 
                 label="Total Hours" 
+              /> */}
+              <StatCard 
+                icon={<FaBook />} 
+                value={stats.totalLogbooks} 
+                label="Total Logbooks" 
+                primary 
               />
               <StatCard 
-                icon={<FaCheckCircle />} 
-                value={`${stats.validatedHours}h`} 
-                label="Validated" 
+                icon={<FaThumbsUp />} 
+                value={stats.approvedCount} 
+                label="Approved" 
                 success 
               />
               <StatCard 
@@ -288,9 +286,8 @@ const CandidateDigitalLogbook = () => {
               />
             </div>
 
-            {/* ================= SEARCH & FILTER ================= */}
             <div className="row g-3 mb-4">
-              <div className="col-lg-9">
+              <div className="col-lg-8">
                 <div className="cdl-search">
                   <FaSearch />
                   <input 
@@ -300,20 +297,19 @@ const CandidateDigitalLogbook = () => {
                   />
                 </div>
               </div>
-              <div className="col-lg-3">
+              <div className="col-lg-4">
                 <select 
                   className="form-select cdl-filter"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                 >
                   <option value="all">All Entries</option>
-                  <option value="validated">Validated</option>
+                  <option value="approved">Approved</option>
                   <option value="pending">Pending</option>
                 </select>
               </div>
             </div>
 
-            {/* ================= LOG ENTRIES ================= */}
             {filteredEntries.length === 0 ? (
               <div className="text-center p-5">
                 <p className="text-muted">No logbook entries found.</p>
@@ -330,7 +326,7 @@ const CandidateDigitalLogbook = () => {
                   key={entry.id}
                   id={entry.id}
                   title={entry.title || "Untitled Entry"}
-                  status={entry.verification_status === "verified" ? "validated" : "pending"}
+                  status={entry.verification_status === "approved" ? "approved" : "pending"}
                   totalHours={getTotalHours(entry)}
                   desc={entry.work_description || entry.description || "No description provided"}
                   location={entry.work_location || "Location not specified"}
@@ -352,12 +348,10 @@ const CandidateDigitalLogbook = () => {
   );
 };
 
-/* ================= SUB COMPONENTS ================= */
-
-const StatCard = ({ icon, value, label, success, warning, info }) => (
+const StatCard = ({ icon, value, label, success, warning, info, primary }) => (
   <div className="col-xl-3 col-md-6">
     <div className="cdl-stat-card">
-      <div className={`cdl-stat-icon ${success ? "ok" : warning ? "warn" : info ? "info" : ""}`}>
+      <div className={`cdl-stat-icon ${success ? "ok" : warning ? "warn" : info ? "info" : primary ? "primary" : ""}`}>
         {icon}
       </div>
       <h3>{value}</h3>
@@ -373,7 +367,7 @@ const LogEntry = ({ id, title, status, totalHours, desc, location, asset, startD
         <div className="d-flex align-items-center gap-2 mb-2">
           <h5 className="mb-0">{title}</h5>
           <span className={`cdl-badge ${status}`}>
-            {status === "validated" ? "Validated" : "Pending"}
+            {status === "approved" ? "Approved" : "Pending"}
           </span>
         </div>
         <p className="cdl-desc">{desc}</p>

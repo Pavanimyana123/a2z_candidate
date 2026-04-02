@@ -689,169 +689,21 @@ const CandidateCompetencyProgression = () => {
                             </span>
                           </div>
                         </div>
-                        
                         <div className="cp-journey-details-content">
-                          {/* Competency Scores Section - Removed as requested */}
-                          
-                          {/* Evidence Section */}
-                          <div className="cp-evidence-section">
-                            <div className="cp-evidence-header">
-                              <h6 className="cp-section-subtitle">
-                                <FaFileAlt className="cp-section-icon" /> Evidence Details
-                              </h6>
-                              <button 
-                                className="cp-add-evidence-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAddEvidence(levelNum, competencyData);
-                                }}
-                              >
-                                <FaPlusCircle className="cp-add-evidence-icon" />
-                                Add Evidence
-                              </button>
-                            </div>
-
-                            {/* Evidence List */}
-                            <div className="cp-evidence-list">
-                              {isLoadingEvidence ? (
-                                <div className="cp-evidence-loading">
-                                  <FaSpinner className="cp-spinner-small" />
-                                  <p>Loading evidence...</p>
-                                </div>
-                              ) : evidence.length > 0 ? (
-                                <div className="cp-evidence-items">
-                                  {evidence.map((item) => (
-                                    <div key={item.id} className="cp-evidence-item">
-                                      <div className="cp-evidence-item-header">
-                                        <div className="cp-evidence-item-icon">
-                                          {getEvidenceTypeIcon(item.evidence_type)}
-                                        </div>
-                                        <div className="cp-evidence-item-title">
-                                          <h6>{item.title}</h6>
-                                          <span className="cp-evidence-type">{item.evidence_type}</span>
-                                        </div>
-                                        <div className="cp-evidence-actions">
-                                          <button 
-                                            className="cp-edit-evidence-btn"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleEditEvidence(item, levelNum, competencyData);
-                                            }}
-                                            title="Edit Evidence"
-                                          >
-                                            <FaEdit />
-                                          </button>
-                                          <button 
-                                            className="cp-delete-evidence-btn"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleDeleteEvidence(item, competencyData.id);
-                                            }}
-                                            title="Delete Evidence"
-                                          >
-                                            <FaTrash />
-                                          </button>
-                                        </div>
-                                        <div className="cp-evidence-verification">
-                                          {getVerificationBadge(item.verification_status)}
-                                        </div>
-                                      </div>
-
-                                      <div className="cp-evidence-item-description">
-                                        <p>{item.description || item.submission_notes}</p>
-                                      </div>
-
-                                      {/* Evidence Link */}
-                                      {item.evidence_link && (
-                                        <div className="cp-evidence-link">
-                                          <FaLink className="cp-evidence-link-icon" />
-                                          <a 
-                                            href={item.evidence_link} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="cp-evidence-link-text"
-                                          >
-                                            View External Link <FaExternalLinkAlt className="cp-external-icon" />
-                                          </a>
-                                        </div>
-                                      )}
-
-                                      {/* Documents */}
-                                      {item.evidence_documents && item.evidence_documents.length > 0 && (
-                                        <div className="cp-evidence-documents">
-                                          <div className="cp-evidence-documents-title">
-                                            <FaDownload /> Documents ({item.evidence_documents.length})
-                                          </div>
-                                          <div className="cp-evidence-document-list">
-                                            {item.evidence_documents.map((doc, idx) => (
-                                              <div key={idx} className="cp-evidence-document-item">
-                                                {getFileIcon(doc)}
-                                                <span className="cp-evidence-document-name">{doc}</span>
-                                                <a 
-                                                  href={getDocumentUrl(doc)} 
-                                                  target="_blank" 
-                                                  rel="noopener noreferrer"
-                                                  className="cp-evidence-document-download"
-                                                  title="Download/View Document"
-                                                >
-                                                  <FaEye />
-                                                </a>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      )}
-
-                                      <div className="cp-evidence-item-meta">
-                                        <span className="cp-evidence-submitted-by">
-                                          Submitted by: {item.submitted_by || 'N/A'}
-                                        </span>
-                                        <span className="cp-evidence-date">
-                                          {formatDate(item.created_at)}
-                                        </span>
-                                      </div>
-
-                                      {/* Review Comments (if any) */}
-                                      {item.review_comments && (
-                                        <div className="cp-evidence-review-comments">
-                                          <strong>Review Comments:</strong>
-                                          <p>{item.review_comments}</p>
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="cp-evidence-placeholder">
-                                  <FaCloudUploadAlt className="cp-evidence-placeholder-icon" />
-                                  <p>No evidence uploaded yet. Click "Add Evidence" to upload documents, certificates, or other证明材料.</p>
-                                </div>
-                              )}
-                            </div>
+                          <div className="cp-digital-logbook-section">
+                            <button 
+                              className="cp-digital-logbook-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate('/candidate-digital');
+                              }}
+                            >
+                              <FaBookOpen className="cp-digital-logbook-icon" />
+                              Add Digital Log Book
+                            </button>
                           </div>
 
-                          {/* Comments Section */}
-                          {(competencyData.mentor_comments || competencyData.admin_comments) && (
-                            <div className="cp-comments-section">
-                              <h6 className="cp-section-subtitle">Comments</h6>
-                              {competencyData.mentor_comments && (
-                                <div className="cp-comment">
-                                  <strong>Mentor Comments:</strong>
-                                  <p>{competencyData.mentor_comments}</p>
-                                </div>
-                              )}
-                              {competencyData.admin_comments && (
-                                <div className="cp-comment">
-                                  <strong>Admin Comments:</strong>
-                                  <p>{competencyData.admin_comments}</p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          <div className="cp-meta-info">
-                            <small>Last Updated: {new Date(competencyData.updated_at).toLocaleDateString()}</small>
-                          </div>
+                        
                         </div>
                       </div>
                     )}

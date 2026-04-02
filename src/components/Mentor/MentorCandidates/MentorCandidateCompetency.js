@@ -333,15 +333,16 @@ const MentorCandidateCompetency = () => {
     navigate('/mentor-candidates');
   };
 
-  const handleViewLogbook = (logbook) => {
-    setSelectedLogbook(logbook);
-    setShowLogbookModal(true);
-  };
+ const handleViewLogbook = (logbook) => {
+  navigate(`/mentor/logbook/${logbook.id}`, {
+    state: {
+      logbookData: logbook,
+      candidateInfo: candidateInfo
+    }
+  });
+};
 
-  const closeModal = () => {
-    setShowLogbookModal(false);
-    setSelectedLogbook(null);
-  };
+
 
   // Get level display name based on level number
   const getLevelDisplay = (levelNumber) => {
@@ -688,7 +689,7 @@ const MentorCandidateCompetency = () => {
                   </div>
 
                   {/* Evidence Section */}
-                  <div className="mcp-evidence-section">
+                  {/* <div className="mcp-evidence-section">
                     <div className="mcp-evidence-header">
                       <h6 className="mcp-section-subtitle">
                         <FaFileAlt className="mcp-section-icon" /> Evidence Details
@@ -698,7 +699,6 @@ const MentorCandidateCompetency = () => {
                       </span>
                     </div>
 
-                    {/* Evidence List */}
                     <div className="mcp-evidence-list">
                       {isLoadingEvidence ? (
                         <div className="mcp-evidence-loading">
@@ -744,11 +744,11 @@ const MentorCandidateCompetency = () => {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </div> */}
 
-                  <div className="mcp-meta-info">
+                  {/* <div className="mcp-meta-info">
                     <small>Last Updated: {new Date(currentCompetency.updated_at).toLocaleDateString()}</small>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             ) : (
@@ -763,7 +763,7 @@ const MentorCandidateCompetency = () => {
       </div>
 
       {/* Logbook Detail Modal */}
-      {showLogbookModal && selectedLogbook && (
+      {/* {showLogbookModal && selectedLogbook && (
         <div className="mcp-modal-overlay" onClick={closeModal}>
           <div className="mcp-modal" onClick={(e) => e.stopPropagation()}>
             <div className="mcp-modal-header">
@@ -835,7 +835,7 @@ const MentorCandidateCompetency = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };

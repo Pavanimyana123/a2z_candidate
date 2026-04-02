@@ -355,3 +355,15 @@
     padding: 6px;
   }
 }
+
+
+/* Add this to your CandidateDigitalLogBox.css file */
+
+.cdl-stat-icon.primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.cdl-stat-icon.primary svg {
+  color: white;
+}

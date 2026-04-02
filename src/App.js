@@ -30,6 +30,7 @@ import MentorLayout from "./components/Mentor/Layout/MentorLayout";
 import MentorDashboard from "./components/Mentor/MentorDashboard/MentorDashboard"
 import MentorCandidates from "./components/Mentor/MentorCandidates/MentorCandidates";
 import MentorCandidatesCompetency from "./components/Mentor/MentorCandidates/MentorCandidateCompetency"
+import MentorLogbookDetails from './components/Mentor/MentorCandidates/MentorLogBookDetails';
 import MentorCompetencyReview from "./components/Mentor/MentorCandidates/MentorCompetencyReview";
 import MentorRequests from "./components/Mentor/MentorRequests/MentorRequests";
 import MentorLogBook from "./components/Mentor/MentorLogBook/MentorLogBook";
@@ -42,6 +43,7 @@ import MentorReports from "./components/Mentor/MentorReports/MentorReports";
 import CandidateDashboard from "./components/Candidate/CandidateDasboard/CandidateDashboard"
 import CandidateProfessionalIdentity from "./components/Candidate/CandidateProfessionality/CandidateProfessionality";
 import CandidateDigitalLogbook from "./components/Candidate/CandidateDigitalLogBox/CandidateDigitalLogBox";
+import CandidateDigitalLogbookDetails from './components/Candidate/CandidateDigitalLogBox/CandidateDigitalLogDetails';
 import AddLogbookEntry from "./components/Candidate/CandidateDigitalLogBox/AddCandidateLogEntry";
 import CandidateCompetency from "./components/Candidate/CandidateCompetency/CandidateCompetency";
 import CompetenceForm from "./components/Candidate/CandidateCompetency/AddCandidateCompetency";
@@ -101,6 +103,7 @@ function App() {
               <Route path="/mentor-candidates" element={<MentorCandidates />} />
               <Route path="/mentor-candidate-competency" element={<MentorCandidatesCompetency />} />
               <Route path="/mentor-competency-review/:competencyId" element={<MentorCompetencyReview />} />
+              <Route path="/mentor/logbook/:id" element={<MentorLogbookDetails />} />
                <Route path="/mentor-requests" element={<MentorRequests />} />
               <Route path="/mentor-logbook" element={<MentorLogBook />} />
               <Route path="/mentor-evidence" element={<MentorEvidence />} />
@@ -116,6 +119,7 @@ function App() {
               <Route path="/candidate-digital" element={<CandidateDigitalLogbook />} />
               <Route path="/candidate/logbook/add" element={<AddLogbookEntry />} />
               <Route path="/candidate/logbook/edit/:id" element={<AddLogbookEntry />} />
+              <Route path="/candidate/logbook/:id" element={<CandidateDigitalLogbookDetails />} />
                <Route path="/candidate-competence" element={<CandidateCompetency />} />
                <Route path="/add-competence" element={<CompetenceForm />} />
                 <Route path="/add-evidence" element={<AddEvidence />} />

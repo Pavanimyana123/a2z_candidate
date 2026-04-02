@@ -1,4 +1,6 @@
-import React from "react";
+// CandidateDashboard.jsx (Updated with dynamic user data)
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import CandidateSidebar from "../Layout/CandidateSidebar";
 import Header from "../Layout/CandidateHeader";
 import {
@@ -13,6 +15,75 @@ import {
 import "./CandidateDashboard.css";
 
 const CandidateDashboard = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [greeting, setGreeting] = useState("Good morning");
+
+  useEffect(() => {
+    // Load user data from localStorage
+    const candidateData = localStorage.getItem("candidate_user");
+    
+    if (candidateData) {
+      try {
+        const parsedUser = JSON.parse(candidateData);
+        setUser(parsedUser);
+        console.log("✅ Candidate user data loaded:", parsedUser);
+      } catch (error) {
+        console.error("Error parsing candidate user data:", error);
+      }
+    } else {
+      console.warn("No candidate user data found in localStorage");
+    }
+
+    // Set greeting based on time of day
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting("Good morning");
+    else if (hour < 18) setGreeting("Good afternoon");
+    else setGreeting("Good evening");
+  }, []);
+
+  // Get user's full name
+  const getUserName = () => {
+    if (user?.full_name) {
+      return user.full_name;
+    } else if (user?.identifier) {
+      return user.identifier.split("@")[0];
+    }
+    return "Candidate";
+  };
+
+  // Get user's role/level (you can customize this based on your data)
+  const getUserRole = () => {
+    // You can fetch this from API or add to localStorage
+    // For now, showing default role
+    return "Junior Surveyor • Level 2 - Developing";
+  };
+
+  // Handle quick action clicks
+  const handleNewLogbook = () => {
+    navigate("/candidate/logbook/add");
+  };
+
+  const handleUploadEvidence = () => {
+    navigate("/candidate/logbook");
+  };
+
+  const handleViewLearning = () => {
+    navigate("/candidate-learning");
+  };
+
+  const handleCheckCompliance = () => {
+    navigate("/candidate-compliance");
+  };
+
+  const handleViewAllLogbook = () => {
+    navigate("/candidate-digital");
+  };
+
+  const handleManageCertifications = () => {
+    navigate("/candidate-certificate");
+  };
+
   return (
     <div className="ta-layout-wrapper">
       {/* Sidebar */}
@@ -29,26 +100,51 @@ const CandidateDashboard = () => {
             {/* ================= HEADER ================= */}
             <div className="d-flex justify-content-between align-items-start mb-4">
               <div>
-                <h2 className="td-title">Good morning, James</h2>
+                <h2 className="td-title">{greeting}, {getUserName()}</h2>
                 <p className="td-subtitle">
-                  Junior Surveyor • Level 2 - Developing
+                  {getUserRole()}
                 </p>
               </div>
 
               <div className="td-demo-box">
-                <span className="me-2">Demo Mode:</span>
+                <span className="me-2">Role:</span>
                 <select className="form-select td-demo-select">
                   <option>Junior Surveyor</option>
+                  <option>Senior Surveyor</option>
+                  <option>Lead Surveyor</option>
                 </select>
               </div>
             </div>
 
             {/* ================= STATS ================= */}
             <div className="row g-4 mb-4">
-              <StatCard title="Total Exposure Hours" value="1,847" desc="Logged field time" change="+12%" icon={<FaClock />} />
-              <StatCard title="Evidence Uploads" value="127" desc="Photos & documents" change="+8%" icon={<FaCamera />} />
-              <StatCard title="Active Certifications" value="2" desc="1 expiring soon" icon={<FaCertificate />} />
-              <StatCard title="Compliance Score" value="94%" desc="All requirements met" change="+2%" icon={<FaShieldAlt />} />
+              <StatCard 
+                title="Total Exposure Hours" 
+                value="1,847" 
+                desc="Logged field time" 
+                change="+12%" 
+                icon={<FaClock />} 
+              />
+              <StatCard 
+                title="Evidence Uploads" 
+                value="127" 
+                desc="Photos & documents" 
+                change="+8%" 
+                icon={<FaCamera />} 
+              />
+              <StatCard 
+                title="Active Certifications" 
+                value="2" 
+                desc="1 expiring soon" 
+                icon={<FaCertificate />} 
+              />
+              <StatCard 
+                title="Compliance Score" 
+                value="94%" 
+                desc="All requirements met" 
+                change="+2%" 
+                icon={<FaShieldAlt />} 
+              />
             </div>
 
             {/* ================= COMPETENCY + ACTIONS ================= */}
@@ -87,7 +183,7 @@ const CandidateDashboard = () => {
 
                   <div className="qa-grid qa-grid-2">
                     {/* New Logbook */}
-                    <div className="qa-box qa-primary">
+                    <div className="qa-box qa-primary" onClick={handleNewLogbook}>
                       <div className="qa-icon dark">
                         <FaPlus />
                       </div>
@@ -97,7 +193,7 @@ const CandidateDashboard = () => {
                     </div>
 
                     {/* Upload Evidence */}
-                    <div className="qa-box">
+                    <div className="qa-box" onClick={handleUploadEvidence}>
                       <div className="qa-icon">
                         <FaUpload />
                       </div>
@@ -107,7 +203,7 @@ const CandidateDashboard = () => {
                     </div>
 
                     {/* View Learning */}
-                    <div className="qa-box">
+                    <div className="qa-box" onClick={handleViewLearning}>
                       <div className="qa-icon">📘</div>
                       <h6>View Learning</h6>
                       <p>Continue training</p>
@@ -115,7 +211,7 @@ const CandidateDashboard = () => {
                     </div>
 
                     {/* Compliance */}
-                    <div className="qa-box">
+                    <div className="qa-box" onClick={handleCheckCompliance}>
                       <div className="qa-icon">📄</div>
                       <h6>Check Compliance</h6>
                       <p>Review status</p>
@@ -136,17 +232,40 @@ const CandidateDashboard = () => {
                       <h5 className="mb-0">Recent Logbook Entries</h5>
                       <p className="cd-muted">Your latest field activities</p>
                     </div>
-                    <button className="btn btn-outline-secondary cd-btn">View All →</button>
+                    <button 
+                      className="btn btn-outline-secondary cd-btn" 
+                      onClick={handleViewAllLogbook}
+                    >
+                      View All →
+                    </button>
                   </div>
 
-                  <LogItem title="FPSO Harmony" status="Validated" work="Hull structural inspection - Phase 2"
-                    meta="Jurong Shipyard • Floating Production • 15 Jan 2024" hours="8h" files="3" />
+                  <LogItem 
+                    title="FPSO Harmony" 
+                    status="Validated" 
+                    work="Hull structural inspection - Phase 2"
+                    meta="Jurong Shipyard • Floating Production • 15 Jan 2024" 
+                    hours="8h" 
+                    files="3" 
+                  />
 
-                  <LogItem title="Platform Bravo" status="Pending" work="Coating inspection - Upper deck"
-                    meta="Singapore Offshore • Fixed Platform • 12 Jan 2024" hours="14h" files="2" />
+                  <LogItem 
+                    title="Platform Bravo" 
+                    status="Pending" 
+                    work="Coating inspection - Upper deck"
+                    meta="Singapore Offshore • Fixed Platform • 12 Jan 2024" 
+                    hours="14h" 
+                    files="2" 
+                  />
 
-                  <LogItem title="Drilling Rig Delta" status="Validated" work="NDT examination - Leg structure"
-                    meta="Batam Yard • Jack-up Rig • 08 Jan 2024" hours="24h" files="1" />
+                  <LogItem 
+                    title="Drilling Rig Delta" 
+                    status="Validated" 
+                    work="NDT examination - Leg structure"
+                    meta="Batam Yard • Jack-up Rig • 08 Jan 2024" 
+                    hours="24h" 
+                    files="1" 
+                  />
                 </div>
               </div>
 
@@ -158,14 +277,31 @@ const CandidateDashboard = () => {
                       <h5 className="mb-0">Certifications</h5>
                       <p className="cd-muted">2 active certifications</p>
                     </div>
-                    <button className="btn btn-outline-secondary cd-btn">Manage →</button>
+                    <button 
+                      className="btn btn-outline-secondary cd-btn" 
+                      onClick={handleManageCertifications}
+                    >
+                      Manage →
+                    </button>
                   </div>
 
-                  <CertCard title="API 510 Pressure Vessel Inspector" org="American Petroleum Institute"
-                    status="173 days left" type="success" issued="01 Aug 2023" expires="01 Aug 2026" />
+                  <CertCard 
+                    title="API 510 Pressure Vessel Inspector" 
+                    org="American Petroleum Institute"
+                    status="173 days left" 
+                    type="success" 
+                    issued="01 Aug 2023" 
+                    expires="01 Aug 2026" 
+                  />
 
-                  <CertCard title="CSWIP 3.1 Welding Inspector" org="TWI Certification Ltd"
-                    status="Expired" type="warning" issued="15 Mar 2023" expires="15 Mar 2024" />
+                  <CertCard 
+                    title="CSWIP 3.1 Welding Inspector" 
+                    org="TWI Certification Ltd"
+                    status="Expired" 
+                    type="warning" 
+                    issued="15 Mar 2023" 
+                    expires="15 Mar 2024" 
+                  />
                 </div>
               </div>
             </div>
@@ -214,7 +350,7 @@ const CandidateDashboard = () => {
                   </div>
 
                   <div className="dr-progress">
-                    <div className="dr-progress-fill" />
+                    <div className="dr-progress-fill" style={{ width: "33%" }} />
                   </div>
 
                   <div className="dr-list mt-4">
