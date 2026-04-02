@@ -140,19 +140,19 @@ const MentorSidebar = () => {
             <FaUserPlus /> Candidate Requests
           </Link>
 
-          <Link
+          {/* <Link
             to="/mentor-logbook"
             className={`ta-menu-item ${isActive("/mentor-logbook") ? "active" : ""}`}
           >
             <FaBook /> Logbook Approvals
-          </Link>
+          </Link> */}
 
-          <Link
+          {/* <Link
             to="/mentor-evidence"
             className={`ta-menu-item ${isActive("/mentor-evidence") ? "active" : ""}`}
           >
             <FaEye /> Evidence Review
-          </Link>
+          </Link> */}
 
           {/* <Link
             to="/mentor-rotation"

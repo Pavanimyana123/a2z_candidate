@@ -2174,4 +2174,87 @@
 
 
 
+/* Competency Scores Section */
+.cp-scores-section {
+  background: #f7f8fa;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 15px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Section Title */
+.cp-section-subtitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cp-section-icon {
+  color: #3b82f6;
+}
+
+/* Grid Layout */
+.cp-scores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+/* Score Card */
+.cp-score-card {
+  background: #f3f4f6;
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #e5e7eb;
+  transition: 0.2s ease;
+}
+
+.cp-score-card:hover {
+  background: #eef2f7;
+  transform: translateY(-2px);
+}
+
+/* Label */
+.cp-score-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Score Value */
+.cp-score-value {
+  background: #ffffff;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 18px;
+  color: #1f2937;
+  border: 1px solid #e5e7eb;
+}
+
+/* Overall Score Special */
+.cp-score-value.overall {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .cp-scores-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 

@@ -689,21 +689,55 @@ const CandidateCompetencyProgression = () => {
                             </span>
                           </div>
                         </div>
-                        <div className="cp-journey-details-content">
-                          <div className="cp-digital-logbook-section">
-                            <button 
-                              className="cp-digital-logbook-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate('/candidate-digital');
-                              }}
-                            >
-                              <FaBookOpen className="cp-digital-logbook-icon" />
-                              Add Digital Log Book
-                            </button>
-                          </div>
-
                         
+                        <div className="cp-journey-details-content">
+                          {/* Competency Scores Section - Removed as requested */}
+
+                          {/* Competency Scores Section */}
+{competencyData && competencyData.overall_score !== undefined && (
+  <div className="cp-scores-section">
+    <h6 className="cp-section-subtitle">
+      <FaChartBar className="cp-section-icon" /> Competency Scores
+    </h6>
+    <div className="cp-scores-grid">
+      <div className="cp-score-card">
+        <span className="cp-score-label">Overall Score</span>
+        <span className="cp-score-value overall">{competencyData.overall_score}</span>
+      </div>
+      {competencyData.technical_knowledge !== undefined && (
+        <div className="cp-score-card">
+          <span className="cp-score-label">Technical Knowledge</span>
+          <span className="cp-score-value">{competencyData.technical_knowledge}</span>
+        </div>
+      )}
+      {competencyData.field_execution !== undefined && (
+        <div className="cp-score-card">
+          <span className="cp-score-label">Field Execution</span>
+          <span className="cp-score-value">{competencyData.field_execution}</span>
+        </div>
+      )}
+      {competencyData.documentation_quality !== undefined && (
+        <div className="cp-score-card">
+          <span className="cp-score-label">Documentation Quality</span>
+          <span className="cp-score-value">{competencyData.documentation_quality}</span>
+        </div>
+      )}
+      {competencyData.ethics_independence !== undefined && (
+        <div className="cp-score-card">
+          <span className="cp-score-label">Ethics & Independence</span>
+          <span className="cp-score-value">{competencyData.ethics_independence}</span>
+        </div>
+      )}
+      {competencyData.communication !== undefined && (
+        <div className="cp-score-card">
+          <span className="cp-score-label">Communication</span>
+          <span className="cp-score-value">{competencyData.communication}</span>
+        </div>
+      )}
+    </div>
+  </div>
+)}
+
                         </div>
                       </div>
                     )}
