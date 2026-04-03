@@ -504,3 +504,14 @@
   color: #16a34a;
   font-weight: 700;
 }
+
+
+.clickable-card {
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.clickable-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.08);
+}

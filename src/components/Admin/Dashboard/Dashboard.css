@@ -3,6 +3,11 @@
   background: #f7f9fc;
 }
 
+.cards{
+  display: flex;
+  flex-direction: row;
+}
+
 /* Header */
 .dashboard-header h2 {
   font-weight: 700;
@@ -189,4 +194,41 @@
 .dash-status-pill.green {
   background: #e7f8ee;
   color: #16a34a;
+}
+
+
+/* ===============================
+   Dashboard Top Cards
+================================ */
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.stat-card-wrapper {
+  width: 100%;
+}
+
+.stat-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 110px;
+}
+
+/* Responsive */
+
+@media (max-width: 992px) {
+  .dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .dashboard-stats {
+    grid-template-columns: 1fr;
+  }
 }

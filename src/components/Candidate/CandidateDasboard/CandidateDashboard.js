@@ -18,6 +18,9 @@ const CandidateDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [greeting, setGreeting] = useState("Good morning");
+  const [totalExposureHours, setTotalExposureHours] = useState(0);
+  const [evidenceUploads, setEvidenceUploads] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Load user data from localStorage
@@ -28,11 +31,16 @@ const CandidateDashboard = () => {
         const parsedUser = JSON.parse(candidateData);
         setUser(parsedUser);
         console.log("✅ Candidate user data loaded:", parsedUser);
+        
+        // Fetch logbook data for this candidate
+        fetchLogbookData(parsedUser.full_name);
       } catch (error) {
         console.error("Error parsing candidate user data:", error);
+        setLoading(false);
       }
     } else {
       console.warn("No candidate user data found in localStorage");
+      setLoading(false);
     }
 
     // Set greeting based on time of day
@@ -41,6 +49,44 @@ const CandidateDashboard = () => {
     else if (hour < 18) setGreeting("Good afternoon");
     else setGreeting("Good evening");
   }, []);
+
+  // Fetch logbook data and calculate totals
+  const fetchLogbookData = async (candidateName) => {
+    try {
+      const response = await fetch("http://145.79.0.94:8000/api/candidate/digital-logbook/");
+      const data = await response.json();
+      
+      if (data.status && data.data) {
+        // Filter entries for this candidate
+        const candidateEntries = data.data.filter(
+          entry => entry.candidate_name === candidateName
+        );
+        
+        // Calculate total exposure hours
+        let totalHours = 0;
+        candidateEntries.forEach(entry => {
+          if (entry.total_hours) {
+            totalHours += parseFloat(entry.total_hours);
+          }
+        });
+        
+        // Calculate total evidence uploads (count all evidence_documents)
+        let totalEvidenceCount = 0;
+        candidateEntries.forEach(entry => {
+          if (entry.evidence_documents && Array.isArray(entry.evidence_documents)) {
+            totalEvidenceCount += entry.evidence_documents.length;
+          }
+        });
+        
+        setTotalExposureHours(Math.round(totalHours));
+        setEvidenceUploads(totalEvidenceCount);
+      }
+    } catch (error) {
+      console.error("Error fetching logbook data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Get user's full name
   const getUserName = () => {
@@ -84,6 +130,16 @@ const CandidateDashboard = () => {
     navigate("/candidate-certificate");
   };
 
+  // Handle navigation to digital logbook
+  const handleNavigateToDigitalLogbook = () => {
+    navigate("/candidate-digital");
+  };
+
+  // Format hours with commas
+  const formatHours = (hours) => {
+    return hours.toLocaleString();
+  };
+
   return (
     <div className="ta-layout-wrapper">
       {/* Sidebar */}
@@ -118,34 +174,39 @@ const CandidateDashboard = () => {
 
             {/* ================= STATS ================= */}
             <div className="row g-4 mb-4">
-              <StatCard 
-                title="Total Exposure Hours" 
-                value="1,847" 
-                desc="Logged field time" 
-                change="+12%" 
-                icon={<FaClock />} 
-              />
-              <StatCard 
-                title="Evidence Uploads" 
-                value="127" 
-                desc="Photos & documents" 
-                change="+8%" 
-                icon={<FaCamera />} 
-              />
-              <StatCard 
-                title="Active Certifications" 
-                value="2" 
-                desc="1 expiring soon" 
-                icon={<FaCertificate />} 
-              />
-              <StatCard 
-                title="Compliance Score" 
-                value="94%" 
-                desc="All requirements met" 
-                change="+2%" 
-                icon={<FaShieldAlt />} 
-              />
-            </div>
+  <StatCard 
+    title="Total Exposure Hours" 
+    value={loading ? "Loading..." : formatHours(totalExposureHours)} 
+    // desc="Logged field time" 
+    // change="+12%" 
+    icon={<FaClock />}
+    onClick={handleNavigateToDigitalLogbook}
+  />
+
+  <StatCard 
+    title="Evidence Uploads" 
+    value={loading ? "Loading..." : evidenceUploads} 
+    // desc="Photos & documents" 
+    // change="+8%" 
+    icon={<FaCamera />}
+    onClick={handleNavigateToDigitalLogbook}
+  />
+
+  <StatCard 
+    title="Active Certifications" 
+    value="2" 
+    // desc="1 expiring soon" 
+    icon={<FaCertificate />} 
+  />
+
+  <StatCard 
+    title="Compliance Score" 
+    value="94%" 
+    // desc="All requirements met" 
+    // change="+2%" 
+    icon={<FaShieldAlt />} 
+  />
+</div>
 
             {/* ================= COMPETENCY + ACTIONS ================= */}
             <div className="row g-4">
@@ -373,16 +434,25 @@ const CandidateDashboard = () => {
 
 /* ================= SUB COMPONENTS ================= */
 
-const StatCard = ({ title, value, desc, change, icon }) => (
+const StatCard = ({ title, value, desc, change, icon, onClick }) => (
   <div className="col-xl-3 col-md-6">
-    <div className="td-stat-card">
+    <div 
+      className="td-stat-card clickable-card"
+      onClick={onClick}
+    >
       <div className="td-stat-top">
         <h6>{title}</h6>
         <div className="td-icon-box">{icon}</div>
       </div>
+
       <h3>{value}</h3>
       <p className="td-muted">{desc}</p>
-      {change && <span className="td-positive">{change} vs last month</span>}
+
+      {change && (
+        <span className="td-positive">
+          {change} vs last month
+        </span>
+      )}
     </div>
   </div>
 );
