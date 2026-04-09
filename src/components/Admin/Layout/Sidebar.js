@@ -137,17 +137,18 @@ const Sidebar = () => {
           </Link>
 
           <Link
-            to="/candidate"
-            className={`ta-menu-item ${isActive("/candidate") ? "active" : ""}`}
-          >
-            <FaUserGraduate /> Candidates
-          </Link>
-
-          <Link
             to="/mentor"
             className={`ta-menu-item ${isActive("/mentor") ? "active" : ""}`}
           >
             <FaUserTie /> Mentors
+          </Link>
+
+
+          <Link
+            to="/candidate"
+            className={`ta-menu-item ${isActive("/candidate") ? "active" : ""}`}
+          >
+            <FaUserGraduate /> Candidates
           </Link>
 
           <Link

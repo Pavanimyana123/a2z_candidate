@@ -22,7 +22,10 @@ const AddLevel = () => {
     description: '',
     is_active: true,
     min_score_required: '',
-    max_score: ''
+    max_score: '',
+    mandatory_requirements: '',
+    promotion_rules: '',
+    authority_limits: ''
   });
 
   // Fetch level data if in edit mode
@@ -49,12 +52,14 @@ const AddLevel = () => {
         setFormData({
           name: levelData.name || '',
           code: levelData.code || '',
-          // Handle number field properly - if it's 0, keep it as 0, not empty string
           number: levelData.number !== undefined && levelData.number !== null ? levelData.number : '',
           description: levelData.description || '',
           is_active: levelData.is_active !== undefined ? levelData.is_active : true,
           min_score_required: levelData.min_score_required !== undefined && levelData.min_score_required !== null ? levelData.min_score_required : '',
-          max_score: levelData.max_score !== undefined && levelData.max_score !== null ? levelData.max_score : ''
+          max_score: levelData.max_score !== undefined && levelData.max_score !== null ? levelData.max_score : '',
+          mandatory_requirements: levelData.mandatory_requirements || '',
+          promotion_rules: levelData.promotion_rules || '',
+          authority_limits: levelData.authority_limits || ''
         });
         console.log('✅ Level data loaded for edit:', levelData);
       }
@@ -80,7 +85,6 @@ const AddLevel = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : 
               (name === 'number' || name === 'min_score_required' || name === 'max_score') ? 
-              // If value is empty string, keep it as empty string, otherwise convert to number
               (value === '' ? '' : Number(value)) : value
     }));
     
@@ -154,11 +158,14 @@ const AddLevel = () => {
     const payload = {
       name: formData.name,
       code: formData.code,
-      number: Number(formData.number), // This will work for 0 as well
+      number: Number(formData.number),
       description: formData.description || '',
       is_active: formData.is_active,
       min_score_required: Number(formData.min_score_required),
-      max_score: Number(formData.max_score)
+      max_score: Number(formData.max_score),
+      mandatory_requirements: formData.mandatory_requirements || '',
+      promotion_rules: formData.promotion_rules || '',
+      authority_limits: formData.authority_limits || ''
     };
 
     console.log('Submitting payload:', payload); // Debug log
@@ -295,26 +302,6 @@ const AddLevel = () => {
                 <h2>{isEditMode ? 'Edit Level' : 'Add New Level'}</h2>
                 <p>{isEditMode ? 'Update the level details below' : 'Fill in the level details below'}</p>
               </div>
-              {/* Uncomment if you want delete button */}
-              {/* <div>
-                {isEditMode && (
-                  <button 
-                    type="button"
-                    className="btn btn-danger me-2"
-                    onClick={handleDelete}
-                    disabled={loading}
-                  >
-                    Delete Level
-                  </button>
-                )}
-                <button 
-                  className="btn btn-outline-secondary"
-                  onClick={handleCancel}
-                  disabled={loading}
-                >
-                  Cancel
-                </button>
-              </div> */}
             </div>
 
             {/* Error Message */}
@@ -447,6 +434,57 @@ const AddLevel = () => {
                     {errors.max_score && (
                       <div className="invalid-feedback">{errors.max_score}</div>
                     )}
+                  </div>
+
+                  {/* Mandatory Requirements */}
+                  <div className="col-12 mb-3">
+                    <label className="form-label">Mandatory Requirements</label>
+                    <textarea
+                      className="form-control"
+                      name="mandatory_requirements"
+                      value={formData.mandatory_requirements || ''}
+                      onChange={handleChange}
+                      placeholder="Enter mandatory requirements (one per line or as JSON string)"
+                      rows="4"
+                      disabled={loading}
+                    />
+                    <small className="text-muted">
+                      Specify the mandatory requirements for this level. You can use bullet points or JSON format.
+                    </small>
+                  </div>
+
+                  {/* Promotion Rules */}
+                  <div className="col-12 mb-3">
+                    <label className="form-label">Promotion Rules</label>
+                    <textarea
+                      className="form-control"
+                      name="promotion_rules"
+                      value={formData.promotion_rules || ''}
+                      onChange={handleChange}
+                      placeholder="Enter promotion rules (one per line or as JSON string)"
+                      rows="4"
+                      disabled={loading}
+                    />
+                    <small className="text-muted">
+                      Define the rules for promotion to the next level.
+                    </small>
+                  </div>
+
+                  {/* Authority Limits */}
+                  <div className="col-12 mb-3">
+                    <label className="form-label">Authority Limits</label>
+                    <textarea
+                      className="form-control"
+                      name="authority_limits"
+                      value={formData.authority_limits || ''}
+                      onChange={handleChange}
+                      placeholder="Enter authority limits (one per line or as JSON string)"
+                      rows="4"
+                      disabled={loading}
+                    />
+                    <small className="text-muted">
+                      Specify the authority limits for this level.
+                    </small>
                   </div>
                 </div>
 

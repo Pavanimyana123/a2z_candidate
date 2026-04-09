@@ -209,3 +209,37 @@
     margin-top: 10px;
   }
 }
+
+
+/* Add this to your existing CandidateCompliance.css */
+.ccd-add-btn {
+  background: #3498db;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.ccd-add-btn:hover {
+  background: #2980b9;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.ccd-add-btn:active {
+  transform: translateY(0);
+}
+
+/* Style for edit buttons in requirements */
+.ccd-req .btn-link {
+  color: #3498db;
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.ccd-req .btn-link:hover {
+  color: #2980b9;
+  text-decoration: underline;
+}

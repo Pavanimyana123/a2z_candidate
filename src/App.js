@@ -18,6 +18,8 @@ import DepartmentLevel from "./components/Admin/DepartmentLevel/DepartmentLevel"
 import AddDepartmentLevel from "./components/Admin/DepartmentLevel/AddDepartmentLevel";
 import RotationProgram from "./components/Admin/RotationProgram/RotationProgram";
 import ComplianceManagement from "./components/Admin/ComplianceManagement/ComplianceManagement";
+import AddCompliance from './components/Admin/ComplianceManagement/AddComplianceManagement';
+import AddComplianceCertificate from "./components/Candidate/CandidateCompliance/AddCandidateCompliance"
 import AuditLogs from "./components/Admin/AuditLogs/AuditLogs";
 import Certifications from "./components/Admin/Certificate/Certificate";
 import ReportsAnalytics from "./components/Admin/Reports/Reports";
@@ -51,6 +53,7 @@ import AddEvidence from "./components/Candidate/CandidateEvidance/CandidateEvida
 import CandidateRotation from "./components/Candidate/CandidateRotation/CandidateRotation"
 import CandidateCompliance from "./components/Candidate/CandidateCompliance/CandidateCompliance";
 import CandidateCertifications from "./components/Candidate/CandidateCertification/CartificationCertificate";
+import AddCandidateCertificate from './components/Candidate/CandidateCertification/AddCandidateCertificate';
 import CandidateLearning from "./components/Candidate/CandidateLearning/CandidateLearning";
 import CandidateMentorship from "./components/Candidate/CandidateMentorship/CandidateMentorship";
 import FindMentor from './components/Candidate/CandidateMentorship/FindMentor';
@@ -86,6 +89,8 @@ function App() {
              <Route path="/edit-department-level/:id" element={<AddDepartmentLevel />} />
             <Route path="/rotation" element={<RotationProgram />} />
             <Route path="/compliance" element={<ComplianceManagement />} />
+            <Route path="/compliance/add" element={<AddCompliance />} />
+            <Route path="/compliance/edit/:id" element={<AddCompliance />} />
             <Route path="/certificate" element={<Certifications />} />
             <Route path="/learning" element={<Learning />} />
             <Route path="/add-learning" element={<AddLearning />} />
@@ -126,7 +131,11 @@ function App() {
                 <Route path="/add-evidence/:id" element={<AddEvidence />} />
                <Route path="/candidate-rotation" element={<CandidateRotation />} />
                <Route path="/candidate-compliance" element={<CandidateCompliance />} />
+                <Route path="/candidate-compliance/add-certificate" element={<AddComplianceCertificate />} />
+               <Route path="/candidate-compliance/edit-certificate/:id" element={<AddComplianceCertificate />} />
                 <Route path="/candidate-certificate" element={<CandidateCertifications />} />
+                 <Route path="/candidate-certifications/add" element={<AddCandidateCertificate />} />
+                <Route path="/candidate-certifications/edit/:id" element={<AddCandidateCertificate />} />
                  <Route path="/candidate-learning" element={<CandidateLearning />} />
                  <Route path="/candidate-mentorship" element={<CandidateMentorship />} />
                  <Route path="/find-mentor" element={<FindMentor />} />

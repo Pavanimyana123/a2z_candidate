@@ -76,7 +76,7 @@ const LevelsManagement = () => {
         throw new Error(data.message || 'Failed to delete level');
       }
       
-      // Remove the deleted level from state - FIXED: using id instead of level_id
+      // Remove the deleted level from state
       setLevels(prev => prev.filter(level => level.id !== levelId));
       
       await Swal.fire({
@@ -106,57 +106,28 @@ const LevelsManagement = () => {
     return value === "string" || value === 2147483647;
   };
 
-  // Helper function to generate requirements based on level data
-  const getMandatoryRequirements = (level) => {
-    const requirements = [];
-    
-    if (!isPlaceholder(level.number) && level.number > 1) {
-      requirements.push(`Complete Level ${level.number - 1} requirements`);
+  // Helper function to parse requirements/rules from string
+  const parseRequirements = (requirementsString) => {
+    if (!requirementsString || isPlaceholder(requirementsString)) {
+      return ["Not specified"];
     }
     
-    requirements.push("Complete department orientation");
-    requirements.push("Safety induction training");
-    
-    if (!isPlaceholder(level.min_score_required)) {
-      requirements.push(`Minimum score: ${level.min_score_required}`);
-    }
-    
-    return requirements;
-  };
-
-  const getPromotionRules = (level) => {
-    const rules = [];
-    
-    if (!isPlaceholder(level.min_score_required)) {
-      rules.push(`Achieve minimum score of ${level.min_score_required}`);
-    }
-    
-    rules.push("Mentor approval required");
-    rules.push("Complete assigned rotations");
-    
-    return rules;
-  };
-
-  const getAuthorityLimits = (level) => {
-    const limits = [];
-    
-    if (!isPlaceholder(level.number)) {
-      if (level.number === 1) {
-        limits.push("Supervised tasks only");
-        limits.push("Basic documentation");
-      } else if (level.number === 2) {
-        limits.push("Limited independent work");
-        limits.push("Can train Level 1");
-      } else {
-        limits.push("Independent work permitted");
-        limits.push("Can supervise lower levels");
+    // Try to parse as JSON first
+    try {
+      const parsed = JSON.parse(requirementsString);
+      if (Array.isArray(parsed)) {
+        return parsed;
       }
-    } else {
-      limits.push("Supervised tasks only");
-      limits.push("Basic documentation");
+      return [requirementsString];
+    } catch (e) {
+      // If not JSON, split by new lines or commas
+      if (requirementsString.includes('\n')) {
+        return requirementsString.split('\n').filter(item => item.trim());
+      } else if (requirementsString.includes(',')) {
+        return requirementsString.split(',').map(item => item.trim());
+      }
+      return [requirementsString];
     }
-    
-    return limits;
   };
 
   // Format level number with leading zero
@@ -269,8 +240,8 @@ const LevelsManagement = () => {
                 })
                 .map((level) => (
                   <LevelCard
-                    key={level.id} // FIXED: using id instead of level_id
-                    levelId={level.id} // FIXED: using id instead of level_id
+                    key={level.id}
+                    levelId={level.id}
                     level={formatLevelNumber(level.number)}
                     title={formatText(level.name)}
                     code={formatText(level.code)}
@@ -278,9 +249,9 @@ const LevelsManagement = () => {
                     candidates="0"
                     minScore={!isPlaceholder(level.min_score_required) ? level.min_score_required : null}
                     maxScore={!isPlaceholder(level.max_score) ? level.max_score : null}
-                    mandatory={getMandatoryRequirements(level)}
-                    promotion={getPromotionRules(level)}
-                    authority={getAuthorityLimits(level)}
+                    mandatory={parseRequirements(level.mandatory_requirements)}
+                    promotion={parseRequirements(level.promotion_rules)}
+                    authority={parseRequirements(level.authority_limits)}
                     isActive={level.is_active}
                     isPlaceholder={isPlaceholder(level.name) || isPlaceholder(level.code)}
                     onEdit={handleEditLevel}

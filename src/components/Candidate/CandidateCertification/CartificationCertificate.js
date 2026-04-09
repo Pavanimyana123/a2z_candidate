@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import CandidateSidebar from "../Layout/CandidateSidebar";
 import Header from "../Layout/CandidateHeader";
 import {
@@ -8,15 +9,31 @@ import {
   FaExternalLinkAlt,
   FaCheckCircle,
   FaExclamationTriangle,
-  FaCalendarAlt
+  FaCalendarAlt,
+  FaEdit,
+  FaTrash
 } from "react-icons/fa";
 
 import "./CandidateCertificate.css";
 
 const CandidateCertifications = () => {
+  const navigate = useNavigate();
+
+  const handleAddCertificate = () => {
+    navigate("/candidate-certifications/add");
+  };
+
+  const handleEditCertificate = (certId) => {
+    navigate(`/candidate-certifications/edit/${certId}`);
+  };
+
+  const handleDeleteCertificate = async (certId, certName) => {
+    // Add delete logic here
+    console.log("Delete certificate:", certId, certName);
+  };
+
   return (
     <div className="ccert-layout-wrapper">
-
       {/* Sidebar */}
       <CandidateSidebar />
 
@@ -25,7 +42,6 @@ const CandidateCertifications = () => {
         <Header />
 
         <div className="ccert-content-area container-fluid">
-
           {/* ================= PAGE HEADER ================= */}
           <div className="d-flex justify-content-between align-items-start mb-4">
             <div>
@@ -40,7 +56,7 @@ const CandidateCertifications = () => {
                 <FaFilter className="me-2" /> Filter
               </button>
 
-              <button className="btn ccert-btn-primary">
+              <button className="btn ccert-btn-primary" onClick={handleAddCertificate}>
                 <FaPlus className="me-2" /> Add Certification
               </button>
             </div>
@@ -48,7 +64,6 @@ const CandidateCertifications = () => {
 
           {/* ================= STATS ================= */}
           <div className="row g-4 mb-4">
-
             <StatCard
               icon={<FaCheckCircle />}
               value="2"
@@ -68,10 +83,9 @@ const CandidateCertifications = () => {
               value="Mar 15"
               label="Next Renewal"
             />
-
           </div>
 
-          {/* ================= FIRST IMAGE SECTION ================= */}
+          {/* ================= CERTIFICATIONS SECTION ================= */}
           <div className="ccert-card">
             <div className="mb-4">
               <h5 className="mb-1">Your Certifications</h5>
@@ -80,6 +94,7 @@ const CandidateCertifications = () => {
 
             {/* Card 1 */}
             <CertificationCard
+              id="1"
               status="valid"
               title="API 510 Pressure Vessel Inspector"
               org="American Petroleum Institute"
@@ -88,9 +103,12 @@ const CandidateCertifications = () => {
               issued="01 Aug 2023"
               expiry="01 Aug 2026"
               remaining="173 days remaining"
+              onEdit={handleEditCertificate}
+              onDelete={handleDeleteCertificate}
             />
 
-              <CertificationCard
+            <CertificationCard
+              id="2"
               status="expired"
               title="CSWIP 3.1 Welding Inspector"
               org="TWI Certification Ltd"
@@ -99,9 +117,12 @@ const CandidateCertifications = () => {
               issued="15 Mar 2023"
               expiry="15 Mar 2024"
               remaining="Expired"
+              onEdit={handleEditCertificate}
+              onDelete={handleDeleteCertificate}
             />
 
             <CertificationCard
+              id="3"
               status="valid"
               title="NACE CIP Level 1"
               org="NACE International"
@@ -110,82 +131,70 @@ const CandidateCertifications = () => {
               issued="20 Jun 2023"
               expiry="20 Jun 2026"
               remaining="131 days remaining"
+              onEdit={handleEditCertificate}
+              onDelete={handleDeleteCertificate}
             />
-
           </div>
 
-
           {/* ================= RECOMMENDED CERTIFICATIONS ================= */}
-<div className="ccert-card mt-4">
+          <div className="ccert-card mt-4">
+            <div className="mb-4">
+              <h5 className="mb-1">Recommended Certifications</h5>
+              <p className="ccert-muted">
+                Based on your career progression
+              </p>
+            </div>
 
-  <div className="mb-4">
-    <h5 className="mb-1">Recommended Certifications</h5>
-    <p className="ccert-muted">
-      Based on your career progression
-    </p>
-  </div>
+            <div className="row g-4">
+              <RecommendedCard
+                title="API 570 Piping Inspector"
+                exam="March 2024"
+                level="high"
+              />
 
-  <div className="row g-4">
+              <RecommendedCard
+                title="CSWIP 3.2 Senior Welding Inspector"
+                exam="April 2024"
+                level="medium"
+              />
 
-    <RecommendedCard
-      title="API 570 Piping Inspector"
-      exam="March 2024"
-      level="high"
-    />
+              <RecommendedCard
+                title="ASNT NDT Level II (UT)"
+                exam="February 2024"
+                level="high"
+              />
 
-    <RecommendedCard
-      title="CSWIP 3.2 Senior Welding Inspector"
-      exam="April 2024"
-      level="medium"
-    />
-
-    <RecommendedCard
-      title="ASNT NDT Level II (UT)"
-      exam="February 2024"
-      level="high"
-    />
-
-    <RecommendedCard
-      title="NACE CIP Level 2"
-      exam="May 2024"
-      level="medium"
-    />
-
-  </div>
-
-</div>
-
-
+              <RecommendedCard
+                title="NACE CIP Level 2"
+                exam="May 2024"
+                level="medium"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-
 /* ================= STAT CARD ================= */
-
 const StatCard = ({ icon, value, label, type }) => (
   <div className="col-lg-4">
     <div className="ccert-stat-card">
-
       <div className={`ccert-stat-icon ${type}`}>
         {icon}
       </div>
-
       <div>
         <h4>{value}</h4>
         <p className="ccert-muted mb-0">{label}</p>
       </div>
-
     </div>
   </div>
 );
 
-
 /* ================= CERTIFICATION CARD ================= */
-
 const CertificationCard = ({
+  id,
   status,
   title,
   org,
@@ -193,14 +202,13 @@ const CertificationCard = ({
   code,
   issued,
   expiry,
-  remaining
+  remaining,
+  onEdit,
+  onDelete
 }) => (
   <div className={`ccert-cert-card ${status}`}>
-
     <div className="d-flex justify-content-between">
-
       <div className="d-flex gap-3">
-
         <div className="ccert-cert-icon">
           {status === "valid"
             ? <FaCheckCircle />
@@ -216,25 +224,27 @@ const CertificationCard = ({
             <span className="ccert-code">{code}</span>
           </div>
         </div>
-
       </div>
 
       {/* Buttons */}
       <div className="d-flex gap-2">
+        <button className="btn ccert-btn-outline" onClick={() => onEdit(id)}>
+          <FaEdit className="me-2" /> Edit
+        </button>
+        <button className="btn ccert-btn-outline" onClick={() => onDelete(id, title)}>
+          <FaTrash className="me-2" /> Delete
+        </button>
         <button className="btn ccert-btn-outline">
           <FaDownload className="me-2" /> Certificate
         </button>
-
         <button className="btn ccert-btn-outline">
           <FaExternalLinkAlt className="me-2" /> Verify
         </button>
       </div>
-
     </div>
 
     {/* Dates */}
     <div className="row mt-3">
-
       <div className="col-md-4">
         <p className="ccert-muted small">Issue Date</p>
         <strong>{issued}</strong>
@@ -251,47 +261,28 @@ const CertificationCard = ({
           {remaining}
         </strong>
       </div>
-
     </div>
 
     {/* Progress */}
     <div className="ccert-progress">
       <div className={`ccert-progress-fill ${status}`} />
     </div>
-
   </div>
 );
-
-
 
 const RecommendedCard = ({ title, exam, level }) => (
   <div className="col-md-6">
     <div className="ccert-recommend-card">
-
       <div className="d-flex justify-content-between mb-2">
         <h6 className="mb-0">{title}</h6>
-
-        <span
-          className={`ccert-badge ${
-            level === "high" ? "high" : "medium"
-          }`}
-        >
+        <span className={`ccert-badge ${level === "high" ? "high" : "medium"}`}>
           {level === "high" ? "High relevance" : "Medium relevance"}
         </span>
       </div>
-
-      <p className="ccert-muted mb-3">
-        Next exam: {exam}
-      </p>
-
-      <button className="btn ccert-recommend-btn w-100">
-        Learn More
-      </button>
-
+      <p className="ccert-muted mb-3">Next exam: {exam}</p>
+      <button className="btn ccert-recommend-btn w-100">Learn More</button>
     </div>
   </div>
 );
-
-
 
 export default CandidateCertifications;

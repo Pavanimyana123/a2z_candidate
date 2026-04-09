@@ -1,10 +1,14 @@
+// CandidateComplianceDashboard.js - Add import for useNavigate
 import React from "react";
+import { useNavigate } from "react-router-dom"; // Add this import
 import CandidateSidebar from "../Layout/CandidateSidebar";
 import Header from "../Layout/CandidateHeader";
-import { FaShieldAlt, FaExclamationTriangle, FaCheck } from "react-icons/fa";
+import { FaShieldAlt, FaExclamationTriangle, FaCheck, FaPlus } from "react-icons/fa"; // Add FaPlus
 import "./CandidateCompliance.css";
 
 const CandidateComplianceDashboard = () => {
+  const navigate = useNavigate(); // Add this line
+
   return (
     <div className="ccd-layout-wrapper">
       <CandidateSidebar />
@@ -24,14 +28,23 @@ const CandidateComplianceDashboard = () => {
                 </p>
               </div>
 
-              <button className="btn ccd-review-btn">
-                Schedule Review
-              </button>
+              <div>
+                <button 
+                  className="btn ccd-add-btn me-2"
+                  onClick={() => navigate('/candidate-compliance/add-certificate')}
+                >
+                  <FaPlus className="me-1" /> Add Certificate
+                </button>
+                <button className="btn ccd-review-btn">
+                  Schedule Review
+                </button>
+              </div>
             </div>
 
+            {/* Rest of your existing code remains the same... */}
+            
             {/* ================= SUMMARY ================= */}
             <div className="row g-4 mb-4">
-
               {/* Compliance Score */}
               <div className="col-lg-6">
                 <div className="ccd-card d-flex align-items-center">
@@ -74,68 +87,91 @@ const CandidateComplianceDashboard = () => {
               {/* REQUIREMENTS */}
               <div className="col-lg-8">
                 <div className="ccd-card">
-                  <h4>Compliance Requirements</h4>
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h4>Compliance Requirements</h4>
+                    <button 
+                      className="btn btn-sm btn-outline-primary"
+                      onClick={() => navigate('/candidate/add-certificate')}
+                    >
+                      <FaPlus /> Add New
+                    </button>
+                  </div>
                   <p className="ccd-muted">
                     All your safety and compliance items
                   </p>
 
-                  <Requirement status="success"
+                  {/* Add edit/delete functionality to each requirement */}
+                  <Requirement 
+                    status="success"
                     title="Platform Safety Certification"
                     subtitle="Valid until June 2025"
                     badge="Safety Induction"
                     expiry="Expires: 15 Jun 2025"
                     checked="Checked: 10 Jan 2024"
+                    onEdit={() => navigate('/candidate/edit-certificate/1')}
                   />
 
-                  <Requirement status="success"
+                  <Requirement 
+                    status="success"
                     title="BOSIET Training"
                     subtitle="Offshore survival training complete"
                     badge="Safety Induction"
                     expiry="Expires: 20 Aug 2025"
                     checked="Checked: 10 Jan 2024"
+                    onEdit={() => navigate('/candidate/edit-certificate/2')}
                   />
 
-                  <Requirement status="success"
+                  <Requirement 
+                    status="success"
                     title="Personal Protective Equipment"
                     subtitle="All equipment verified and in good condition"
                     badge="PPE"
                     checked="Checked: 15 Jan 2024"
+                    onEdit={() => navigate('/candidate/edit-certificate/3')}
                   />
 
-                  <Requirement status="warning"
+                  <Requirement 
+                    status="warning"
                     title="Offshore Medical Certificate"
                     subtitle="Expires in 60 days - schedule renewal"
                     badge="Medical"
                     expiry="Expires: 15 Mar 2024"
                     checked="Checked: 10 Jan 2024"
+                    onEdit={() => navigate('/candidate/edit-certificate/4')}
                   />
 
-                  <Requirement status="success"
+                  <Requirement 
+                    status="success"
                     title="Fit for Duty Assessment"
                     badge="Medical"
                     expiry="Expires: 01 Dec 2024"
                     checked="Checked: 05 Jan 2024"
+                    onEdit={() => navigate('/candidate/edit-certificate/5')}
                   />
 
-                  <Requirement status="success"
+                  <Requirement 
+                    status="success"
                     title="Code of Conduct Acknowledgment"
                     subtitle="Annual renewal not required until June 2024"
                     badge="Ethics"
                     checked="Checked: 15 Jun 2023"
+                    onEdit={() => navigate('/candidate/edit-certificate/6')}
                   />
 
-                  <Requirement status="success"
+                  <Requirement 
+                    status="success"
                     title="Insurance Coverage"
                     badge="Documentation"
                     expiry="Expires: 31 Dec 2024"
                     checked="Checked: 01 Jan 2024"
+                    onEdit={() => navigate('/candidate/edit-certificate/7')}
                   />
                 </div>
               </div>
 
               {/* RIGHT PANEL */}
               <div className="col-lg-4">
-                {/* PPE */}
+                {/* PPE Checklist */}
                 <div className="ccd-card mb-4">
                   <h5>PPE Checklist</h5>
                   <p className="ccd-muted">Personal Protective Equipment</p>
@@ -159,6 +195,12 @@ const CandidateComplianceDashboard = () => {
                 {/* Quick Actions */}
                 <div className="ccd-card">
                   <h5>Quick Actions</h5>
+                  <button 
+                    className="ccd-action-btn"
+                    onClick={() => navigate('/candidate/add-certificate')}
+                  >
+                    Add New Certificate
+                  </button>
                   <button className="ccd-action-btn">Report Incident</button>
                   <button className="ccd-action-btn">Book Medical</button>
                   <button className="ccd-action-btn">Update PPE</button>
@@ -173,8 +215,7 @@ const CandidateComplianceDashboard = () => {
 };
 
 /* ================= SUB COMPONENTS ================= */
-
-const Requirement = ({ title, subtitle, badge, expiry, checked, status }) => (
+const Requirement = ({ title, subtitle, badge, expiry, checked, status, onEdit }) => (
   <div className={`ccd-req ${status}`}>
     <div>
       <strong>{title}</strong>
@@ -184,6 +225,15 @@ const Requirement = ({ title, subtitle, badge, expiry, checked, status }) => (
     <div className="text-end">
       {expiry && <p className="ccd-expiry">{expiry}</p>}
       {checked && <p className="ccd-muted small">{checked}</p>}
+      {onEdit && (
+        <button 
+          className="btn btn-sm btn-link p-0 mt-1"
+          onClick={onEdit}
+          style={{ fontSize: '12px' }}
+        >
+          Edit
+        </button>
+      )}
     </div>
   </div>
 );
