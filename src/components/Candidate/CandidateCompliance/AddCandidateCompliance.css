@@ -3,6 +3,7 @@
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin: 20px;
 }
 
 .cert-add-header {
@@ -83,25 +84,41 @@
   border-color: #3498db;
 }
 
-.cert-add-actions .btn-primary:hover {
+.cert-add-actions .btn-primary:hover:not(:disabled) {
   background-color: #2980b9;
   border-color: #2980b9;
 }
 
-.cert-add-actions .btn-danger {
-  background-color: #e74c3c;
-  border-color: #e74c3c;
+.cert-add-actions .btn-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
-.cert-add-actions .btn-danger:hover {
-  background-color: #c0392b;
-  border-color: #c0392b;
+.cert-add-actions .btn-outline-secondary {
+  border-color: #95a5a6;
+  color: #7f8c8d;
 }
 
-.cert-add-actions .btn-outline-secondary:hover {
+.cert-add-actions .btn-outline-secondary:hover:not(:disabled) {
   background-color: #95a5a6;
   border-color: #95a5a6;
   color: white;
+}
+
+.cert-add-actions .btn-outline-secondary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Edit button styling */
+.edit-btn {
+  color: #3498db;
+  transition: color 0.2s;
+}
+
+.edit-btn:hover {
+  color: #2980b9;
+  text-decoration: underline !important;
 }
 
 /* Checkbox styling */
@@ -124,6 +141,7 @@
 @media (max-width: 768px) {
   .cert-add-wrapper {
     padding: 16px;
+    margin: 10px;
   }
   
   .cert-add-header {

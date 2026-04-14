@@ -13,6 +13,7 @@ import {
   FaCheck
 } from "react-icons/fa";
 import "./CandidateDashboard.css";
+import { BASE_URL } from "../../../ApiUrl";
 
 const CandidateDashboard = () => {
   const navigate = useNavigate();
@@ -53,7 +54,7 @@ const CandidateDashboard = () => {
   // Fetch logbook data and calculate totals
   const fetchLogbookData = async (candidateName) => {
     try {
-      const response = await fetch("http://145.79.0.94:8000/api/candidate/digital-logbook/");
+      const response = await fetch(`${BASE_URL}/api/candidate/digital-logbook/`);
       const data = await response.json();
       
       if (data.status && data.data) {

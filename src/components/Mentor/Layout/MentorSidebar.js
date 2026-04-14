@@ -12,7 +12,8 @@ import {
   FaSignOutAlt,
   FaUserCircle,
   FaUser,
-  FaUserPlus, // Add this icon for Candidate Requests
+  FaUserPlus,
+  FaCertificate
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import "./Sidebar.css";
@@ -167,6 +168,13 @@ const MentorSidebar = () => {
           >
             <FaShieldAlt /> Compliance
           </Link>
+
+          <Link
+              to="/mentor-certificates"
+              className={`ta-menu-item ${isActive("/mentor-certificates") ? "active" : ""}`}
+            >
+              <FaCertificate /> Certifications
+            </Link>
 
           <Link
             to="/mentor-feedback"

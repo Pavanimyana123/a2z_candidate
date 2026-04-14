@@ -13,7 +13,15 @@ import {
   FaTrash,
   FaLayerGroup,
   FaTimes,
-  FaSave
+  FaSave,
+  FaFile,
+  FaDownload,
+  FaUser,
+  FaCalendarAlt,
+  FaIdCard,
+  FaCheckCircle,
+  FaClock,
+  FaTimesCircle
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { BASE_URL } from "../../../ApiUrl";
@@ -22,12 +30,16 @@ const ComplianceManagement = () => {
   const navigate = useNavigate();
   const [complianceRules, setComplianceRules] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [complianceCertificates, setComplianceCertificates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editCategoryName, setEditCategoryName] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [selectedCertificate, setSelectedCertificate] = useState(null);
+  const [activeTab, setActiveTab] = useState("certificate");
 
   const [summaryData, setSummaryData] = useState({
     safetyInduction: 0,
@@ -39,6 +51,7 @@ const ComplianceManagement = () => {
   useEffect(() => {
     fetchComplianceRules();
     fetchCategories();
+    fetchComplianceCertificates();
   }, []);
 
   const fetchCategories = async () => {
@@ -62,6 +75,28 @@ const ComplianceManagement = () => {
         timer: 3000
       });
     }
+  };
+
+  const fetchComplianceCertificates = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/candidate/compliance-certificates/`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch compliance certificates");
+      }
+      const result = await response.json();
+      if (result.status && result.data) {
+        setComplianceCertificates(result.data);
+        console.log("Fetched compliance certificates:", result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching compliance certificates:", error);
+    }
+  };
+
+  const handleViewDetails = (certificate) => {
+    setSelectedCertificate(certificate);
+    setActiveTab("certificate");
+    setShowModal(true);
   };
 
   const handleAddCategory = async () => {
@@ -264,77 +299,28 @@ const ComplianceManagement = () => {
   };
 
   const updateSummaryData = (rules) => {
-    // First, fetch categories to map IDs to names
-    const getCategoryCounts = async () => {
-      try {
-        const catResponse = await fetch(`${BASE_URL}/api/admin/compliance-categories/`);
-        const catResult = await catResponse.json();
-        const categoriesList = catResult.status ? catResult.data : catResult;
-        
-        // Create mapping from category ID to normalized name
-        const categoryMapping = {};
-        categoriesList.forEach(cat => {
-          const catId = cat.id || cat.category_id;
-          const catName = cat.category_name.toLowerCase();
-          
-          if (catName.includes('safety') || catName.includes('induction')) {
-            categoryMapping[catId] = 'safetyInduction';
-          } else if (catName.includes('medical') || catName.includes('validity')) {
-            categoryMapping[catId] = 'medicalValidity';
-          } else if (catName.includes('incident') || catName.includes('tracking')) {
-            categoryMapping[catId] = 'incidentTracking';
-          } else if (catName.includes('ethics') || catName.includes('violation')) {
-            categoryMapping[catId] = 'ethicsViolations';
-          }
-        });
-        
-        // Count rules by category
-        const counts = {
-          safetyInduction: 0,
-          medicalValidity: 0,
-          incidentTracking: 0,
-          ethicsViolations: 0
-        };
-        
-        rules.forEach(rule => {
-          const mappedKey = categoryMapping[rule.category];
-          if (mappedKey && counts[mappedKey] !== undefined) {
-            counts[mappedKey]++;
-          }
-        });
-        
-        setSummaryData(counts);
-      } catch (error) {
-        console.error("Error fetching categories for summary:", error);
-        // Fallback: try to determine from rule names or use existing mapping
-        const counts = {
-          safetyInduction: 0,
-          medicalValidity: 0,
-          incidentTracking: 0,
-          ethicsViolations: 0
-        };
-        
-        rules.forEach(rule => {
-          if (rule.category === 'safety' || rule.category === 1 || 
-              (rule.category_name && rule.category_name.toLowerCase().includes('safety'))) {
-            counts.safetyInduction++;
-          } else if (rule.category === 'medical' || rule.category === 2 ||
-                     (rule.category_name && rule.category_name.toLowerCase().includes('medical'))) {
-            counts.medicalValidity++;
-          } else if (rule.category === 'incident' || rule.category === 3 ||
-                     (rule.category_name && rule.category_name.toLowerCase().includes('incident'))) {
-            counts.incidentTracking++;
-          } else if (rule.category === 'ethics' || rule.category === 4 ||
-                     (rule.category_name && rule.category_name.toLowerCase().includes('ethics'))) {
-            counts.ethicsViolations++;
-          }
-        });
-        
-        setSummaryData(counts);
-      }
+    const counts = {
+      safetyInduction: 0,
+      medicalValidity: 0,
+      incidentTracking: 0,
+      ethicsViolations: 0
     };
     
-    getCategoryCounts();
+    rules.forEach(rule => {
+      const categoryName = rule.complience_category?.category_name?.toLowerCase() || '';
+      
+      if (categoryName.includes('safety')) {
+        counts.safetyInduction++;
+      } else if (categoryName.includes('medical')) {
+        counts.medicalValidity++;
+      } else if (categoryName.includes('incident')) {
+        counts.incidentTracking++;
+      } else if (categoryName.includes('ethics')) {
+        counts.ethicsViolations++;
+      }
+    });
+    
+    setSummaryData(counts);
   };
 
   const getCategoryName = (categoryId) => {
@@ -343,61 +329,23 @@ const ComplianceManagement = () => {
   };
 
   const formatRules = (rule) => {
-    switch (rule.category_type || rule.category) {
-      case "safety":
-      case 1:
-        return [
-          { label: "Validity Period", value: rule.validity_period_months || rule.validity_days || 12, unit: "months" },
-          { label: "Renewal Warning", value: rule.renewal_warning_days || 30, unit: "days before" },
-          { label: "Grace Period", value: rule.grace_period_days || 7, unit: "days" }
-        ];
-
-      case "medical":
-      case 2:
-        return [
-          { label: "Certificate Validity", value: rule.validity_period_months || rule.validity_days || 24, unit: "months" },
-          { label: "Renewal Warning", value: rule.renewal_warning_days || 60, unit: "days before" },
-          {
-            label: "Mandatory Check Interval",
-            value: rule.mandatory_check_interval_months || rule.check_interval || 6,
-            unit: "months"
-          }
-        ];
-
-      case "incident":
-      case 3:
-        return [
-          { label: "Report Deadline", value: rule.report_deadline_hours || rule.validity_period_months || 24, unit: "hours" },
-          { label: "Investigation Period", value: rule.investigation_period_days || rule.grace_period_days || 7, unit: "days" },
-          { label: "Review Cycle", value: rule.review_cycle_days || rule.renewal_warning_days || 30, unit: "days" }
-        ];
-
-      case "ethics":
-      case 4:
-        return [
-          { label: "Review Period", value: rule.review_period_days || rule.grace_period_days || 14, unit: "days" },
-          { label: "Appeal Window", value: rule.appeal_window_days || rule.renewal_warning_days || 30, unit: "days" },
-          { label: "Record Retention", value: rule.record_retention_years || rule.validity_period_months || 5, unit: "years" }
-        ];
-
-      default:
-        return [
-          { label: "Validity Period", value: rule.validity_period_months || "-", unit: "months" },
-          { label: "Renewal Warning", value: rule.renewal_warning_days || "-", unit: "days before" },
-          { label: "Grace Period", value: rule.grace_period_days || "-", unit: "days" }
-        ];
-    }
+    return [
+      { label: "Validity Period", value: rule.validity_period_months || "-", unit: "months" },
+      { label: "Renewal Warning", value: rule.renewal_warning_days || "-", unit: "days before" },
+      { label: "Grace Period", value: rule.grace_period_days || "-", unit: "days" },
+      { label: "Check Interval", value: rule.mandatory_check_interval_months || "-", unit: "months" }
+    ];
   };
 
   const getIcon = (categoryId) => {
     const categoryName = getCategoryName(categoryId).toLowerCase();
-    if (categoryName.includes('safety') || categoryName.includes('induction')) {
+    if (categoryName.includes('safety')) {
       return <FaShieldAlt />;
-    } else if (categoryName.includes('medical') || categoryName.includes('validity')) {
+    } else if (categoryName.includes('medical')) {
       return <FaHeartbeat />;
-    } else if (categoryName.includes('incident') || categoryName.includes('tracking')) {
+    } else if (categoryName.includes('incident')) {
       return <FaExclamationTriangle />;
-    } else if (categoryName.includes('ethics') || categoryName.includes('violation')) {
+    } else if (categoryName.includes('ethics')) {
       return <FaBalanceScale />;
     }
     return <FaLayerGroup />;
@@ -463,6 +411,51 @@ const ComplianceManagement = () => {
     }
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+  };
+
+  const formatDateTime = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleString();
+  };
+
+  const getStatusDisplay = (cert) => {
+    if (!cert.is_approved) return "pending";
+    const today = new Date();
+    const expiryDate = new Date(cert.expiry_date);
+    if (expiryDate < today) return "expired";
+    
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(today.getDate() + 30);
+    if (expiryDate <= thirtyDaysFromNow) return "expiring";
+    return "valid";
+  };
+
+  const getSeverityFromStatus = (complianceStatus) => {
+    if (complianceStatus === 'non_compliant') return 'high';
+    if (complianceStatus === 'partially_compliant') return 'medium';
+    return 'low';
+  };
+
+  const getStatusFromCompliance = (complianceStatus) => {
+    if (complianceStatus === 'non_compliant') return 'open';
+    if (complianceStatus === 'partially_compliant') return 'investigating';
+    return 'resolved';
+  };
+
+  const getDocumentUrl = (path) => {
+    if (!path) return null;
+    return `${BASE_URL}${path}`;
+  };
+
+  const handleDownload = (url, filename) => {
+    window.open(url, '_blank');
+  };
+
   // Group rules by category for better display
   const groupedRules = complianceRules.reduce((acc, rule) => {
     const categoryId = rule.category;
@@ -498,7 +491,7 @@ const ComplianceManagement = () => {
             </div>
           </div>
 
-          {/* SUMMARY CARDS - Updated with proper icons and layout like the image */}
+          {/* SUMMARY CARDS */}
           <div className="row g-4">
             <SummaryCard 
               title="Safety Induction" 
@@ -668,54 +661,221 @@ const ComplianceManagement = () => {
             </div>
           )}
 
-          {/* RECENT INCIDENTS TABLE */}
+          {/* RECENT INCIDENTS TABLE - Updated with real data */}
           <div className="compliance-card mt-4">
             <h4>Recent Incidents</h4>
             <p className="subtext">Track and manage compliance incidents</p>
 
-            <table className="table compliance-table">
-              <thead>
-                <tr>
-                  <th>Type</th>
-                  <th>Candidate</th>
-                  <th>Date</th>
-                  <th>Severity</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <IncidentRow
-                  type="Safety Violation"
-                  name="John Smith"
-                  date="2024-01-28"
-                  severity="medium"
-                  status="investigating"
-                />
-                <IncidentRow
-                  type="Medical Expiry"
-                  name="Sarah Johnson"
-                  date="2024-01-25"
-                  severity="high"
-                  status="open"
-                />
-                <IncidentRow
-                  type="Documentation Issue"
-                  name="Mike Chen"
-                  date="2024-01-20"
-                  severity="low"
-                  status="resolved"
-                />
-              </tbody>
-            </table>
+            <div className="table-responsive">
+              <table className="table compliance-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Candidate</th>
+                    <th>Issue Date</th>
+                    <th>Expiry Date</th>
+                    <th>Severity</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {complianceCertificates.length > 0 ? (
+                    complianceCertificates.map((cert) => (
+                      <IncidentRow
+                        key={cert.id}
+                        type={cert.compliance_rule_name}
+                        candidate={cert.candidate_name}
+                        issueDate={formatDate(cert.issue_date)}
+                        expiryDate={formatDate(cert.expiry_date)}
+                        severity={getSeverityFromStatus(cert.compliance_status)}
+                        status={cert.status}
+                        onView={() => handleViewDetails(cert)}
+                      />
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="7" className="text-center">
+                        <p className="mb-0">No compliance incidents found.</p>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Modal for Compliance Certificate Details */}
+      {showModal && selectedCertificate && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Compliance Certificate Details</h3>
+              <button className="modal-close" onClick={() => setShowModal(false)}>
+                <FaTimes />
+              </button>
+            </div>
+            
+            <div className="modal-tabs">
+              <button 
+                className={`tab-btn ${activeTab === 'certificate' ? 'active' : ''}`}
+                onClick={() => setActiveTab('certificate')}
+              >
+                <FaIdCard /> Certificate Info
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'candidate' ? 'active' : ''}`}
+                onClick={() => setActiveTab('candidate')}
+              >
+                <FaUser /> Candidate Info
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'document' ? 'active' : ''}`}
+                onClick={() => setActiveTab('document')}
+              >
+                <FaFile /> Document
+              </button>
+            </div>
+
+            <div className="modal-body">
+              {/* Certificate Information Tab */}
+              {activeTab === 'certificate' && (
+                <div className="info-section">
+                  <h4>Certificate Information</h4>
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <label>Certificate Number:</label>
+                      <span>{selectedCertificate.certificate_number}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Compliance Rule:</label>
+                      <span>{selectedCertificate.compliance_rule_name}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Issuing Authority:</label>
+                      <span>{selectedCertificate.issuing_authority}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Issue Date:</label>
+                      <span>{formatDate(selectedCertificate.issue_date)}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Expiry Date:</label>
+                      <span>{formatDate(selectedCertificate.expiry_date)}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Compliance Status:</label>
+                      <span className={`status-badge ${selectedCertificate.compliance_status}`}>
+                        {selectedCertificate.compliance_status}
+                      </span>
+                    </div>
+                    <div className="info-item">
+                      <label>Certificate Status:</label>
+                      <span className={`status-badge ${getStatusDisplay(selectedCertificate)}`}>
+                        {getStatusDisplay(selectedCertificate)}
+                      </span>
+                    </div>
+                    <div className="info-item">
+                      <label>Approval Status:</label>
+                      <span>{selectedCertificate.is_approved ? "Approved" : "Pending"}</span>
+                    </div>
+                    {selectedCertificate.approved_at && (
+                      <div className="info-item">
+                        <label>Approved At:</label>
+                        <span>{formatDateTime(selectedCertificate.approved_at)}</span>
+                      </div>
+                    )}
+                    {selectedCertificate.approval_remarks && (
+                      <div className="info-item">
+                        <label>Approval Remarks:</label>
+                        <span>{selectedCertificate.approval_remarks}</span>
+                      </div>
+                    )}
+                    <div className="info-item">
+                      <label>Created At:</label>
+                      <span>{formatDateTime(selectedCertificate.created_at)}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Last Updated:</label>
+                      <span>{formatDateTime(selectedCertificate.updated_at)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Candidate Information Tab */}
+              {activeTab === 'candidate' && (
+                <div className="info-section">
+                  <h4>Candidate Information</h4>
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <label>Candidate ID:</label>
+                      <span>{selectedCertificate.candidate}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Candidate Name:</label>
+                      <span>{selectedCertificate.candidate_name}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Compliance Rule ID:</label>
+                      <span>{selectedCertificate.compliance_rule}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Compliance Rule Name:</label>
+                      <span>{selectedCertificate.compliance_rule_name}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Approved By Mentor:</label>
+                      <span>{selectedCertificate.approved_by_mentor || "N/A"}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Document Tab */}
+              {activeTab === 'document' && (
+                <div className="info-section">
+                  <h4>Certificate Document</h4>
+                  {selectedCertificate.document && (
+                    <div className="document-preview">
+                      <div className="document-card">
+                        <FaFile className="document-icon" />
+                        <div className="document-info">
+                          <p className="document-name">
+                            {selectedCertificate.document.split('/').pop()}
+                          </p>
+                          <p className="document-size">
+                            Compliance Certificate Document
+                          </p>
+                          <button 
+                            className="btn btn-primary btn-sm"
+                            onClick={() => handleDownload(getDocumentUrl(selectedCertificate.document), selectedCertificate.document.split('/').pop())}
+                          >
+                            <FaDownload /> Download Certificate
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-/* COMPONENTS - Updated to match the image layout */
+/* COMPONENTS */
 const SummaryCard = ({ title, value, icon, subtitle }) => (
   <div className="col-lg-3 col-md-6">
     <div className="compliance-card summary-card">
@@ -733,84 +893,75 @@ const SummaryCard = ({ title, value, icon, subtitle }) => (
 );
 
 const RuleCard = ({ title, icon, rules, onEdit, onDelete, formatRules, deletingId }) => {
+  const rule = rules[0];
+  const formattedRules = formatRules(rule);
+  const isDeleting = deletingId === rule.id;
+
   return (
-    <div className="col-lg-6">
-      {/* <div className="compliance-card rule-card"> */}
-        {/* <div className="rule-header">
-          <div className="rule-icon">{icon}</div>
-          <div>
+    <div className="col-lg-6 col-md-6">
+      <div className="compliance-card compliance-rule-card">
+
+        {/* Header */}
+        <div className="compliance-rule-header">
+          <div className="compliance-rule-icon">
+            {icon}
+          </div>
+
+          <div className="compliance-rule-title">
             <h5>{title}</h5>
             <p>Configure validity and threshold rules</p>
           </div>
-        </div> */}
 
-        {rules.map((rule) => {
-          const formattedRules = formatRules(rule);
-          const isDeleting = deletingId === rule.id;
-          
-          return (
-            <div key={rule.id} className="rule-item-wrapper">
-              <div className="rule-name-section">
-                <div className="rule-name-wrapper">
-                  <span className="rule-name">{rule.name || rule.rule_name || title}</span>
-                  <div className="rule-status-badges">
-                    <span className={`badge ${rule.is_active !== false ? 'bg-success' : 'bg-secondary'}`}>
-                      {rule.is_active !== false ? 'Active' : 'Inactive'}
-                    </span>
-                    <span className={`badge ${rule.is_mandatory ? 'bg-danger' : 'bg-info'}`}>
-                      {rule.is_mandatory ? 'Mandatory' : 'Optional'}
-                    </span>
-                    <span className="badge bg-primary">Priority: {rule.priority || 1}</span>
-                  </div>
-                </div>
-                <div className="rule-actions">
-                  <button 
-                    className="btn btn-sm btn-outline-primary"
-                    onClick={() => onEdit(rule.id)}
-                    title="Edit Rule"
-                    disabled={isDeleting}
-                  >
-                    <FaEdit /> Edit
-                  </button>
-                  <button 
-                    className="btn btn-sm btn-outline-danger"
-                    onClick={() => onDelete(rule.id, rule.name || rule.rule_name || title)}
-                    title="Delete Rule"
-                    disabled={isDeleting}
-                  >
-                    {isDeleting ? (
-                      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    ) : (
-                      <>
-                        <FaTrash /> Delete
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-              
-              {formattedRules.map((formattedRule, idx) => (
-                <div className="rule-row" key={idx}>
-                  <span className="rule-label">{formattedRule.label}</span>
-                  <div className="rule-input">
-                    <strong>{formattedRule.value}</strong>
-                    <small>{formattedRule.unit}</small>
-                  </div>
-                </div>
-              ))}
+          {/* Icon Actions */}
+          <div className="compliance-rule-actions">
+            <button
+              className="rule-icon-btn edit-btn"
+              onClick={() => onEdit(rule.id)}
+              disabled={isDeleting}
+              title="Edit"
+            >
+              <FaEdit />
+            </button>
+
+            <button
+              className="rule-icon-btn delete-btn"
+              onClick={() =>
+                onDelete(rule.id, rule.name || rule.rule_name || title)
+              }
+              disabled={isDeleting}
+              title="Delete"
+            >
+              <FaTrash />
+            </button>
+          </div>
+        </div>
+
+        {/* Rules */}
+        <div className="compliance-rule-body">
+          {formattedRules.slice(0,3).map((item, idx) => (
+            <div className="compliance-rule-row" key={idx}>
+              <span className="compliance-rule-label">
+                {item.label}
+              </span>
+
+              <span className="compliance-rule-value">
+                {item.value} {item.unit}
+              </span>
             </div>
-          );
-        })}
+          ))}
+        </div>
+
       </div>
-    // </div>
+    </div>
   );
 };
 
-const IncidentRow = ({ type, name, date, severity, status }) => (
+const IncidentRow = ({ type, candidate, issueDate, expiryDate, severity, status, onView }) => (
   <tr>
     <td>{type}</td>
-    <td>{name}</td>
-    <td>{date}</td>
+    <td>{candidate}</td>
+    <td>{issueDate}</td>
+    <td>{expiryDate}</td>
     <td>
       <span className={`pill severity ${severity}`}>{severity}</span>
     </td>
@@ -818,7 +969,9 @@ const IncidentRow = ({ type, name, date, severity, status }) => (
       <span className={`pill status ${status}`}>{status}</span>
     </td>
     <td>
-      <button className="btn btn-outline-primary btn-sm">View</button>
+      <button className="btn btn-outline-primary btn-sm" onClick={onView}>
+        View
+      </button>
     </td>
   </tr>
 );

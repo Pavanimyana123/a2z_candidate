@@ -1,13 +1,81 @@
-// CandidateComplianceDashboard.js - Add import for useNavigate
-import React from "react";
-import { useNavigate } from "react-router-dom"; // Add this import
+// CandidateComplianceDashboard.js
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import CandidateSidebar from "../Layout/CandidateSidebar";
 import Header from "../Layout/CandidateHeader";
-import { FaShieldAlt, FaExclamationTriangle, FaCheck, FaPlus } from "react-icons/fa"; // Add FaPlus
+import { FaShieldAlt, FaExclamationTriangle, FaCheck, FaPlus, FaEdit } from "react-icons/fa";
 import "./CandidateCompliance.css";
 
 const CandidateComplianceDashboard = () => {
-  const navigate = useNavigate(); // Add this line
+  const navigate = useNavigate();
+  const [complianceData, setComplianceData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const API_URL = "http://145.79.0.94:8000/api/candidate/compliance-certificates/";
+
+  // Fetch compliance certificates on component mount
+  useEffect(() => {
+    fetchComplianceCertificates();
+  }, []);
+
+  const fetchComplianceCertificates = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(API_URL);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch compliance certificates");
+      }
+      
+      const result = await response.json();
+      
+      if (result.status && result.data) {
+        setComplianceData(result.data);
+        console.log("Fetched compliance data:", result.data);
+      } else {
+        throw new Error(result.message || "No data received");
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error("Error fetching compliance:", err);
+      setTimeout(() => setError(""), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Calculate statistics from fetched data
+  const calculateStats = () => {
+    const total = complianceData.length;
+    const compliant = complianceData.filter(item => item.compliance_status === "compliant").length;
+    const nonCompliant = complianceData.filter(item => item.compliance_status === "non_compliant").length;
+    const pending = complianceData.filter(item => item.status === "pending").length;
+    
+    return { total, compliant, nonCompliant, pending };
+  };
+
+  const stats = calculateStats();
+  const complianceScore = stats.total > 0 ? Math.round((stats.compliant / stats.total) * 100) : 0;
+  const deployable = stats.nonCompliant === 0;
+  const needsAttention = stats.nonCompliant + stats.pending;
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const getStatusClass = (status) => {
+    switch(status) {
+      case "compliant":
+        return "success";
+      case "non_compliant":
+        return "warning";
+      default:
+        return "warning";
+    }
+  };
 
   return (
     <div className="ccd-layout-wrapper">
@@ -41,172 +109,148 @@ const CandidateComplianceDashboard = () => {
               </div>
             </div>
 
-            {/* Rest of your existing code remains the same... */}
-            
-            {/* ================= SUMMARY ================= */}
-            <div className="row g-4 mb-4">
-              {/* Compliance Score */}
-              <div className="col-lg-6">
-                <div className="ccd-card d-flex align-items-center">
-                  <div className="ccd-circle">
-                    86%
+            {/* Error Message */}
+            {error && (
+              <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                {error}
+                <button type="button" className="btn-close" onClick={() => setError("")}></button>
+              </div>
+            )}
+
+            {/* Loading State */}
+            {loading ? (
+              <div className="text-center py-5">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                <p className="mt-3">Loading compliance data...</p>
+              </div>
+            ) : (
+              <>
+                {/* ================= SUMMARY ================= */}
+                <div className="row g-4 mb-4">
+                  {/* Compliance Score */}
+                  <div className="col-lg-6">
+                    <div className="ccd-card d-flex align-items-center">
+                      <div className="ccd-circle">
+                        {complianceScore}%
+                      </div>
+                      <div className="ms-4">
+                        <h5>Compliance Score</h5>
+                        <p className="ccd-muted">{stats.compliant} of {stats.total} requirements met</p>
+                        <div>
+                          <span className="ccd-badge-success">{stats.compliant} Compliant</span>
+                          {stats.nonCompliant > 0 && (
+                            <span className="ccd-badge-warning ms-2">{stats.nonCompliant} Non-Compliant</span>
+                          )}
+                          {stats.pending > 0 && (
+                            <span className="ccd-badge-warning ms-2">{stats.pending} Pending</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="ms-4">
-                    <h5>Compliance Score</h5>
-                    <p className="ccd-muted">6 of 7 requirements met</p>
-                    <div>
-                      <span className="ccd-badge-success">6 Compliant</span>
-                      <span className="ccd-badge-warning ms-2">1 Warning</span>
+
+                  {/* Deployable */}
+                  <div className="col-lg-3">
+                    <div className="ccd-card text-center">
+                      <FaShieldAlt className={deployable ? "ccd-icon-success" : "ccd-icon-warning"} />
+                      <h4>{deployable ? "Yes" : "No"}</h4>
+                      <p className="ccd-muted">Deployable Status</p>
+                    </div>
+                  </div>
+
+                  {/* Attention */}
+                  <div className="col-lg-3">
+                    <div className="ccd-card text-center">
+                      <FaExclamationTriangle className="ccd-icon-warning" />
+                      <h4>{needsAttention}</h4>
+                      <p className="ccd-muted">Items Need Attention</p>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Deployable */}
-              <div className="col-lg-3">
-                <div className="ccd-card text-center">
-                  <FaShieldAlt className="ccd-icon-success" />
-                  <h4>Yes</h4>
-                  <p className="ccd-muted">Deployable Status</p>
-                </div>
-              </div>
+                {/* ================= MAIN SECTION ================= */}
+                <div className="row g-4">
 
-              {/* Attention */}
-              <div className="col-lg-3">
-                <div className="ccd-card text-center">
-                  <FaExclamationTriangle className="ccd-icon-warning" />
-                  <h4>1</h4>
-                  <p className="ccd-muted">Items Need Attention</p>
-                </div>
-              </div>
-            </div>
+                  {/* REQUIREMENTS - Now populated from API */}
+                  <div className="col-lg-8">
+                    <div className="ccd-card">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Compliance Requirements</h4>
+                      </div>
+                      <p className="ccd-muted">
+                        All your safety and compliance items
+                      </p>
 
-            {/* ================= MAIN SECTION ================= */}
-            <div className="row g-4">
-
-              {/* REQUIREMENTS */}
-              <div className="col-lg-8">
-                <div className="ccd-card">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h4>Compliance Requirements</h4>
-                    <button 
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={() => navigate('/candidate/add-certificate')}
-                    >
-                      <FaPlus /> Add New
-                    </button>
-                  </div>
-                  <p className="ccd-muted">
-                    All your safety and compliance items
-                  </p>
-
-                  {/* Add edit/delete functionality to each requirement */}
-                  <Requirement 
-                    status="success"
-                    title="Platform Safety Certification"
-                    subtitle="Valid until June 2025"
-                    badge="Safety Induction"
-                    expiry="Expires: 15 Jun 2025"
-                    checked="Checked: 10 Jan 2024"
-                    onEdit={() => navigate('/candidate/edit-certificate/1')}
-                  />
-
-                  <Requirement 
-                    status="success"
-                    title="BOSIET Training"
-                    subtitle="Offshore survival training complete"
-                    badge="Safety Induction"
-                    expiry="Expires: 20 Aug 2025"
-                    checked="Checked: 10 Jan 2024"
-                    onEdit={() => navigate('/candidate/edit-certificate/2')}
-                  />
-
-                  <Requirement 
-                    status="success"
-                    title="Personal Protective Equipment"
-                    subtitle="All equipment verified and in good condition"
-                    badge="PPE"
-                    checked="Checked: 15 Jan 2024"
-                    onEdit={() => navigate('/candidate/edit-certificate/3')}
-                  />
-
-                  <Requirement 
-                    status="warning"
-                    title="Offshore Medical Certificate"
-                    subtitle="Expires in 60 days - schedule renewal"
-                    badge="Medical"
-                    expiry="Expires: 15 Mar 2024"
-                    checked="Checked: 10 Jan 2024"
-                    onEdit={() => navigate('/candidate/edit-certificate/4')}
-                  />
-
-                  <Requirement 
-                    status="success"
-                    title="Fit for Duty Assessment"
-                    badge="Medical"
-                    expiry="Expires: 01 Dec 2024"
-                    checked="Checked: 05 Jan 2024"
-                    onEdit={() => navigate('/candidate/edit-certificate/5')}
-                  />
-
-                  <Requirement 
-                    status="success"
-                    title="Code of Conduct Acknowledgment"
-                    subtitle="Annual renewal not required until June 2024"
-                    badge="Ethics"
-                    checked="Checked: 15 Jun 2023"
-                    onEdit={() => navigate('/candidate/edit-certificate/6')}
-                  />
-
-                  <Requirement 
-                    status="success"
-                    title="Insurance Coverage"
-                    badge="Documentation"
-                    expiry="Expires: 31 Dec 2024"
-                    checked="Checked: 01 Jan 2024"
-                    onEdit={() => navigate('/candidate/edit-certificate/7')}
-                  />
-                </div>
-              </div>
-
-              {/* RIGHT PANEL */}
-              <div className="col-lg-4">
-                {/* PPE Checklist */}
-                <div className="ccd-card mb-4">
-                  <h5>PPE Checklist</h5>
-                  <p className="ccd-muted">Personal Protective Equipment</p>
-
-                  <PPE label="Safety Helmet" />
-                  <PPE label="Safety Glasses" />
-                  <PPE label="Safety Boots" />
-                  <PPE label="Hi-Vis Vest" />
-                  <PPE label="Gloves" />
-                  <PPE label="Hearing Protection" />
-                  <PPE label="Coveralls" warning />
-                  <PPE label="Fall Protection Harness" />
-
-                  <div className="ccd-progress">
-                    <div className="ccd-progress-fill" />
+                      {complianceData.length === 0 ? (
+                        <div className="text-center py-4">
+                          <p className="text-muted">No compliance certificates found.</p>
+                          <button 
+                            className="btn btn-primary mt-2"
+                            onClick={() => navigate('/candidate-compliance/add-certificate')}
+                          >
+                            <FaPlus /> Add Your First Certificate
+                          </button>
+                        </div>
+                      ) : (
+                        complianceData.map((item) => (
+                          <Requirement 
+                            key={item.id}
+                            status={getStatusClass(item.compliance_status)}
+                            title={item.compliance_rule_name}
+                            subtitle={`Certificate: ${item.certificate_number || 'N/A'}`}
+                            badge={item.compliance_status === "compliant" ? "Compliant" : "Non-Compliant"}
+                            expiry={item.expiry_date ? `Expires: ${formatDate(item.expiry_date)}` : null}
+                            checked={`Checked: ${formatDate(item.issue_date)}`}
+                            onEdit={() => navigate(`/candidate-compliance/edit-certificate/${item.id}`)}
+                            issuingAuthority={item.issuing_authority}
+                          />
+                        ))
+                      )}
+                    </div>
                   </div>
 
-                  <p className="text-end small">Completion 7/8</p>
-                </div>
+                  {/* RIGHT PANEL */}
+                  <div className="col-lg-4">
+                    {/* PPE Checklist */}
+                    <div className="ccd-card mb-4">
+                      <h5>PPE Checklist</h5>
+                      <p className="ccd-muted">Personal Protective Equipment</p>
 
-                {/* Quick Actions */}
-                <div className="ccd-card">
-                  <h5>Quick Actions</h5>
-                  <button 
-                    className="ccd-action-btn"
-                    onClick={() => navigate('/candidate/add-certificate')}
-                  >
-                    Add New Certificate
-                  </button>
-                  <button className="ccd-action-btn">Report Incident</button>
-                  <button className="ccd-action-btn">Book Medical</button>
-                  <button className="ccd-action-btn">Update PPE</button>
+                      <PPE label="Safety Helmet" />
+                      <PPE label="Safety Glasses" />
+                      <PPE label="Safety Boots" />
+                      <PPE label="Hi-Vis Vest" />
+                      <PPE label="Gloves" />
+                      <PPE label="Hearing Protection" />
+                      <PPE label="Coveralls" warning />
+                      <PPE label="Fall Protection Harness" />
+
+                      <div className="ccd-progress">
+                        <div className="ccd-progress-fill" />
+                      </div>
+
+                      <p className="text-end small">Completion 7/8</p>
+                    </div>
+
+                    {/* Quick Actions */}
+                    <div className="ccd-card">
+                      <h5>Quick Actions</h5>
+                      <button 
+                        className="ccd-action-btn"
+                        onClick={() => navigate('/candidate-compliance/add-certificate')}
+                      >
+                        Add New Certificate
+                      </button>
+                      <button className="ccd-action-btn">Report Incident</button>
+                      <button className="ccd-action-btn">Book Medical</button>
+                      <button className="ccd-action-btn">Update PPE</button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -215,23 +259,24 @@ const CandidateComplianceDashboard = () => {
 };
 
 /* ================= SUB COMPONENTS ================= */
-const Requirement = ({ title, subtitle, badge, expiry, checked, status, onEdit }) => (
+const Requirement = ({ title, subtitle, badge, expiry, checked, status, onEdit, issuingAuthority }) => (
   <div className={`ccd-req ${status}`}>
     <div>
       <strong>{title}</strong>
       {badge && <span className="ccd-small-badge">{badge}</span>}
       {subtitle && <p className="ccd-muted">{subtitle}</p>}
+      {issuingAuthority && <p className="ccd-muted small">Authority: {issuingAuthority}</p>}
     </div>
     <div className="text-end">
       {expiry && <p className="ccd-expiry">{expiry}</p>}
       {checked && <p className="ccd-muted small">{checked}</p>}
       {onEdit && (
         <button 
-          className="btn btn-sm btn-link p-0 mt-1"
+          className="btn btn-sm btn-link p-0 mt-1 edit-btn"
           onClick={onEdit}
-          style={{ fontSize: '12px' }}
+          style={{ fontSize: '14px' }}
         >
-          Edit
+          <FaEdit className="me-1" /> Edit
         </button>
       )}
     </div>

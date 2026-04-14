@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import CandidateSidebar from '../Layout/CandidateSidebar';
 import Header from '../Layout/CandidateHeader';
 import "./AddCandidateCompliance.css";
@@ -8,6 +8,9 @@ import { BASE_URL } from "../../../ApiUrl";
 
 const AddCertificate = () => {
   const navigate = useNavigate();
+  const { id } = useParams(); // Get ID from URL params for edit mode
+  const isEditMode = !!id;
+  
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,6 +25,8 @@ const AddCertificate = () => {
   
   // State for selected file
   const [selectedFile, setSelectedFile] = useState(null);
+  const [existingDocument, setExistingDocument] = useState(null);
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
   
   // Get candidate data from localStorage
   const getCandidateData = () => {
@@ -51,7 +56,7 @@ const AddCertificate = () => {
     status: 'pending',
     candidate: candidateId,
     compliance_rule: '',
-    approved_by_mentor: null  // Change to null instead of 0
+    approved_by_mentor: null
   });
 
   // Fetch compliance categories on component mount
@@ -60,6 +65,13 @@ const AddCertificate = () => {
     fetchComplianceRules();
   }, []);
 
+  // After complianceRules are loaded, fetch edit data if in edit mode
+  useEffect(() => {
+    if (isEditMode && id && complianceRules.length > 0 && !initialDataLoaded) {
+      fetchComplianceCertificateData(id);
+    }
+  }, [isEditMode, id, complianceRules, initialDataLoaded]);
+
   // Filter rules when category changes
   useEffect(() => {
     if (selectedCategory && complianceRules.length > 0) {
@@ -67,17 +79,87 @@ const AddCertificate = () => {
         rule => rule.complience_category?.category_name === selectedCategory
       );
       setFilteredRules(rules);
-      setSelectedRule(''); // Reset selected rule when category changes
-      setFormData(prev => ({ ...prev, compliance_rule: '' }));
     } else {
       setFilteredRules([]);
     }
   }, [selectedCategory, complianceRules]);
 
+  // Fetch existing certificate data for edit mode
+  const fetchComplianceCertificateData = async (certificateId) => {
+    setFetchLoading(true);
+    try {
+      const response = await fetch(`${BASE_URL}/api/candidate/compliance-certificates/${certificateId}/`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch certificate data');
+      }
+      
+      const result = await response.json();
+      
+      if (result.status && result.data) {
+        const certificateData = result.data;
+        
+        console.log('Certificate data loaded:', certificateData);
+        console.log('Compliance rules available:', complianceRules);
+        
+        // Find the compliance rule to get its category
+        const rule = complianceRules.find(r => r.id === certificateData.compliance_rule);
+        
+        if (rule) {
+          console.log('Found matching rule:', rule);
+          console.log('Rule category:', rule.complience_category);
+          
+          // Set the category based on the rule's category name
+          const categoryName = rule.complience_category?.category_name;
+          if (categoryName) {
+            setSelectedCategory(categoryName);
+          }
+          
+          // Set the selected rule ID
+          setSelectedRule(certificateData.compliance_rule.toString());
+        } else {
+          console.warn('Rule not found for ID:', certificateData.compliance_rule);
+        }
+        
+        setFormData({
+          issue_date: certificateData.issue_date?.split('T')[0] || '',
+          expiry_date: certificateData.expiry_date?.split('T')[0] || '',
+          certificate_number: certificateData.certificate_number || '',
+          issuing_authority: certificateData.issuing_authority || '',
+          is_approved: certificateData.is_approved !== undefined ? certificateData.is_approved : true,
+          approved_at: certificateData.approved_at || new Date().toISOString(),
+          approval_remarks: certificateData.approval_remarks || '',
+          status: certificateData.status || 'pending',
+          candidate: candidateId,
+          compliance_rule: certificateData.compliance_rule || '',
+          approved_by_mentor: certificateData.approved_by_mentor || null
+        });
+        
+        // Store existing document info
+        if (certificateData.document) {
+          setExistingDocument(certificateData.document);
+        }
+        
+        setInitialDataLoaded(true);
+      }
+    } catch (err) {
+      console.error('Error fetching certificate data:', err);
+      Swal.fire({
+        icon: 'error',
+        title: 'Failed to Load Data',
+        text: err.message || 'Could not load certificate data',
+        showConfirmButton: true
+      }).then(() => {
+        navigate('/candidate-compliance');
+      });
+    } finally {
+      setFetchLoading(false);
+    }
+  };
+
   // Fetch compliance categories
   const fetchComplianceCategories = async () => {
     try {
-      setFetchLoading(true);
       const response = await fetch(`${BASE_URL}/api/admin/compliance-categories/`);
       
       if (!response.ok) {
@@ -98,8 +180,6 @@ const AddCertificate = () => {
         text: err.message || 'An error occurred while loading categories',
         showConfirmButton: true
       });
-    } finally {
-      setFetchLoading(false);
     }
   };
 
@@ -157,6 +237,9 @@ const AddCertificate = () => {
   const handleCategoryChange = (e) => {
     const categoryName = e.target.value;
     setSelectedCategory(categoryName);
+    // Reset selected rule when category changes
+    setSelectedRule('');
+    setFormData(prev => ({ ...prev, compliance_rule: '' }));
   };
 
   const handleRuleChange = (e) => {
@@ -202,7 +285,8 @@ const AddCertificate = () => {
       newErrors.compliance_rule = "Please select a compliance rule";
     }
 
-    if (!selectedFile) {
+    // Only require document for new entries, not for edits
+    if (!isEditMode && !selectedFile) {
       newErrors.document = "Please select a document to upload";
     }
 
@@ -233,41 +317,80 @@ const AddCertificate = () => {
     setError('');
 
     try {
-      // Create FormData for multipart/form-data upload
-      const formDataToSend = new FormData();
-      
-      // Append all fields to FormData
-      formDataToSend.append('issue_date', formData.issue_date);
-      formDataToSend.append('expiry_date', formData.expiry_date);
-      formDataToSend.append('certificate_number', formData.certificate_number);
-      formDataToSend.append('issuing_authority', formData.issuing_authority);
-      formDataToSend.append('is_approved', formData.is_approved);
-      formDataToSend.append('approved_at', formData.approved_at);
-      formDataToSend.append('approval_remarks', formData.approval_remarks || '');
-      formDataToSend.append('status', formData.status);
-      formDataToSend.append('candidate', parseInt(candidateId));
-      formDataToSend.append('compliance_rule', parseInt(formData.compliance_rule));
-      
-      // Only append approved_by_mentor if it has a value (not null)
-      if (formData.approved_by_mentor !== null && formData.approved_by_mentor !== '') {
-        formDataToSend.append('approved_by_mentor', formData.approved_by_mentor);
-      }
-      
-      // Append the file
-      if (selectedFile) {
-        formDataToSend.append('document', selectedFile);
-      }
+      let response;
+      let url;
+      let method;
+      let requestBody;
 
-      // Log FormData contents for debugging
-      console.log('Submitting FormData:');
-      for (let pair of formDataToSend.entries()) {
-        console.log(pair[0] + ': ' + (pair[0] === 'document' ? pair[1].name : pair[1]));
-      }
+      if (isEditMode) {
+        // EDIT MODE - Use PUT request with JSON
+        url = `${BASE_URL}/api/candidate/compliance-certificates/${id}/`;
+        method = 'PUT';
+        
+        requestBody = {
+          issue_date: formData.issue_date,
+          expiry_date: formData.expiry_date,
+          certificate_number: formData.certificate_number,
+          issuing_authority: formData.issuing_authority,
+          is_approved: formData.is_approved,
+          approved_at: formData.approved_at,
+          approval_remarks: formData.approval_remarks,
+          status: formData.status,
+          candidate: parseInt(candidateId),
+          compliance_rule: parseInt(formData.compliance_rule),
+        };
 
-      const response = await fetch(`${BASE_URL}/api/candidate/compliance-certificates/`, {
-        method: 'POST',
-        body: formDataToSend,  // Don't set Content-Type header, browser will set it with boundary
-      });
+        if (formData.approved_by_mentor !== null && formData.approved_by_mentor !== '') {
+          requestBody.approved_by_mentor = formData.approved_by_mentor;
+        }
+
+        console.log('Updating with data:', requestBody);
+
+        response = await fetch(url, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+      } else {
+        // ADD MODE - Use POST request with FormData
+        url = `${BASE_URL}/api/candidate/compliance-certificates/`;
+        method = 'POST';
+        
+        const formDataToSend = new FormData();
+        
+        formDataToSend.append('issue_date', formData.issue_date);
+        formDataToSend.append('expiry_date', formData.expiry_date);
+        formDataToSend.append('certificate_number', formData.certificate_number);
+        formDataToSend.append('issuing_authority', formData.issuing_authority);
+        formDataToSend.append('is_approved', formData.is_approved);
+        formDataToSend.append('approved_at', formData.approved_at);
+        formDataToSend.append('approval_remarks', formData.approval_remarks || '');
+        formDataToSend.append('status', formData.status);
+        formDataToSend.append('candidate', parseInt(candidateId));
+        formDataToSend.append('compliance_rule', parseInt(formData.compliance_rule));
+        
+        if (formData.approved_by_mentor !== null && formData.approved_by_mentor !== '') {
+          formDataToSend.append('approved_by_mentor', formData.approved_by_mentor);
+        }
+        
+        if (selectedFile) {
+          formDataToSend.append('document', selectedFile);
+        }
+
+        console.log('Submitting FormData:');
+        for (let pair of formDataToSend.entries()) {
+          console.log(pair[0] + ': ' + (pair[0] === 'document' ? pair[1].name : pair[1]));
+        }
+        
+        requestBody = formDataToSend;
+        
+        response = await fetch(url, {
+          method: method,
+          body: requestBody,
+        });
+      }
 
       const responseData = await response.json();
 
@@ -289,25 +412,25 @@ const AddCertificate = () => {
           setErrors(newErrors);
           throw new Error(responseData.message || 'Please fix the validation errors');
         }
-        throw new Error(responseData.message || 'Failed to add compliance certificate');
+        throw new Error(responseData.message || `Failed to ${isEditMode ? 'update' : 'add'} compliance certificate`);
       }
 
       await Swal.fire({
         icon: 'success',
         title: 'Success!',
-        text: 'Compliance certificate has been added successfully.',
+        text: `Compliance certificate has been ${isEditMode ? 'updated' : 'added'} successfully.`,
         timer: 2000,
         showConfirmButton: false
       });
       
       navigate('/candidate-compliance');
     } catch (err) {
-      setError(err.message || 'Failed to add compliance certificate. Please try again.');
+      setError(err.message || `Failed to ${isEditMode ? 'update' : 'add'} compliance certificate. Please try again.`);
       
       Swal.fire({
         icon: 'error',
-        title: 'Submission Failed',
-        text: err.message || 'Failed to add compliance certificate. Please try again.',
+        title: `${isEditMode ? 'Update' : 'Submission'} Failed`,
+        text: err.message || `Failed to ${isEditMode ? 'update' : 'add'} compliance certificate. Please try again.`,
         timer: 3000,
         showConfirmButton: true
       });
@@ -317,7 +440,7 @@ const AddCertificate = () => {
   };
 
   const handleCancel = () => {
-    navigate('/candidate-certifications');
+    navigate('/candidate-compliance');
   };
 
   if (fetchLoading) {
@@ -331,7 +454,7 @@ const AddCertificate = () => {
               <div className="spinner-border text-primary" role="status">
                 <span className="visually-hidden">Loading...</span>
               </div>
-              <p className="mt-2">Loading form data...</p>
+              <p className="mt-2">Loading certificate data...</p>
             </div>
           </div>
         </div>
@@ -351,8 +474,12 @@ const AddCertificate = () => {
             {/* Header */}
             <div className="cert-add-header">
               <div>
-                <h2>Add Compliance Certificate</h2>
-                <p>Upload your compliance certificate and fill in the details below</p>
+                <h2>{isEditMode ? 'Edit Compliance Certificate' : 'Add Compliance Certificate'}</h2>
+                <p>
+                  {isEditMode 
+                    ? 'Update your compliance certificate details' 
+                    : 'Upload your compliance certificate and fill in the details below'}
+                </p>
               </div>
             </div>
 
@@ -361,7 +488,7 @@ const AddCertificate = () => {
 
             {/* Form */}
             <div className="cert-add-form-container">
-              <form onSubmit={handleSubmit} encType="multipart/form-data">
+              <form onSubmit={handleSubmit} encType={isEditMode ? '' : 'multipart/form-data'}>
                 <div className="row">
                   {/* Compliance Category Dropdown */}
                   <div className="col-md-6 mb-3">
@@ -370,7 +497,7 @@ const AddCertificate = () => {
                       className={`form-control ${errors.category ? 'is-invalid' : ''}`}
                       value={selectedCategory}
                       onChange={handleCategoryChange}
-                      disabled={loading}
+                      disabled={loading || fetchLoading}
                     >
                       <option value="">Select Compliance Category</option>
                       {complianceCategories.map(category => (
@@ -391,7 +518,7 @@ const AddCertificate = () => {
                       className={`form-control ${errors.compliance_rule ? 'is-invalid' : ''}`}
                       value={selectedRule}
                       onChange={handleRuleChange}
-                      disabled={loading || !selectedCategory}
+                      disabled={loading || fetchLoading || !selectedCategory}
                     >
                       <option value="">Select Compliance Rule</option>
                       {filteredRules.map(rule => (
@@ -474,9 +601,9 @@ const AddCertificate = () => {
                     )}
                   </div>
 
-                  {/* Document Upload */}
+                  {/* Document Upload - Only show for new entries or allow update for edits */}
                   <div className="col-12 mb-3">
-                    <label className="form-label">Document *</label>
+                    <label className="form-label">{isEditMode ? 'Update Document (Optional)' : 'Document *'}</label>
                     <input
                       type="file"
                       className={`form-control ${errors.document ? 'is-invalid' : ''}`}
@@ -489,6 +616,11 @@ const AddCertificate = () => {
                     )}
                     <small className="text-muted">
                       Supported formats: PDF, JPG, JPEG, PNG, DOC, DOCX (Max size: 5MB)
+                      {isEditMode && existingDocument && (
+                        <span className="d-block mt-1 text-success">
+                          Current document: {existingDocument.split('/').pop()}
+                        </span>
+                      )}
                     </small>
                   </div>
                 </div>
@@ -516,7 +648,7 @@ const AddCertificate = () => {
                     className="btn btn-primary"
                     disabled={loading}
                   >
-                    {loading ? 'Submitting...' : 'Submit Certificate'}
+                    {loading ? (isEditMode ? 'Updating...' : 'Submitting...') : (isEditMode ? 'Update Certificate' : 'Submit Certificate')}
                   </button>
                 </div>
               </form>

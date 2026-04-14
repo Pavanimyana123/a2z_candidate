@@ -22,6 +22,7 @@ import AddCompliance from './components/Admin/ComplianceManagement/AddCompliance
 import AddComplianceCertificate from "./components/Candidate/CandidateCompliance/AddCandidateCompliance"
 import AuditLogs from "./components/Admin/AuditLogs/AuditLogs";
 import Certifications from "./components/Admin/Certificate/Certificate";
+import CertificationCategories from "./components/Admin/Certificate/CertificateCategory"
 import ReportsAnalytics from "./components/Admin/Reports/Reports";
 import SystemSettings from "./components/Admin/SystemSettings/SystemSettings";
 import EmailSettings from "./components/Admin/EmailSettings/EmailSettings";
@@ -41,6 +42,7 @@ import MentorRotation from "./components/Mentor/MentorRotation/MentorRotation";
 import MentorCompliance from "./components/Mentor/MentorCompliance/MentorCompliance";
 import MentorFeedback from "./components/Mentor/MentorFeedback/MentorFeedback";
 import MentorReports from "./components/Mentor/MentorReports/MentorReports";
+import MentorCertificatesPage from "./components/Mentor/MentorCertificates/MentorCertificates";
 
 import CandidateDashboard from "./components/Candidate/CandidateDasboard/CandidateDashboard"
 import CandidateProfessionalIdentity from "./components/Candidate/CandidateProfessionality/CandidateProfessionality";
@@ -92,6 +94,7 @@ function App() {
             <Route path="/compliance/add" element={<AddCompliance />} />
             <Route path="/compliance/edit/:id" element={<AddCompliance />} />
             <Route path="/certificate" element={<Certifications />} />
+            <Route path="/certification-categories" element={<CertificationCategories />} />
             <Route path="/learning" element={<Learning />} />
             <Route path="/add-learning" element={<AddLearning />} />
             <Route path="/add-learning/:id" element={<AddLearning />} />
@@ -114,6 +117,7 @@ function App() {
               <Route path="/mentor-evidence" element={<MentorEvidence />} />
               <Route path="/mentor-rotation" element={<MentorRotation />} />
               <Route path="/mentor-compliance" element={<MentorCompliance />} />
+              <Route path="/mentor-certificates" element={<MentorCertificatesPage />} />
                <Route path="/mentor-feedback" element={<MentorFeedback />} />
                 <Route path="/mentor-reports" element={<MentorReports />} />
 
