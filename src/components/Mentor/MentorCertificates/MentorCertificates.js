@@ -14,10 +14,13 @@ import {
   FaIdCard,
   FaBuilding,
   FaCalendarAlt,
-  FaFile
+  FaFile,
+  FaCheck,
+  FaBan
 } from "react-icons/fa";
 import "./MentorCertificates.css";
 import { BASE_URL } from "../../../ApiUrl";
+import Swal from "sweetalert2";
 
 const MentorCertificatesPage = () => {
   const [certificates, setCertificates] = useState([]);
@@ -28,6 +31,7 @@ const MentorCertificatesPage = () => {
   const [selectedCert, setSelectedCert] = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [activeTab, setActiveTab] = useState("certificate");
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Fetch certificates from API
   useEffect(() => {
@@ -73,6 +77,106 @@ const MentorCertificatesPage = () => {
       }
     } catch (error) {
       console.error("Error fetching candidates:", error);
+    }
+  };
+
+  // Handle accept action
+  const handleAccept = async (certId, certNumber) => {
+    const result = await Swal.fire({
+      title: 'Approve Certificate?',
+      text: `Are you sure you want to approve certificate "${certNumber}"?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#28a745',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, Approve',
+      cancelButtonText: 'Cancel',
+    });
+
+    if (result.isConfirmed) {
+      setActionLoading(true);
+      try {
+        // Add your API call here to approve certificate
+        // Example:
+        // const response = await fetch(`${BASE_URL}/api/mentor/certifications/${certId}/approve/`, {
+        //   method: 'PUT',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({ status: 'approved' })
+        // });
+        
+        await Swal.fire({
+          icon: 'success',
+          title: 'Approved!',
+          text: 'Certificate has been approved successfully.',
+          timer: 2000,
+          showConfirmButton: false
+        });
+        
+        fetchCertificates(); // Refresh data
+      } catch (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: 'Failed to approve certificate. Please try again.',
+        });
+      } finally {
+        setActionLoading(false);
+      }
+    }
+  };
+
+  // Handle reject action
+  const handleReject = async (certId, certNumber) => {
+    const result = await Swal.fire({
+      title: 'Reject Certificate?',
+      text: `Are you sure you want to reject certificate "${certNumber}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, Reject',
+      cancelButtonText: 'Cancel',
+      input: 'textarea',
+      inputPlaceholder: 'Please provide a reason for rejection...',
+      inputValidator: (value) => {
+        if (!value) {
+          return 'You need to provide a reason for rejection!';
+        }
+      }
+    });
+
+    if (result.isConfirmed) {
+      setActionLoading(true);
+      try {
+        // Add your API call here to reject certificate
+        // Example:
+        // const response = await fetch(`${BASE_URL}/api/mentor/certifications/${certId}/reject/`, {
+        //   method: 'PUT',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({ 
+        //     status: 'rejected',
+        //     rejection_reason: result.value 
+        //   })
+        // });
+        
+        await Swal.fire({
+          icon: 'success',
+          title: 'Rejected!',
+          text: 'Certificate has been rejected.',
+          timer: 2000,
+          showConfirmButton: false
+        });
+        
+        fetchCertificates(); // Refresh data
+      } catch (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: 'Failed to reject certificate. Please try again.',
+        });
+      } finally {
+        setActionLoading(false);
+      }
     }
   };
 
@@ -357,12 +461,35 @@ const MentorCertificatesPage = () => {
                               </span>
                             </td>
                             <td>
-                              <button
-                                className="tc-view-btn"
-                                onClick={() => handleViewDetails(cert)}
-                              >
-                                <FaEye /> View
-                              </button>
+                              <div className="tc-action-buttons">
+                                <button
+                                  className="tc-view-btn"
+                                  onClick={() => handleViewDetails(cert)}
+                                  title="View Details"
+                                >
+                                  <FaEye />
+                                </button>
+                                {status === "pending" && (
+                                  <>
+                                    <button
+                                      className="tc-accept-btn"
+                                      onClick={() => handleAccept(cert.id, cert.certificate_number)}
+                                      disabled={actionLoading}
+                                      title="Approve Certificate"
+                                    >
+                                      <FaCheck />
+                                    </button>
+                                    <button
+                                      className="tc-reject-btn"
+                                      onClick={() => handleReject(cert.id, cert.certificate_number)}
+                                      disabled={actionLoading}
+                                      title="Reject Certificate"
+                                    >
+                                      <FaTimes />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );
@@ -380,7 +507,7 @@ const MentorCertificatesPage = () => {
             )}
           </div>
 
-          {/* Pending Approvals Section */}
+          {/* Pending Approvals Section with Action Buttons */}
           {/* {getPendingCertificates() > 0 && (
             <div className="tc-table-card mt-4">
               <div className="tc-table-header tc-pending-header">
@@ -427,12 +554,31 @@ const MentorCertificatesPage = () => {
                             <span className="tc-status tc-status-gray">Pending Review</span>
                           </td>
                           <td>
-                            <button
-                              className="tc-view-btn"
-                              onClick={() => handleViewDetails(cert)}
-                            >
-                              <FaEye /> Review
-                            </button>
+                            <div className="tc-action-buttons">
+                              <button
+                                className="tc-view-btn"
+                                onClick={() => handleViewDetails(cert)}
+                                title="View Details"
+                              >
+                                <FaEye />
+                              </button>
+                              <button
+                                className="tc-accept-btn"
+                                onClick={() => handleAccept(cert.id, cert.certificate_number)}
+                                disabled={actionLoading}
+                                title="Approve Certificate"
+                              >
+                                <FaCheck />
+                              </button>
+                              <button
+                                className="tc-reject-btn"
+                                onClick={() => handleReject(cert.id, cert.certificate_number)}
+                                disabled={actionLoading}
+                                title="Reject Certificate"
+                              >
+                                <FaTimes />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -444,7 +590,7 @@ const MentorCertificatesPage = () => {
         </div>
       </div>
 
-      {/* Modal for Certificate Details */}
+      {/* Modal for Certificate Details with Action Buttons */}
       {showModal && selectedCert && (
         <div className="tc-modal-overlay" onClick={() => setShowModal(false)}>
           <div className="tc-modal-container" onClick={(e) => e.stopPropagation()}>
@@ -641,6 +787,31 @@ const MentorCertificatesPage = () => {
             </div>
 
             <div className="tc-modal-footer">
+              {/* Action buttons in modal footer for pending certificates */}
+              {getCertificateStatus(selectedCert) === "pending" && (
+                <div className="tc-modal-actions">
+                  <button
+                    className="tc-accept-btn-modal"
+                    onClick={() => {
+                      handleAccept(selectedCert.id, selectedCert.certificate_number);
+                      setShowModal(false);
+                    }}
+                    disabled={actionLoading}
+                  >
+                    <FaCheck /> Approve Certificate
+                  </button>
+                  <button
+                    className="tc-reject-btn-modal"
+                    onClick={() => {
+                      handleReject(selectedCert.id, selectedCert.certificate_number);
+                      setShowModal(false);
+                    }}
+                    disabled={actionLoading}
+                  >
+                    <FaTimes /> Reject Certificate
+                  </button>
+                </div>
+              )}
               <button className="tc-close-btn" onClick={() => setShowModal(false)}>
                 Close
               </button>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import MentorSidebar from "../Layout/MentorSidebar";
 import Header from "../Layout/MentorHeader";
-import { FaCheckCircle, FaClock, FaTimesCircle, FaExclamationTriangle, FaEye, FaDownload, FaTimes, FaShieldAlt, FaHeartbeat, FaBalanceScale } from "react-icons/fa";
+import { FaCheckCircle, FaClock, FaTimesCircle, FaExclamationTriangle, FaEye, FaDownload, FaTimes, FaShieldAlt, FaHeartbeat, FaBalanceScale, FaCheck, FaBan } from "react-icons/fa";
 import "./MentorCompliance.css";
 import { BASE_URL } from "../../../ApiUrl";
+import Swal from "sweetalert2";
 
 const MentorCompliancePage = () => {
   const [complianceCertificates, setComplianceCertificates] = useState([]);
@@ -12,6 +13,7 @@ const MentorCompliancePage = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedCertificate, setSelectedCertificate] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Fetch data on component mount
   useEffect(() => {
@@ -57,6 +59,96 @@ const MentorCompliancePage = () => {
       }
     } catch (error) {
       console.error("Error fetching compliance rules:", error);
+    }
+  };
+
+  // Handle accept action
+  const handleAccept = async (candidateId) => {
+    const result = await Swal.fire({
+      title: 'Approve Compliance?',
+      text: `Are you sure you want to approve compliance for ${getCandidateName(candidateId)}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#28a745',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, Approve',
+      cancelButtonText: 'Cancel',
+    });
+
+    if (result.isConfirmed) {
+      setActionLoading(true);
+      try {
+        // Add your API call here to update compliance status
+        // Example:
+        // const response = await fetch(`${BASE_URL}/api/mentor/compliance/${candidateId}/approve/`, {
+        //   method: 'PUT',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({ status: 'approved' })
+        // });
+        
+        await Swal.fire({
+          icon: 'success',
+          title: 'Approved!',
+          text: 'Compliance has been approved successfully.',
+          timer: 2000,
+          showConfirmButton: false
+        });
+        
+        fetchComplianceCertificates(); // Refresh data
+      } catch (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: 'Failed to approve compliance. Please try again.',
+        });
+      } finally {
+        setActionLoading(false);
+      }
+    }
+  };
+
+  // Handle reject action
+  const handleReject = async (candidateId) => {
+    const result = await Swal.fire({
+      title: 'Reject Compliance?',
+      text: `Are you sure you want to reject compliance for ${getCandidateName(candidateId)}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, Reject',
+      cancelButtonText: 'Cancel',
+    });
+
+    if (result.isConfirmed) {
+      setActionLoading(true);
+      try {
+        // Add your API call here to update compliance status
+        // Example:
+        // const response = await fetch(`${BASE_URL}/api/mentor/compliance/${candidateId}/reject/`, {
+        //   method: 'PUT',
+        //   headers: { 'Content-Type': 'application/json' },
+        //   body: JSON.stringify({ status: 'rejected' })
+        // });
+        
+        await Swal.fire({
+          icon: 'success',
+          title: 'Rejected!',
+          text: 'Compliance has been rejected.',
+          timer: 2000,
+          showConfirmButton: false
+        });
+        
+        fetchComplianceCertificates(); // Refresh data
+      } catch (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: 'Failed to reject compliance. Please try again.',
+        });
+      } finally {
+        setActionLoading(false);
+      }
     }
   };
 
@@ -352,12 +444,31 @@ const MentorCompliancePage = () => {
                               </span>
                             </td>
                             <td>
-                              <button
-                                className="tc-view-btn"
-                                onClick={() => handleViewDetails(candidate.id)}
-                              >
-                                <FaEye /> View
-                              </button>
+                              <div className="tc-action-buttons">
+                                <button
+                                  className="tc-view-btn"
+                                  onClick={() => handleViewDetails(candidate.id)}
+                                  title="View Details"
+                                >
+                                  <FaEye />
+                                </button>
+                                <button
+                                  className="tc-accept-btn"
+                                  onClick={() => handleAccept(candidate.id)}
+                                  disabled={actionLoading}
+                                  title="Accept"
+                                >
+                                  <FaCheck />
+                                </button>
+                                <button
+                                  className="tc-reject-btn"
+                                  onClick={() => handleReject(candidate.id)}
+                                  disabled={actionLoading}
+                                  title="Reject"
+                                >
+                                  <FaTimes />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );

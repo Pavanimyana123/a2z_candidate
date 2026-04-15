@@ -3,16 +3,19 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CandidateSidebar from "../Layout/CandidateSidebar";
 import Header from "../Layout/CandidateHeader";
-import { FaShieldAlt, FaExclamationTriangle, FaCheck, FaPlus, FaEdit } from "react-icons/fa";
+import { FaShieldAlt, FaExclamationTriangle, FaCheck, FaPlus, FaEdit, FaTrash } from "react-icons/fa";
+import Swal from "sweetalert2";
 import "./CandidateCompliance.css";
+import { BASE_URL } from "../../../ApiUrl";
 
 const CandidateComplianceDashboard = () => {
   const navigate = useNavigate();
   const [complianceData, setComplianceData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const API_URL = "http://145.79.0.94:8000/api/candidate/compliance-certificates/";
+  const API_URL = `${BASE_URL}/api/candidate/compliance-certificates/`;
 
   // Fetch compliance certificates on component mount
   useEffect(() => {
@@ -42,6 +45,58 @@ const CandidateComplianceDashboard = () => {
       setTimeout(() => setError(""), 3000);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle delete certificate
+  const handleDeleteCertificate = async (certificateId, certificateName) => {
+    const result = await Swal.fire({
+      title: 'Delete Certificate?',
+      html: `Are you sure you want to delete <strong>${certificateName}</strong>?<br>This action cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, Delete',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true
+    });
+
+    if (result.isConfirmed) {
+      setDeleteLoading(true);
+      try {
+        const response = await fetch(`${BASE_URL}/api/candidate/compliance-certificates/${certificateId}/`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Failed to delete certificate");
+        }
+
+        await Swal.fire({
+          icon: 'success',
+          title: 'Deleted!',
+          text: 'Certificate has been deleted successfully.',
+          timer: 2000,
+          showConfirmButton: false
+        });
+        
+        // Refresh the list
+        fetchComplianceCertificates();
+      } catch (error) {
+        console.error("Error deleting certificate:", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error!',
+          text: error.message || 'Failed to delete certificate. Please try again.',
+        });
+      } finally {
+        setDeleteLoading(false);
+      }
     }
   };
 
@@ -204,7 +259,9 @@ const CandidateComplianceDashboard = () => {
                             expiry={item.expiry_date ? `Expires: ${formatDate(item.expiry_date)}` : null}
                             checked={`Checked: ${formatDate(item.issue_date)}`}
                             onEdit={() => navigate(`/candidate-compliance/edit-certificate/${item.id}`)}
+                            onDelete={() => handleDeleteCertificate(item.id, item.compliance_rule_name)}
                             issuingAuthority={item.issuing_authority}
+                            deleteLoading={deleteLoading}
                           />
                         ))
                       )}
@@ -259,26 +316,53 @@ const CandidateComplianceDashboard = () => {
 };
 
 /* ================= SUB COMPONENTS ================= */
-const Requirement = ({ title, subtitle, badge, expiry, checked, status, onEdit, issuingAuthority }) => (
+const Requirement = ({ 
+  title, 
+  subtitle, 
+  badge, 
+  expiry, 
+  checked, 
+  status, 
+  onEdit, 
+  onDelete, 
+  issuingAuthority,
+  deleteLoading 
+}) => (
   <div className={`ccd-req ${status}`}>
-    <div>
-      <strong>{title}</strong>
-      {badge && <span className="ccd-small-badge">{badge}</span>}
+    <div className="ccd-req-content">
+      <div className="ccd-req-main">
+        <strong>{title}</strong>
+        {badge && <span className="ccd-small-badge">{badge}</span>}
+      </div>
       {subtitle && <p className="ccd-muted">{subtitle}</p>}
       {issuingAuthority && <p className="ccd-muted small">Authority: {issuingAuthority}</p>}
     </div>
-    <div className="text-end">
-      {expiry && <p className="ccd-expiry">{expiry}</p>}
-      {checked && <p className="ccd-muted small">{checked}</p>}
-      {onEdit && (
-        <button 
-          className="btn btn-sm btn-link p-0 mt-1 edit-btn"
-          onClick={onEdit}
-          style={{ fontSize: '14px' }}
-        >
-          <FaEdit className="me-1" /> Edit
-        </button>
-      )}
+    <div className="ccd-req-actions">
+      <div className="ccd-req-dates">
+        {expiry && <p className="ccd-expiry">{expiry}</p>}
+        {checked && <p className="ccd-muted small">{checked}</p>}
+      </div>
+      <div className="ccd-req-buttons">
+        {onEdit && (
+          <button 
+            className="ccd-edit-btn"
+            onClick={onEdit}
+            title="Edit Certificate"
+          >
+            <FaEdit />
+          </button>
+        )}
+        {onDelete && (
+          <button 
+            className="ccd-delete-btn"
+            onClick={onDelete}
+            disabled={deleteLoading}
+            title="Delete Certificate"
+          >
+            <FaTrash />
+          </button>
+        )}
+      </div>
     </div>
   </div>
 );

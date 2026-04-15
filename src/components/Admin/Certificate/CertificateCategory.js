@@ -5,6 +5,7 @@ import Sidebar from "../Layout/Sidebar";
 import Header from "../Layout/Header";
 import "./Certificate.css";
 import { FaArrowLeft } from "react-icons/fa";
+import { BASE_URL } from "../../../ApiUrl";
 
 const CertificationCategories = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const CertificationCategories = () => {
   const [success, setSuccess] = useState("");
 
   // API Base URL
-  const API_URL = "http://145.79.0.94:8000/api/admin/certification-categories/";
+  const API_URL = `${BASE_URL}/api/admin/certification-categories/`;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

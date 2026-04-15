@@ -340,3 +340,188 @@ hr {
 .tc-modal-container::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+
+/* Action buttons container */
+.tc-action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Accept button */
+.tc-accept-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #28a745;
+  background-color: transparent;
+  color: #28a745;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.tc-accept-btn:hover {
+  background-color: #28a745;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Reject button */
+.tc-reject-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #dc3545;
+  background-color: transparent;
+  color: #dc3545;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.tc-reject-btn:hover {
+  background-color: #dc3545;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Update view button to work well with the new buttons */
+.tc-view-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #007bff;
+  background-color: transparent;
+  color: #007bff;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.tc-view-btn:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+.tc-view-btn svg {
+  font-size: 12px;
+}
+
+
+/* Action Buttons Container */
+.tc-action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* View Button */
+.tc-view-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  background-color: #fff;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.tc-view-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #adb5bd;
+  color: #495057;
+}
+
+/* Accept Button */
+.tc-accept-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #28a745;
+  background-color: #28a745;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.tc-accept-btn:hover {
+  background-color: #218838;
+  border-color: #1e7e34;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+}
+
+.tc-accept-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Reject Button */
+.tc-reject-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #dc3545;
+  background-color: #dc3545;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.tc-reject-btn:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+}
+
+.tc-reject-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Update existing tc-view-btn if needed */
+.tc-view-btn {
+  width: auto;
+  padding: 0 12px;
+  gap: 6px;
+}
+
+/* For mobile responsiveness */
+@media (max-width: 768px) {
+  .tc-action-buttons {
+    flex-wrap: wrap;
+  }
+  
+  .tc-view-btn {
+    padding: 0 8px;
+  }
+}

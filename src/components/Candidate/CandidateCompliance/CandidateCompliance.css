@@ -243,3 +243,149 @@
   color: #2980b9;
   text-decoration: underline;
 }
+
+
+/* Requirement Container Updates */
+.ccd-req {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 12px;
+  border-left: 4px solid transparent;
+  gap: 15px;
+}
+
+.ccd-req-content {
+  flex: 1;
+}
+
+.ccd-req-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+
+.ccd-req-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.ccd-req-dates {
+  text-align: right;
+}
+
+.ccd-req-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Edit Button */
+.ccd-edit-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #3498db;
+  background-color: #3498db;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  padding: 0;
+}
+
+.ccd-edit-btn:hover {
+  background-color: #2980b9;
+  border-color: #2980b9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+}
+
+.ccd-edit-btn:active {
+  transform: translateY(0);
+}
+
+/* Delete Button */
+.ccd-delete-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #dc3545;
+  background-color: #dc3545;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  padding: 0;
+}
+
+.ccd-delete-btn:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+}
+
+.ccd-delete-btn:active {
+  transform: translateY(0);
+}
+
+.ccd-delete-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Remove old button styles and update */
+.ccd-req .btn-link {
+  display: none; /* Hide old edit button style */
+}
+
+/* Responsive adjustments for requirements */
+@media (max-width: 768px) {
+  .ccd-req {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .ccd-req-actions {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+  
+  .ccd-req-dates {
+    text-align: left;
+  }
+  
+  .ccd-req-buttons {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .ccd-req-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .ccd-req-buttons {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

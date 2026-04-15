@@ -5,6 +5,7 @@ import Sidebar from "../Layout/Sidebar";
 import Header from "../Layout/Header";
 import "./Certificate.css";
 import { FaCheckCircle, FaClock, FaTimesCircle, FaPlus, FaTags, FaTimes, FaFile, FaImage, FaVideo, FaDownload, FaUser, FaBuilding, FaGraduationCap, FaCalendarAlt, FaIdCard, FaEnvelope, FaPhone, FaMapMarkerAlt, FaTint, FaUserMd } from "react-icons/fa";
+import { BASE_URL } from "../../../ApiUrl";
 
 const Certifications = () => {
   const navigate = useNavigate();
@@ -26,10 +27,10 @@ const Certifications = () => {
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [activeTab, setActiveTab] = useState("candidate");
 
-  const API_URL = "http://145.79.0.94:8000/api/admin/certification-categories";
-  const CERT_API_URL = "http://145.79.0.94:8000/api/candidate/certifications/";
-  const COMPETENCY_API_URL = "http://145.79.0.94:8000/api/candidate/competencies/";
-  const CANDIDATE_API_URL = "http://145.79.0.94:8000/api/candidate/candidates/";
+  const API_URL = `${BASE_URL}/api/admin/certification-categories`;
+  const CERT_API_URL = `${BASE_URL}/api/candidate/certifications/`;
+  const COMPETENCY_API_URL = `${BASE_URL}/api/candidate/competencies/`;
+  const CANDIDATE_API_URL = `${BASE_URL}/api/candidate/candidates/`;
 
   // FETCH ALL DATA ON COMPONENT MOUNT
   useEffect(() => {
@@ -281,7 +282,7 @@ const Certifications = () => {
 
   const getDocumentUrl = (path) => {
     if (!path) return null;
-    return `http://145.79.0.94:8000${path}`;
+    return `${BASE_URL}${path}`;
   };
 
   const handleDownload = (url, filename) => {

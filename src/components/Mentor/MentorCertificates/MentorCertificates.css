@@ -727,3 +727,193 @@
     text-align: center;
   }
 }
+
+
+
+/* Action Buttons Container */
+.tc-action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* View Button */
+.tc-view-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  background-color: #fff;
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.tc-view-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #adb5bd;
+  color: #495057;
+}
+
+/* Accept Button */
+.tc-accept-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #28a745;
+  background-color: #28a745;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.tc-accept-btn:hover {
+  background-color: #218838;
+  border-color: #1e7e34;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+}
+
+.tc-accept-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Reject Button */
+.tc-reject-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #dc3545;
+  background-color: #dc3545;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.tc-reject-btn:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+}
+
+.tc-reject-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Modal Action Buttons */
+.tc-modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-right: auto;
+}
+
+.tc-accept-btn-modal {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  background-color: #28a745;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.tc-accept-btn-modal:hover {
+  background-color: #218838;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);
+}
+
+.tc-reject-btn-modal {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  background-color: #dc3545;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.tc-reject-btn-modal:hover {
+  background-color: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+}
+
+/* Modal Footer Layout */
+.tc-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-top: 1px solid #dee2e6;
+}
+
+.tc-close-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  background-color: #fff;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.tc-close-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #adb5bd;
+  color: #495057;
+}
+
+/* For mobile responsiveness */
+@media (max-width: 768px) {
+  .tc-action-buttons {
+    flex-wrap: wrap;
+  }
+  
+  .tc-modal-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .tc-modal-actions {
+    margin-right: 0;
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .tc-accept-btn-modal,
+  .tc-reject-btn-modal {
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -25,6 +25,7 @@ const CandidateCertifications = () => {
   const [certifications, setCertifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const [stats, setStats] = useState({
     active: 0,
     expiringSoon: 0,
@@ -101,16 +102,13 @@ const CandidateCertifications = () => {
     certData.forEach(cert => {
       const expiryDate = new Date(cert.expiry_date);
       
-      // Check if certification is active (not expired AND approved)
       if (expiryDate > today && cert.status === 'approved') {
         active++;
         
-        // Check if expiring within 30 days
         if (expiryDate <= thirtyDaysFromNow) {
           expiringSoon++;
         }
         
-        // Find earliest renewal date
         if (!nextRenewalDate || expiryDate < nextRenewalDate) {
           nextRenewalDate = expiryDate;
         }
@@ -145,14 +143,12 @@ const CandidateCertifications = () => {
     return `${diffDays} days remaining`;
   };
 
-  // Get expiry status (based on date)
   const getExpiryStatus = (expiryDate) => {
     const today = new Date();
     const expiry = new Date(expiryDate);
     return expiry > today ? 'valid' : 'expired';
   };
 
-  // Get approval status display
   const getApprovalStatusInfo = (status) => {
     switch(status) {
       case 'approved':
@@ -182,7 +178,6 @@ const CandidateCertifications = () => {
     }
   };
 
-  // Get overall card status class
   const getCardStatusClass = (approvalStatus, expiryDate) => {
     if (approvalStatus === 'rejected') return 'rejected';
     if (approvalStatus === 'pending') return 'pending';
@@ -202,17 +197,19 @@ const CandidateCertifications = () => {
 
   const handleDeleteCertificate = async (certId, certName) => {
     const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: `You are about to delete "${certName}". This action cannot be undone!`,
+      title: 'Delete Certificate?',
+      html: `Are you sure you want to delete <strong>${certName}</strong>?<br>This action cannot be undone.`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!',
-      cancelButtonText: 'Cancel'
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, Delete',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true
     });
     
     if (result.isConfirmed) {
+      setActionLoading(true);
       try {
         const response = await fetch(`${BASE_URL}/api/candidate/certifications/${certId}/`, {
           method: 'DELETE',
@@ -222,17 +219,14 @@ const CandidateCertifications = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        // Remove the deleted certification from state
         const updatedCertifications = certifications.filter(cert => cert.id !== certId);
         setCertifications(updatedCertifications);
-        
-        // Recalculate stats
         calculateStats(updatedCertifications);
         
-        Swal.fire({
+        await Swal.fire({
           icon: 'success',
           title: 'Deleted!',
-          text: 'Certification has been deleted successfully.',
+          text: 'Certificate has been deleted successfully.',
           timer: 2000,
           showConfirmButton: false
         });
@@ -241,9 +235,11 @@ const CandidateCertifications = () => {
         Swal.fire({
           icon: 'error',
           title: 'Delete Failed',
-          text: err.message || 'Failed to delete certification. Please try again.',
+          text: err.message || 'Failed to delete certificate. Please try again.',
           showConfirmButton: true
         });
+      } finally {
+        setActionLoading(false);
       }
     }
   };
@@ -291,9 +287,9 @@ const CandidateCertifications = () => {
         <div className="ccert-main-wrapper">
           <Header />
           <div className="ccert-content-area">
-            <div className="text-center p-5">
-              <FaSpinner className="fa-spin" size={40} color="#3498db" />
-              <p className="mt-2">Loading certifications...</p>
+            <div className="ccert-loading-container">
+              <FaSpinner className="ccert-spinner" />
+              <p>Loading certifications...</p>
             </div>
           </div>
         </div>
@@ -303,16 +299,13 @@ const CandidateCertifications = () => {
 
   return (
     <div className="ccert-layout-wrapper">
-      {/* Sidebar */}
       <CandidateSidebar />
 
-      {/* Main */}
       <div className="ccert-main-wrapper">
         <Header />
 
         <div className="ccert-content-area container-fluid">
-          {/* ================= PAGE HEADER ================= */}
-          <div className="d-flex justify-content-between align-items-start mb-4">
+          <div className="ccert-page-header">
             <div>
               <h3 className="ccert-title">Certifications</h3>
               <p className="ccert-sub">
@@ -320,19 +313,18 @@ const CandidateCertifications = () => {
               </p>
             </div>
 
-            <div className="d-flex gap-2">
-              <button className="btn ccert-btn-outline">
-                <FaFilter className="me-2" /> Filter
+            <div className="ccert-header-actions">
+              <button className="ccert-btn-outline">
+                <FaFilter /> Filter
               </button>
 
-              <button className="btn ccert-btn-primary" onClick={handleAddCertificate}>
-                <FaPlus className="me-2" /> Add Certification
+              <button className="ccert-btn-primary" onClick={handleAddCertificate}>
+                <FaPlus /> Add Certification
               </button>
             </div>
           </div>
 
-          {/* ================= STATS ================= */}
-          <div className="row g-4 mb-4">
+          <div className="ccert-stats-grid">
             <StatCard
               icon={<FaCheckCircle />}
               value={stats.active.toString()}
@@ -351,66 +343,77 @@ const CandidateCertifications = () => {
               icon={<FaCalendarAlt />}
               value={stats.nextRenewal}
               label="Next Renewal"
+              type="info"
             />
           </div>
 
-          {/* ================= CERTIFICATIONS SECTION ================= */}
           <div className="ccert-card">
-            <div className="mb-4">
-              <h5 className="mb-1">Your Certifications</h5>
-              <p className="ccert-muted">All your professional credentials</p>
+            <div className="ccert-card-header">
+              <div>
+                <h5>Your Certifications</h5>
+                <p className="ccert-muted">All your professional credentials</p>
+              </div>
+              <span className="ccert-count-badge">{certifications.length} Total</span>
             </div>
 
             {certifications.length === 0 ? (
-              <div className="text-center p-5">
-                <p className="ccert-muted">No certifications found.</p>
-                <button className="btn ccert-btn-primary mt-2" onClick={handleAddCertificate}>
-                  <FaPlus className="me-2" /> Add Your First Certification
+              <div className="ccert-empty-state">
+                <div className="ccert-empty-icon">
+                  <FaCheckCircle />
+                </div>
+                <h6>No Certifications Found</h6>
+                <p className="ccert-muted">Start by adding your first certification</p>
+                <button className="ccert-btn-primary" onClick={handleAddCertificate}>
+                  <FaPlus /> Add Certification
                 </button>
               </div>
             ) : (
-              certifications.map(cert => {
-                const approvalInfo = getApprovalStatusInfo(cert.status);
-                const expiryStatus = getExpiryStatus(cert.expiry_date);
-                const cardStatus = getCardStatusClass(cert.status, cert.expiry_date);
-                
-                return (
-                  <CertificationCard
-                    key={cert.id}
-                    id={cert.id}
-                    cardStatus={cardStatus}
-                    approvalStatus={cert.status}
-                    approvalStatusText={approvalInfo.text}
-                    approvalStatusClass={approvalInfo.class}
-                    approvalIcon={approvalInfo.icon}
-                    title={cert.certificate_number}
-                    org={cert.issuing_authority}
-                    certificationName={cert.certification_name || "Certification"}
-                    issued={formatDisplayDate(cert.issue_date)}
-                    expiry={formatDisplayDate(cert.expiry_date)}
-                    remaining={calculateRemainingDays(cert.expiry_date)}
-                    expiryStatus={expiryStatus}
-                    onEdit={handleEditCertificate}
-                    onDelete={handleDeleteCertificate}
-                    onDownload={handleDownloadCertificate}
-                    onVerify={handleVerifyCertificate}
-                    document={cert.document}
-                  />
-                );
-              })
+              <div className="ccert-certificates-list">
+                {certifications.map(cert => {
+                  const approvalInfo = getApprovalStatusInfo(cert.status);
+                  const expiryStatus = getExpiryStatus(cert.expiry_date);
+                  const cardStatus = getCardStatusClass(cert.status, cert.expiry_date);
+                  
+                  return (
+                    <CertificationCard
+                      key={cert.id}
+                      id={cert.id}
+                      cardStatus={cardStatus}
+                      approvalStatus={cert.status}
+                      approvalStatusText={approvalInfo.text}
+                      approvalStatusClass={approvalInfo.class}
+                      approvalIcon={approvalInfo.icon}
+                      title={cert.certificate_number}
+                      org={cert.issuing_authority}
+                      certificationName={cert.certification_name || "Certification"}
+                      issued={formatDisplayDate(cert.issue_date)}
+                      expiry={formatDisplayDate(cert.expiry_date)}
+                      remaining={calculateRemainingDays(cert.expiry_date)}
+                      expiryStatus={expiryStatus}
+                      onEdit={handleEditCertificate}
+                      onDelete={handleDeleteCertificate}
+                      onDownload={handleDownloadCertificate}
+                      onVerify={handleVerifyCertificate}
+                      document={cert.document}
+                      actionLoading={actionLoading}
+                    />
+                  );
+                })}
+              </div>
             )}
           </div>
 
-          {/* ================= RECOMMENDED CERTIFICATIONS ================= */}
-          <div className="ccert-card mt-4">
-            <div className="mb-4">
-              <h5 className="mb-1">Recommended Certifications</h5>
-              <p className="ccert-muted">
-                Based on your career progression
-              </p>
+          <div className="ccert-card">
+            <div className="ccert-card-header">
+              <div>
+                <h5>Recommended Certifications</h5>
+                <p className="ccert-muted">
+                  Based on your career progression
+                </p>
+              </div>
             </div>
 
-            <div className="row g-4">
+            <div className="ccert-recommended-grid">
               <RecommendedCard
                 title="API 570 Piping Inspector"
                 exam="March 2024"
@@ -444,15 +447,13 @@ const CandidateCertifications = () => {
 
 /* ================= STAT CARD ================= */
 const StatCard = ({ icon, value, label, type }) => (
-  <div className="col-lg-4">
-    <div className="ccert-stat-card">
-      <div className={`ccert-stat-icon ${type}`}>
-        {icon}
-      </div>
-      <div>
-        <h4>{value}</h4>
-        <p className="ccert-muted mb-0">{label}</p>
-      </div>
+  <div className="ccert-stat-card">
+    <div className={`ccert-stat-icon ${type}`}>
+      {icon}
+    </div>
+    <div className="ccert-stat-content">
+      <h4>{value}</h4>
+      <p>{label}</p>
     </div>
   </div>
 );
@@ -475,86 +476,100 @@ const CertificationCard = ({
   onEdit,
   onDelete,
   onDownload,
-  onVerify
+  onVerify,
+  document,
+  actionLoading
 }) => (
-  <div className={`ccert-cert-card ${cardStatus}`}>
-    <div className="d-flex justify-content-between">
-      <div className="d-flex gap-3">
-        <div className="ccert-cert-icon">
-          {approvalIcon}
+  <div className={`ccert-certificate-item ${cardStatus}`}>
+    <div className="ccert-certificate-main">
+      <div className="ccert-certificate-icon">
+        {approvalIcon}
+      </div>
+
+      <div className="ccert-certificate-info">
+        <div className="ccert-certificate-header">
+          <h6>{title}</h6>
+          <span className={`ccert-status-tag ${approvalStatusClass}`}>
+            {approvalStatusText}
+          </span>
+        </div>
+        
+        <p className="ccert-organization">{org}</p>
+        
+        <div className="ccert-certificate-meta">
+          <span className="ccert-meta-tag">{certificationName}</span>
         </div>
 
-        <div>
-          <h6 className="mb-1">{title}</h6>
-          <p className="ccert-muted mb-2">{org}</p>
-
-          <div className="d-flex gap-2 align-items-center flex-wrap">
-            <span className="ccert-tag">{certificationName}</span>
-            <span className={`ccert-status-badge ${approvalStatusClass}`}>
-              {approvalStatusText}
-            </span>
+        <div className="ccert-dates-grid">
+          <div className="ccert-date-item">
+            <span className="ccert-date-label">Issue Date</span>
+            <span className="ccert-date-value">{issued}</span>
           </div>
+          <div className="ccert-date-item">
+            <span className="ccert-date-label">Expiry Date</span>
+            <span className="ccert-date-value">{expiry}</span>
+          </div>
+          {/* <div className="ccert-date-item">
+            <span className="ccert-date-label">Remaining</span>
+            <span className={`ccert-remaining ${expiryStatus}`}>{remaining}</span>
+          </div> */}
         </div>
       </div>
 
-      {/* Buttons */}
-      <div className="d-flex gap-2">
-        <button className="btn ccert-btn-outline" onClick={() => onEdit(id)}>
-          <FaEdit className="me-2" /> Edit
+      <div className="ccert-certificate-actions">
+        <button 
+          className="ccert-action-btn ccert-edit-btn"
+          onClick={() => onEdit(id)}
+          title="Edit Certificate"
+        >
+          <FaEdit />
         </button>
-        <button className="btn ccert-btn-outline" onClick={() => onDelete(id, title)}>
-          <FaTrash className="me-2" /> Delete
+        <button 
+          className="ccert-action-btn ccert-delete-btn"
+          onClick={() => onDelete(id, title)}
+          disabled={actionLoading}
+          title="Delete Certificate"
+        >
+          <FaTrash />
         </button>
-        <button className="btn ccert-btn-outline" onClick={() => onDownload(id)}>
-          <FaDownload className="me-2" /> Certificate
+        <button 
+          className="ccert-action-btn ccert-download-btn"
+          onClick={() => onDownload(id)}
+          disabled={!document}
+          title="Download Certificate"
+        >
+          <FaDownload />
         </button>
-        <button className="btn ccert-btn-outline" onClick={() => onVerify(title)}>
-          <FaExternalLinkAlt className="me-2" /> Verify
+        <button 
+          className="ccert-action-btn ccert-verify-btn"
+          onClick={() => onVerify(title)}
+          title="Verify Certificate"
+        >
+          <FaExternalLinkAlt />
         </button>
       </div>
     </div>
 
-    {/* Dates */}
-    <div className="row mt-3">
-      <div className="col-md-4">
-        <p className="ccert-muted small">Issue Date</p>
-        <strong>{issued}</strong>
-      </div>
-
-      <div className="col-md-4">
-        <p className="ccert-muted small">Expiry Date</p>
-        <strong>{expiry}</strong>
-      </div>
-
-      <div className="col-md-4">
-        <p className="ccert-muted small">Status</p>
-        <strong className={`ccert-status-text ${approvalStatusClass}`}>
-          {approvalStatusText}
-        </strong>
-      </div>
-    </div>
-
-    {/* Progress bar for approved certificates */}
     {approvalStatus === 'approved' && expiryStatus === 'valid' && (
-      <div className="ccert-progress">
-        <div className={`ccert-progress-fill ${cardStatus}`} />
+      <div className="ccert-certificate-progress">
+        <div className={`ccert-progress-bar ${cardStatus}`} />
       </div>
     )}
   </div>
 );
 
 const RecommendedCard = ({ title, exam, level }) => (
-  <div className="col-md-6">
-    <div className="ccert-recommend-card">
-      <div className="d-flex justify-content-between mb-2">
-        <h6 className="mb-0">{title}</h6>
-        <span className={`ccert-badge ${level === "high" ? "high" : "medium"}`}>
-          {level === "high" ? "High relevance" : "Medium relevance"}
-        </span>
-      </div>
-      <p className="ccert-muted mb-3">Next exam: {exam}</p>
-      <button className="btn ccert-recommend-btn w-100">Learn More</button>
+  <div className="ccert-recommend-item">
+    <div className="ccert-recommend-header">
+      <h6>{title}</h6>
+      <span className={`ccert-relevance-badge ${level}`}>
+        {level === "high" ? "High" : "Medium"}
+      </span>
     </div>
+    <p className="ccert-exam-date">Next exam: {exam}</p>
+    <button className="ccert-learn-more-btn">
+      Learn More
+    </button>
   </div>
 );
 
