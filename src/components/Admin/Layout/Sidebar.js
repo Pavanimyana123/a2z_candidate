@@ -226,12 +226,12 @@ const Sidebar = () => {
             <FaFileAlt /> Audit Logs
           </Link>
 
-          <Link
+          {/* <Link
             to="/system"
             className={`ta-menu-item ${isActive("/system") ? "active" : ""}`}
           >
             <FaCog /> System Settings
-          </Link>
+          </Link> */}
 
           <Link
             to="/email-settings"

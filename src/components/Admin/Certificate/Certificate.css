@@ -1261,3 +1261,245 @@
   background: #fee2e2;
   color: #dc2626;
 }
+
+
+/* Edit button styling for certification categories */
+.cert-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 0;
+}
+
+.cert-bar-row span {
+  min-width: 150px;
+}
+
+.cert-bar {
+  flex: 1;
+}
+
+.cert-bar-row strong {
+  min-width: 40px;
+  text-align: right;
+}
+
+.edit-category-btn {
+  padding: 0;
+  margin-left: 10px;
+  color: #6c757d;
+  transition: color 0.3s ease;
+}
+
+.edit-category-btn:hover {
+  color: #007bff;
+}
+
+.edit-category-btn svg {
+  font-size: 16px;
+}
+
+
+/* Main Tabs Styling */
+.main-tabs-container {
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 20px;
+}
+
+.main-tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.main-tab-btn {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #6c757d;
+  font-weight: 500;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+}
+
+.main-tab-btn:hover {
+  color: #007bff;
+  background-color: #f8f9fa;
+}
+
+.main-tab-btn.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+}
+
+/* Categories Content */
+.categories-content {
+  padding: 10px 0;
+}
+
+.categories-header {
+  margin-bottom: 20px;
+}
+
+.categories-header h5 {
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Certificates Content */
+.certificates-content {
+  padding: 10px 0;
+}
+
+.certificates-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.certificates-header h5 {
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.certificates-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Category Tabs for Filtering */
+.category-tabs-container {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.category-tabs {
+  display: flex;
+  gap: 5px;
+  padding-bottom: 10px;
+}
+
+.category-tab-btn {
+  padding: 8px 16px;
+  background: none;
+  border: 1px solid #dee2e6;
+  border-radius: 20px;
+  color: #6c757d;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.category-tab-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.category-tab-btn.active {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+.category-count {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.category-tab-btn.active .category-count {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* Search Input */
+.cert-search {
+  width: 300px;
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.cert-search:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Table adjustments */
+.cert-table {
+  width: 100%;
+  margin-top: 15px;
+}
+
+.cert-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  padding: 12px;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.cert-table td {
+  padding: 12px;
+  vertical-align: middle;
+}
+
+/* CertBar Row Click Effect */
+.cert-bar-row {
+  transition: background-color 0.2s ease;
+  padding: 12px 10px;
+  border-radius: 6px;
+}
+
+.cert-bar-row:hover {
+  background-color: #f8f9fa;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .certificates-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .certificates-header-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .cert-search {
+    width: 100%;
+  }
+  
+  .category-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .main-tab-btn {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+}
