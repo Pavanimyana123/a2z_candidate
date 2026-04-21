@@ -1,86 +1,142 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import MentorSidebar from "../Layout/MentorSidebar";
 import Header from "../Layout/MentorHeader";
 import {
   FaEye,
-  FaEnvelope,
-  FaPhone,
   FaUserGraduate,
   FaBuilding,
-  FaLevelUpAlt
+  FaEnvelope,
+  FaPhone,
+  FaLevelUpAlt,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
+import { BASE_URL } from "../../../ApiUrl";
 
 const MentorProgressionPage = () => {
+  const [data, setData] = useState([]);
+  const [candidates, setCandidates] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [levels, setLevels] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // ✅ Static Candidates
-  const [candidates] = useState([
-    {
-      id: 1,
-      full_name: "Rahul Sharma",
-      email: "rahul@gmail.com",
-      phone_number: "9876543210"
-    },
-    {
-      id: 2,
-      full_name: "Priya Reddy",
-      email: "priya@gmail.com",
-      phone_number: "9123456780"
-    }
-  ]);
+  // ✅ Fetch ALL APIs
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [validationRes, candidateRes, deptRes, levelRes] =
+          await Promise.all([
+            fetch(`${BASE_URL}/api/candidate/competencies/validation/`),
+            fetch(`${BASE_URL}/api/candidate/candidates/`),
+            fetch(`${BASE_URL}/api/admin/departments/`),
+            fetch(`${BASE_URL}/api/admin/levels/`),
+          ]);
 
-  // ✅ Static Departments
-  const [departments] = useState([
-    { id: 1, name: "IT" },
-    { id: 2, name: "HR" }
-  ]);
+        const validationJson = await validationRes.json();
+        const candidateJson = await candidateRes.json();
+        const deptJson = await deptRes.json();
+        const levelJson = await levelRes.json();
 
-  // ✅ Static Progression Data
-  const [progressions] = useState([
-    {
-      id: 101,
-      candidate: 1,
-      department: 1,
-      department_name: "IT",
-      current_level_name: "Level 1",
-      target_level_name: "Level 3",
-      progress_percentage: 40
-    },
-    {
-      id: 102,
-      candidate: 2,
-      department: 2,
-      department_name: "HR",
-      current_level_name: "Level 2",
-      target_level_name: "Level 4",
-      progress_percentage: 75
-    }
-  ]);
+        if (validationJson.status) {
+          setData(validationJson.data.results || []);
+        }
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [departmentFilter, setDepartmentFilter] = useState("all");
+        if (candidateJson.status) {
+          setCandidates(candidateJson.data || []);
+        }
 
-  // ✅ Helper: get candidate
-  const getCandidateDetails = (id) => {
-    return candidates.find((c) => c.id === id);
+        if (deptJson.status) {
+          setDepartments(deptJson.data || []);
+        }
+
+        if (levelJson.status) {
+          setLevels(levelJson.data || []);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // ✅ Helpers
+  const getCandidate = (id) =>
+    candidates.find((c) => Number(c.id) === Number(id));
+
+  const getDepartment = (id) =>
+    departments.find((d) => Number(d.id) === Number(id));
+
+  const getLevel = (id) => levels.find((l) => Number(l.id) === Number(id));
+
+  const [showModal, setShowModal] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  const [formData, setFormData] = useState({
+    action: "",
+    level: "",
+    comments: "",
+  });
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
-  // ✅ Filter
-  const filteredProgressions = progressions.filter((item) => {
-    const candidate = getCandidateDetails(item.candidate);
-    const search = searchTerm.toLowerCase();
+  const handleSubmit = async () => {
+    if (!formData.action) {
+      alert("Please select action");
+      return;
+    }
 
-    const matchesSearch =
-      searchTerm === "" ||
-      candidate?.full_name?.toLowerCase().includes(search) ||
-      candidate?.email?.toLowerCase().includes(search);
+    if (formData.action === "approve" && !formData.level) {
+      alert("Please select level");
+      return;
+    }
 
-    const matchesDepartment =
-      departmentFilter === "all" ||
-      String(item.department) === String(departmentFilter);
+    try {
+      const payload = {
+        action: formData.action,
+        candidate_id: selectedItem.candidate_id,
+        department_id: selectedItem.department_id,
+        current_level_id: selectedItem.level_id,
+        mentor_name: "tharun", // 🔥 make dynamic later
+        ...(formData.action === "approve" && {
+          target_level_id: Number(formData.level),
+        }),
+        comments: formData.comments,
+      };
 
-    return matchesSearch && matchesDepartment;
-  });
+      console.log("Payload:", payload);
+
+      const res = await fetch(
+        `${BASE_URL}/api/candidate/competencies/progression/`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message);
+
+      alert("Action successful");
+      setShowModal(false);
+
+      // refresh data
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    }
+  };
+
+  //   if (loading) return <p>Loading...</p>;
 
   return (
     <div className="ta-layout-wrapper">
@@ -89,152 +145,194 @@ const MentorProgressionPage = () => {
       <div className="ta-main-wrapper">
         <Header />
 
-        <div className="ta-content-area">
-          <div className="container-fluid">
+        <div className="ta-content-area container-fluid">
+          <h4 className="mb-3">Competency Validation</h4>
 
-            {/* Header */}
-            <div className="mb-4">
-              <h4>Progression Management (Static)</h4>
-              <p className="text-muted">
-                Demo data for UI testing
-              </p>
-            </div>
+          <div className="table-responsive">
+            <table className="table align-middle">
+              <thead>
+                <tr>
+                  <th>Candidate</th>
+                  <th>Contact</th>
+                  <th>Department</th>
+                  <th>Current Level</th>
+                  <th>Department Level</th>
+                  <th>Avg Score</th>
+                  <th>Required</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
 
-            {/* Filters */}
-            <div className="row mb-3">
-              <div className="col-md-5">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search candidate..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-
-              <div className="col-md-3">
-                <select
-                  className="form-select"
-                  value={departmentFilter}
-                  onChange={(e) => setDepartmentFilter(e.target.value)}
-                >
-                  <option value="all">All Departments</option>
-                  {departments.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="table-responsive">
-              <table className="table align-middle">
-                <thead>
+              <tbody>
+                {data.length === 0 ? (
                   <tr>
-                    <th>Candidate</th>
-                    <th>Contact</th>
-                    <th>Department</th>
-                    <th>Current Level</th>
-                    <th>Target Level</th>
-                    <th>Progress</th>
-                    <th>Action</th>
+                    <td colSpan="9" className="text-center">
+                      No Data
+                    </td>
                   </tr>
-                </thead>
+                ) : (
+                  data.map((item, index) => {
+                    const candidate = getCandidate(item.candidate_id);
+                    const department = getDepartment(item.department_id);
+                    const level = getLevel(item.level_id);
 
-                <tbody>
-                  {filteredProgressions.length === 0 ? (
-                    <tr>
-                      <td colSpan="7" className="text-center text-muted">
-                        No data found
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredProgressions.map((item) => {
-                      const candidate = getCandidateDetails(item.candidate);
+                    return (
+                      <tr key={index}>
+                        {/* Candidate */}
+                        <td>
+                          <FaUserGraduate className="me-2" />
+                          {candidate?.full_name || `ID: ${item.candidate_id}`}
+                        </td>
 
-                      return (
-                        <tr key={item.id}>
-                          {/* Candidate */}
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <FaUserGraduate className="me-2" />
-                              {candidate?.full_name}
-                            </div>
-                          </td>
-
-                          {/* Contact */}
-                          <td>
+                        {/* Contact */}
+                        <td>
+                          <div>
                             <div>
-                              <div>
-                                <FaEnvelope size={12} /> {candidate?.email}
-                              </div>
-                              <div>
-                                <FaPhone size={12} /> {candidate?.phone_number}
-                              </div>
+                              <FaEnvelope size={12} />{" "}
+                              {candidate?.email || "N/A"}
                             </div>
-                          </td>
-
-                          {/* Department */}
-                          <td>
-                            <FaBuilding size={12} /> {item.department_name}
-                          </td>
-
-                          {/* Current Level */}
-                          <td>
-                            <FaLevelUpAlt size={12} /> {item.current_level_name}
-                          </td>
-
-                          {/* Target Level */}
-                          <td>
-                            <FaLevelUpAlt size={12} /> {item.target_level_name}
-                          </td>
-
-                          {/* Progress */}
-                          <td style={{ width: "150px" }}>
-                            <div className="progress">
-                              <div
-                                className="progress-bar"
-                                style={{
-                                  width: `${item.progress_percentage}%`
-                                }}
-                              >
-                                {item.progress_percentage}%
-                              </div>
+                            <div>
+                              <FaPhone size={12} />{" "}
+                              {candidate?.phone_number || "N/A"}
                             </div>
-                          </td>
+                          </div>
+                        </td>
 
-                          {/* Action */}
-                          <td>
-                            <button
-                              className="btn btn-sm btn-primary"
-                              onClick={() =>
-                                Swal.fire({
-                                  title: "Progress Details",
-                                  html: `
-                                    <p><b>Candidate:</b> ${candidate?.full_name}</p>
-                                    <p><b>Current Level:</b> ${item.current_level_name}</p>
-                                    <p><b>Target Level:</b> ${item.target_level_name}</p>
-                                    <p><b>Progress:</b> ${item.progress_percentage}%</p>
-                                  `
-                                })
-                              }
-                            >
-                              <FaEye />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                        {/* Department */}
+                        <td>
+                          <FaBuilding className="me-1" />
+                          {department?.name || "N/A"}
+                        </td>
 
+                        {/* Level */}
+                        <td>
+                          <FaLevelUpAlt className="me-1" />
+                          {level?.name || item.department_level_name}
+                        </td>
+                        <td>{item.department_level_name}</td>
+
+                        {/* Scores */}
+                        <td>{item.candidate_average_score}</td>
+                        <td>{item.minimum_required_score}</td>
+
+                        {/* Status */}
+                        <td>
+                          {item.passed ? (
+                            <span className="badge bg-success">Passed</span>
+                          ) : (
+                            <span className="badge bg-danger">Failed</span>
+                          )}
+                        </td>
+
+                        {/* Action */}
+                        <td>
+                          <button
+                            className="btn btn-sm btn-primary"
+                            onClick={() => {
+                              setSelectedItem(item);
+                              setFormData({
+                                action: "",
+                                level: "",
+                                comments: "",
+                              });
+                              setShowModal(true);
+                            }}
+                          >
+                            Take Action
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
+
+      {showModal && (
+        <div className="modal show fade d-block">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              {/* Header */}
+              <div className="modal-header">
+                <h5 className="modal-title">Progression Action</h5>
+                <button
+                  className="btn-close"
+                  onClick={() => setShowModal(false)}
+                ></button>
+              </div>
+
+              {/* Body */}
+              <div className="modal-body">
+                {/* Action */}
+                <div className="mb-3">
+                  <label className="form-label">Action</label>
+                  <select
+                    className="form-select"
+                    name="action"
+                    value={formData.action}
+                    onChange={handleChange}
+                  >
+                    <option value="">Select</option>
+                    <option value="approve">Approve</option>
+                    <option value="reject">Reject</option>
+                  </select>
+                </div>
+
+                {/* Level (only for approve) */}
+                {formData.action === "approve" && (
+                  <div className="mb-3">
+                    <label className="form-label">Select Level</label>
+                    <select
+                      className="form-select"
+                      name="level"
+                      value={formData.level}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select Level</option>
+                      {selectedItem?.progression_approval?.eligible_levels?.map(
+                        (lvl) => (
+                          <option key={lvl.level_id} value={lvl.level_id}>
+                            {lvl.level_name} {lvl.is_double_progression && "⚡"}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </div>
+                )}
+
+                {/* Comments */}
+                <div className="mb-3">
+                  <label className="form-label">Comments</label>
+                  <textarea
+                    className="form-control"
+                    name="comments"
+                    rows="3"
+                    value={formData.comments}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="modal-footer">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={handleSubmit}>
+                  Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
