@@ -1,6 +1,6 @@
 // CertificationCategories.js
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import Sidebar from "../Layout/Sidebar";
 import Header from "../Layout/Header";
 import "./Certificate.css";
@@ -9,6 +9,7 @@ import { BASE_URL } from "../../../ApiUrl";
 
 const CertificationCategories = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -16,9 +17,24 @@ const CertificationCategories = () => {
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [categoryId, setCategoryId] = useState(null);
 
   // API Base URL
   const API_URL = `${BASE_URL}/api/admin/certification-categories/`;
+
+  // Check if we're in edit mode when component mounts
+  useEffect(() => {
+    const state = location.state;
+    if (state && state.isEditing && state.categoryToEdit) {
+      setIsEditing(true);
+      setCategoryId(state.categoryToEdit.id);
+      setFormData({
+        name: state.categoryToEdit.name,
+        description: state.categoryToEdit.description || ""
+      });
+    }
+  }, [location]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -35,8 +51,11 @@ const CertificationCategories = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
+      const url = isEditing ? `${API_URL}${categoryId}/` : API_URL;
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method: method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -45,11 +64,11 @@ const CertificationCategories = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create category");
+        throw new Error(errorData.message || `Failed to ${isEditing ? 'update' : 'create'} category`);
       }
 
       const savedCategory = await response.json();
-      setSuccess("Category created successfully!");
+      setSuccess(`Category ${isEditing ? 'updated' : 'created'} successfully!`);
       
       // Navigate back to certifications page after 2 seconds
       setTimeout(() => {
@@ -83,8 +102,8 @@ const CertificationCategories = () => {
                     <FaArrowLeft /> Back
                   </button>
                   <div>
-                    <h2>Add Certification Category</h2>
-                    <p>Create a new certification category</p>
+                    <h2>{isEditing ? 'Edit' : 'Add'} Certification Category</h2>
+                    <p>{isEditing ? 'Update' : 'Create a new'} certification category</p>
                   </div>
                 </div>
               </div>
@@ -108,7 +127,7 @@ const CertificationCategories = () => {
             <div className="category-form-section mt-4">
               <div className="cert-card">
                 <div className="form-header">
-                  <h5>Create New Certification Category</h5>
+                  <h5>{isEditing ? 'Edit' : 'Create New'} Certification Category</h5>
                 </div>
                 
                 <form onSubmit={handleSubmit}>
@@ -142,7 +161,7 @@ const CertificationCategories = () => {
                     <button 
                       type="button" 
                       className="btn btn-secondary" 
-                      onClick={() => navigate('/certifications')}
+                      onClick={() => navigate('/certificate')}
                     >
                       Cancel
                     </button>
@@ -151,7 +170,7 @@ const CertificationCategories = () => {
                       className="btn btn-primary"
                       disabled={loading}
                     >
-                      {loading ? "Creating..." : "Create Category"}
+                      {loading ? (isEditing ? "Updating..." : "Creating...") : (isEditing ? "Update Category" : "Create Category")}
                     </button>
                   </div>
                 </form>

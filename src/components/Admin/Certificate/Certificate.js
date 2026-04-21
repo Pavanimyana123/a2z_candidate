@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../Layout/Sidebar";
 import Header from "../Layout/Header";
 import "./Certificate.css";
-import { FaCheckCircle, FaClock, FaTimesCircle, FaPlus, FaTags, FaTimes, FaFile, FaImage, FaVideo, FaDownload, FaUser, FaBuilding, FaGraduationCap, FaCalendarAlt, FaIdCard, FaEnvelope, FaPhone, FaMapMarkerAlt, FaTint, FaUserMd } from "react-icons/fa";
+import { FaCheckCircle, FaClock, FaTimesCircle, FaPlus, FaTags, FaTimes, FaFile, FaImage, FaVideo, FaDownload, FaUser, FaBuilding, FaGraduationCap, FaCalendarAlt, FaIdCard, FaEnvelope, FaPhone, FaMapMarkerAlt, FaTint, FaUserMd, FaEdit, FaList, FaCertificate, FaGlobe, FaHashtag, FaInfoCircle } from "react-icons/fa";
 import { BASE_URL } from "../../../ApiUrl";
 
 const Certifications = () => {
@@ -26,6 +26,8 @@ const Certifications = () => {
   const [selectedCompetency, setSelectedCompetency] = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [activeTab, setActiveTab] = useState("candidate");
+  const [mainTab, setMainTab] = useState("categories"); // 'categories' or 'certificates'
+  const [selectedCategory, setSelectedCategory] = useState(null); // For filtering certificates by category
 
   const API_URL = `${BASE_URL}/api/admin/certification-categories`;
   const CERT_API_URL = `${BASE_URL}/api/candidate/certifications/`;
@@ -159,6 +161,25 @@ const Certifications = () => {
     setShowModal(true);
   };
 
+  // Navigate to edit category page with category data
+  const handleEditCategory = (category) => {
+    navigate('/certification-categories', { 
+      state: { 
+        categoryToEdit: category,
+        isEditing: true 
+      } 
+    });
+  };
+
+  // Navigate to add new category page
+  const handleAddCategory = () => {
+    navigate('/certification-categories', { 
+      state: { 
+        isEditing: false 
+      } 
+    });
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -195,7 +216,7 @@ const Certifications = () => {
       await fetchCategories();
       
       setTimeout(() => {
-        navigate('/certifications');
+        navigate('/certificate');
       }, 2000);
     } catch (err) {
       setError(err.message);
@@ -242,10 +263,25 @@ const Certifications = () => {
     return certifications.filter(cert => cert.certification === categoryId).length;
   };
 
-  const filteredCertifications = certifications.filter(cert => 
-    cert.certificate_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cert.issuing_authority?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Get certifications filtered by search term and selected category
+  const getFilteredCertifications = () => {
+    let filtered = certifications;
+    
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(cert => 
+        cert.certificate_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cert.issuing_authority?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // Filter by selected category
+    if (selectedCategory) {
+      filtered = filtered.filter(cert => cert.certification === selectedCategory);
+    }
+    
+    return filtered;
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -296,6 +332,8 @@ const Certifications = () => {
     return 'Not specified';
   };
 
+  const filteredCertifications = getFilteredCertifications();
+
   return (
     <div className="ta-layout-wrapper">
       <Sidebar />
@@ -314,15 +352,15 @@ const Certifications = () => {
               <div className="d-flex gap-2">
                 <button 
                   className="btn btn-outline-primary cert-category-btn"
-                  onClick={() => navigate('/certification-categories')}
+                  onClick={handleAddCategory}
                 >
                   <FaTags className="me-2" />
                   Add Certification Category
                 </button>
-                <button className="btn btn-primary cert-issue-btn">
+                {/* <button className="btn btn-primary cert-issue-btn">
                   <FaPlus className="me-2" />
                   Issue Certificate
-                </button>
+                </button> */}
               </div>
             </div>
 
@@ -333,100 +371,191 @@ const Certifications = () => {
               <CertStat title="Expired" value={getExpiredCertifications()} icon={<FaTimesCircle />} red />
             </div>
 
+            {/* Combined Card with Tabs */}
             <div className="cert-card mt-4">
-              <h5>Certification Types</h5>
-              <p className="text-muted">Overview of certification distribution</p>
+              {/* Main Tabs */}
+              <div className="main-tabs-container">
+                <div className="main-tabs">
+                  <button 
+                    className={`main-tab-btn ${mainTab === 'categories' ? 'active' : ''}`}
+                    onClick={() => {
+                      setMainTab('categories');
+                      setSelectedCategory(null);
+                    }}
+                  >
+                    <FaList className="me-2" />
+                    Certification Types
+                  </button>
+                  <button 
+                    className={`main-tab-btn ${mainTab === 'certificates' ? 'active' : ''}`}
+                    onClick={() => setMainTab('certificates')}
+                  >
+                    <FaCertificate className="me-2" />
+                    Certifications
+                  </button>
+                </div>
+              </div>
 
-              {loading && categories.length === 0 ? (
-                <div className="text-center py-4">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
+              {/* Categories Tab Content */}
+              {mainTab === 'categories' && (
+                <div className="categories-content">
+                  <div className="categories-header">
+                    <h5>Certification Types</h5>
+                    <p className="text-muted">Overview of certification distribution</p>
                   </div>
-                  <p className="mt-2">Loading categories...</p>
+
+                  {loading && categories.length === 0 ? (
+                    <div className="text-center py-4">
+                      <div className="spinner-border text-primary" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                      <p className="mt-2">Loading categories...</p>
+                    </div>
+                  ) : error ? (
+                    <div className="alert alert-danger">{error}</div>
+                  ) : categories.length > 0 ? (
+                    <div className="categories-list">
+                      {categories.map((category) => {
+                        const count = getCertCountForCategory(category.id);
+                        return (
+                          <CertBar 
+                            key={category.id}
+                            label={category.name}
+                            total={count}
+                            valid={0}
+                            expiring={0}
+                            expired={0}
+                            onEdit={() => handleEditCategory(category)}
+                            onClick={() => {
+                              setSelectedCategory(category.id);
+                              setMainTab('certificates');
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-muted text-center">No certification categories found.</p>
+                  )}
                 </div>
-              ) : error ? (
-                <div className="alert alert-danger">{error}</div>
-              ) : categories.length > 0 ? (
-                <>
-                  {categories.map((category) => {
-                    const count = getCertCountForCategory(category.id);
-                    return (
-                      <CertBar 
-                        key={category.id}
-                        label={category.name}
-                        total={count}
-                        valid={0}
-                        expiring={0}
-                        expired={0}
-                      />
-                    );
-                  })}
-                </>
-              ) : (
-                <p className="text-muted text-center">No certification categories found.</p>
               )}
-            </div>
 
-            <div className="cert-card mt-4">
-              <div className="d-flex justify-content-between align-items-center mb-3">
-                <div>
-                  <h5>Recent Certifications</h5>
-                  <p className="text-muted">Latest certification updates</p>
+              {/* Certificates Tab Content */}
+              {mainTab === 'certificates' && (
+                <div className="certificates-content">
+                  <div className="certificates-header">
+                    <div>
+                      <h5>
+                        {selectedCategory 
+                          ? `${categories.find(c => c.id === selectedCategory)?.name || 'Category'} Certifications`
+                          : 'Certifications'
+                        }
+                      </h5>
+                      <p className="text-muted">
+                        {selectedCategory 
+                          ? `Showing certifications for selected category`
+                          : 'Latest certification updates'
+                        }
+                      </p>
+                    </div>
+                    <div className="certificates-header-actions">
+                      {selectedCategory && (
+                        <button 
+                          className="btn btn-outline-secondary btn-sm me-2"
+                          onClick={() => setSelectedCategory(null)}
+                        >
+                          <FaTimes className="me-1" />
+                          Clear Filter
+                        </button>
+                      )}
+                      <input
+                        className="form-control cert-search"
+                        placeholder="Search certifications..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Category Tabs for Quick Filtering */}
+                  <div className="category-tabs-container">
+                    <div className="category-tabs">
+                      <button 
+                        className={`category-tab-btn ${!selectedCategory ? 'active' : ''}`}
+                        onClick={() => setSelectedCategory(null)}
+                      >
+                        All Categories
+                        <span className="category-count">{certifications.length}</span>
+                      </button>
+                      {categories.map((category) => {
+                        const count = getCertCountForCategory(category.id);
+                        return (
+                          <button 
+                            key={category.id}
+                            className={`category-tab-btn ${selectedCategory === category.id ? 'active' : ''}`}
+                            onClick={() => setSelectedCategory(category.id)}
+                          >
+                            {category.name}
+                            <span className="category-count">{count}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="table-responsive">
+                    <table className="table cert-table">
+                      <thead>
+                        <tr>
+                          <th>Certification Name</th>
+                          <th>Category</th>
+                          <th>Issuing Authority</th>
+                          <th>Certificate Number</th>
+                          <th>Issue Date</th>
+                          <th>Expiry Date</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {loading && certifications.length === 0 ? (
+                          <tr>
+                            <td colSpan="8" className="text-center">
+                              <div className="spinner-border text-primary" role="status">
+                                <span className="visually-hidden">Loading...</span>
+                              </div>
+                              <p className="mt-2">Loading certifications...</p>
+                            </td>
+                          </tr>
+                        ) : filteredCertifications.length > 0 ? (
+                          filteredCertifications.map((cert) => {
+                            const category = categories.find(c => c.id === cert.certification);
+                            return (
+                              <CertRow
+                                key={cert.id}
+                                name={category?.name || "N/A"}
+                                category={category?.name || "N/A"}
+                                authority={cert.issuing_authority}
+                                certNumber={cert.certificate_number}
+                                issueDate={formatDate(cert.issue_date)}
+                                expiryDate={formatDate(cert.expiry_date)}
+                                status={cert.status || getStatusDisplay(cert)}
+                                onView={() => handleViewDetails(cert)}
+                              />
+                            );
+                          })
+                        ) : (
+                          <tr>
+                            <td colSpan="8" className="text-center">
+                              <p className="text-muted">No certifications found.</p>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <input
-                  className="form-control cert-search"
-                  placeholder="Search certifications..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-
-              <div className="table-responsive">
-                <table className="table cert-table">
-                  <thead>
-                    <tr>
-                      <th>Certification Name</th>
-                      <th>Issuing Authority</th>
-                      <th>Certificate Number</th>
-                      <th>Issue Date</th>
-                      <th>Expiry Date</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading && certifications.length === 0 ? (
-                      <tr>
-                        <td colSpan="7" className="text-center">
-                          <div className="spinner-border text-primary" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                          </div>
-                          <p className="mt-2">Loading certifications...</p>
-                        </td>
-                      </tr>
-                    ) : filteredCertifications.length > 0 ? (
-                      filteredCertifications.map((cert) => (
-                        <CertRow
-                          key={cert.id}
-                          name={cert.certificate_number}
-                          authority={cert.issuing_authority}
-                          certNumber={cert.certificate_number}
-                          issueDate={formatDate(cert.issue_date)}
-                          expiryDate={formatDate(cert.expiry_date)}
-                          status={cert.status || getStatusDisplay(cert)}
-                          onView={() => handleViewDetails(cert)}
-                        />
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="7" className="text-center">
-                          <p className="text-muted">No certifications found.</p>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              )}
             </div>
 
           </div>
@@ -456,6 +585,12 @@ const Certifications = () => {
                 onClick={() => setActiveTab('certification')}
               >
                 <FaIdCard /> Certification
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'issuer' ? 'active' : ''}`}
+                onClick={() => setActiveTab('issuer')}
+              >
+                <FaBuilding /> Issuer Details
               </button>
               <button 
                 className={`tab-btn ${activeTab === 'competency' ? 'active' : ''}`}
@@ -636,6 +771,73 @@ const Certifications = () => {
                 </div>
               )}
 
+              {/* Issuer Details Tab */}
+              {activeTab === 'issuer' && (
+                <div className="info-section">
+                  <h4>Issuer Details</h4>
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <label><FaBuilding /> Issuer Type:</label>
+                      <span>{selectedCert.issuer_type || "N/A"}</span>
+                    </div>
+                    <div className="info-item">
+                      <label><FaUser /> Issuer Name:</label>
+                      <span>{selectedCert.issuer_name || "N/A"}</span>
+                    </div>
+                    <div className="info-item">
+                      <label><FaEnvelope /> Issuer Email:</label>
+                      <span>
+                        {selectedCert.issuer_email ? (
+                          <a href={`mailto:${selectedCert.issuer_email}`}>{selectedCert.issuer_email}</a>
+                        ) : "N/A"}
+                      </span>
+                    </div>
+                    <div className="info-item">
+                      <label><FaPhone /> Issuer Phone:</label>
+                      <span>{selectedCert.issuer_phone || "N/A"}</span>
+                    </div>
+                    <div className="info-item">
+                      <label><FaGlobe /> Issuer Website:</label>
+                      <span>
+                        {selectedCert.issuer_website ? (
+                          <a href={selectedCert.issuer_website} target="_blank" rel="noopener noreferrer">
+                            {selectedCert.issuer_website}
+                          </a>
+                        ) : "N/A"}
+                      </span>
+                    </div>
+                    <div className="info-item">
+                      <label><FaMapMarkerAlt /> Issuer Address:</label>
+                      <span>{selectedCert.issuer_address || "N/A"}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Issuer City:</label>
+                      <span>{selectedCert.issuer_city || "N/A"}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Issuer State:</label>
+                      <span>{selectedCert.issuer_state || "N/A"}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Issuer Country:</label>
+                      <span>{selectedCert.issuer_country || "N/A"}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Postal Code:</label>
+                      <span>{selectedCert.issuer_postal_code || "N/A"}</span>
+                    </div>
+                    <div className="info-item">
+                      <label><FaHashtag /> Accreditation Number:</label>
+                      <span>{selectedCert.issuer_accreditation_number || "N/A"}</span>
+                    </div>
+                    <div className="info-item full-width">
+                      <label><FaInfoCircle /> Issuer Description:</label>
+                      <span>{selectedCert.issuer_description || "N/A"}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Competency Information Tab */}
               {activeTab === 'competency' && selectedCompetency && (
                 <div className="info-section">
@@ -808,8 +1010,8 @@ const CertStat = ({ title, value, icon, green, orange, red }) => (
   </div>
 );
 
-const CertBar = ({ label, total, valid, expiring, expired }) => (
-  <div className="cert-bar-row">
+const CertBar = ({ label, total, valid, expiring, expired, onEdit, onClick }) => (
+  <div className="cert-bar-row" onClick={onClick} style={{ cursor: 'pointer' }}>
     <span>{label}</span>
     <div className="cert-bar">
       <div className="valid" style={{ width: total > 0 ? `${(valid / total) * 100}%` : '0%' }} />
@@ -817,13 +1019,24 @@ const CertBar = ({ label, total, valid, expiring, expired }) => (
       <div className="expired" style={{ width: total > 0 ? `${(expired / total) * 100}%` : '0%' }} />
     </div>
     <strong>{total}</strong>
+    <button 
+      className="btn btn-link edit-category-btn" 
+      onClick={(e) => {
+        e.stopPropagation();
+        onEdit();
+      }}
+      title="Edit Category"
+    >
+      <FaEdit />
+    </button>
   </div>
 );
 
-const CertRow = ({ name, authority, certNumber, issueDate, expiryDate, status, onView }) => {
+const CertRow = ({ name, category, authority, certNumber, issueDate, expiryDate, status, onView }) => {
   return (
     <tr>
       <td>{name}</td>
+      <td>{category}</td>
       <td>{authority}</td>
       <td>{certNumber}</td>
       <td>{issueDate}</td>

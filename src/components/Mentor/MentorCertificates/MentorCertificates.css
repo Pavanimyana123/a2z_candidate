@@ -739,8 +739,8 @@
 
 /* View Button */
 .tc-view-btn {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 30px;
   border-radius: 6px;
   border: 1px solid #dee2e6;
   background-color: #fff;
@@ -916,4 +916,104 @@
     width: 100%;
     justify-content: center;
   }
+}
+
+
+
+/* Issuer Details Tab Styles */
+.issuer-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.issuer-avatar {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.issuer-name-title h3 {
+  color: white;
+  margin: 0 0 5px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.issuer-name-title p {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-size: 1rem;
+}
+
+.info-icon {
+  margin-right: 6px;
+  color: #6c757d;
+}
+
+.info-item.full-width {
+  grid-column: span 2;
+}
+
+.info-item a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.info-item a:hover {
+  text-decoration: underline;
+}
+
+/* Tab icon sizes */
+.tab-btn svg {
+  font-size: 18px;
+  margin-right: 6px;
+}
+
+/* Action button icon sizes */
+.tc-action-buttons .tc-view-btn svg,
+.tc-action-buttons .tc-accept-btn svg,
+.tc-action-buttons .tc-reject-btn svg {
+  font-size: 16px;
+}
+
+/* Modal action button icon sizes */
+.tc-accept-btn-modal svg,
+.tc-reject-btn-modal svg {
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+/* Document icon size */
+.document-icon {
+  font-size: 48px;
+}
+
+.btn-download svg {
+  font-size: 18px;
+  margin-right: 8px;
+}
+
+/* Stat card icon sizes */
+.tc-stat-icon svg {
+  font-size: 32px;
+}
+
+/* Search icon size */
+.tc-search-icon {
+  font-size: 18px;
+}
+
+/* Certificate table icon */
+.tc-cert-icon {
+  font-size: 16px;
 }

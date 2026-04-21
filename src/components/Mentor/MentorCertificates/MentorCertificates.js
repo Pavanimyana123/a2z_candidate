@@ -16,7 +16,13 @@ import {
   FaCalendarAlt,
   FaFile,
   FaCheck,
-  FaBan
+  FaBan,
+  FaGlobe,
+  FaPhone,
+  FaEnvelope,
+  FaMapMarkerAlt,
+  FaCertificate,
+  FaUserTie
 } from "react-icons/fa";
 import "./MentorCertificates.css";
 import { BASE_URL } from "../../../ApiUrl";
@@ -261,6 +267,7 @@ const MentorCertificatesPage = () => {
   const filteredCertificates = certificates.filter(cert =>
     cert.certificate_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cert.issuing_authority?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cert.issuer_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (getCandidateName(cert.candidate)?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
@@ -318,6 +325,19 @@ const MentorCertificatesPage = () => {
     return 'Not specified';
   };
 
+  // Get issuer type display
+  const getIssuerTypeDisplay = (type) => {
+    const types = {
+      'Client Company': 'Client Company',
+      'Training Center': 'Training Center',
+      'Educational Institution': 'Educational Institution',
+      'Government Body': 'Government Body',
+      'Professional Organization': 'Professional Organization',
+      'Other': 'Other'
+    };
+    return types[type] || type || 'Not specified';
+  };
+
   return (
     <div className="tc-layout-wrapper">
       <MentorSidebar />
@@ -337,7 +357,7 @@ const MentorCertificatesPage = () => {
             <div className="col-md-3">
               <div className="tc-stat-card">
                 <div className="tc-stat-icon tc-icon-green">
-                  <FaCheckCircle />
+                  <FaCheckCircle size={32} />
                 </div>
                 <div>
                   <h3 className="tc-green">{getValidCertificates()}</h3>
@@ -349,7 +369,7 @@ const MentorCertificatesPage = () => {
             <div className="col-md-3">
               <div className="tc-stat-card">
                 <div className="tc-stat-icon tc-icon-yellow">
-                  <FaClock />
+                  <FaClock size={32} />
                 </div>
                 <div>
                   <h3 className="tc-yellow">{getExpiringCertificates()}</h3>
@@ -361,7 +381,7 @@ const MentorCertificatesPage = () => {
             <div className="col-md-3">
               <div className="tc-stat-card">
                 <div className="tc-stat-icon tc-icon-red">
-                  <FaTimesCircle />
+                  <FaTimesCircle size={32} />
                 </div>
                 <div>
                   <h3 className="tc-red">{getExpiredCertificates()}</h3>
@@ -373,7 +393,7 @@ const MentorCertificatesPage = () => {
             <div className="col-md-3">
               <div className="tc-stat-card">
                 <div className="tc-stat-icon tc-icon-blue">
-                  <FaFileAlt />
+                  <FaFileAlt size={32} />
                 </div>
                 <div>
                   <h3 className="tc-blue">{getTotalCertificates()}</h3>
@@ -386,11 +406,11 @@ const MentorCertificatesPage = () => {
           {/* Search Bar */}
           <div className="tc-search-wrapper">
             <div className="tc-search-box">
-              <FaSearch className="tc-search-icon" />
+              <FaSearch className="tc-search-icon" size={18} />
               <input
                 type="text"
                 className="tc-search-input"
-                placeholder="Search by certificate name, issuing authority, or candidate name..."
+                placeholder="Search by certificate name, issuing authority, issuer name, or candidate name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -440,7 +460,7 @@ const MentorCertificatesPage = () => {
                           <tr key={cert.id}>
                             <td>
                               <div className="tc-cert-name">
-                                <FaFileAlt className="tc-cert-icon" />
+                                <FaFileAlt className="tc-cert-icon" size={16} />
                                 <span>{cert.certificate_number}</span>
                               </div>
                             </td>
@@ -467,7 +487,7 @@ const MentorCertificatesPage = () => {
                                   onClick={() => handleViewDetails(cert)}
                                   title="View Details"
                                 >
-                                  <FaEye />
+                                  <FaEye size={16} />
                                 </button>
                                 {status === "pending" && (
                                   <>
@@ -477,7 +497,7 @@ const MentorCertificatesPage = () => {
                                       disabled={actionLoading}
                                       title="Approve Certificate"
                                     >
-                                      <FaCheck />
+                                      <FaCheck size={16} />
                                     </button>
                                     <button
                                       className="tc-reject-btn"
@@ -485,7 +505,7 @@ const MentorCertificatesPage = () => {
                                       disabled={actionLoading}
                                       title="Reject Certificate"
                                     >
-                                      <FaTimes />
+                                      <FaTimes size={16} />
                                     </button>
                                   </>
                                 )}
@@ -506,87 +526,6 @@ const MentorCertificatesPage = () => {
               </div>
             )}
           </div>
-
-          {/* Pending Approvals Section with Action Buttons */}
-          {/* {getPendingCertificates() > 0 && (
-            <div className="tc-table-card mt-4">
-              <div className="tc-table-header tc-pending-header">
-                <div>
-                  <h5 className="mb-0">Pending Approvals</h5>
-                  <p className="text-muted mb-0 small">Certificates waiting for approval</p>
-                </div>
-                <div className="tc-pending-count">{getPendingCertificates()} pending</div>
-              </div>
-              <div className="table-responsive">
-                <table className="table tc-table align-middle mb-0">
-                  <thead>
-                    <tr>
-                      <th>CERTIFICATE NAME</th>
-                      <th>CANDIDATE</th>
-                      <th>ISSUING AUTHORITY</th>
-                      <th>SUBMISSION DATE</th>
-                      <th>STATUS</th>
-                      <th>ACTIONS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {certificates
-                      .filter(cert => getCertificateStatus(cert) === "pending")
-                      .map((cert) => (
-                        <tr key={cert.id}>
-                          <td>
-                            <div className="tc-cert-name">
-                              <FaFileAlt className="tc-cert-icon" />
-                              <span>{cert.certificate_number}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <div className="tc-candidate">
-                              <div className="tc-avatar">
-                                {getInitials(cert.candidate)}
-                              </div>
-                              {getCandidateName(cert.candidate)}
-                            </div>
-                          </td>
-                          <td>{cert.issuing_authority}</td>
-                          <td>{formatDate(cert.created_at)}</td>
-                          <td>
-                            <span className="tc-status tc-status-gray">Pending Review</span>
-                          </td>
-                          <td>
-                            <div className="tc-action-buttons">
-                              <button
-                                className="tc-view-btn"
-                                onClick={() => handleViewDetails(cert)}
-                                title="View Details"
-                              >
-                                <FaEye />
-                              </button>
-                              <button
-                                className="tc-accept-btn"
-                                onClick={() => handleAccept(cert.id, cert.certificate_number)}
-                                disabled={actionLoading}
-                                title="Approve Certificate"
-                              >
-                                <FaCheck />
-                              </button>
-                              <button
-                                className="tc-reject-btn"
-                                onClick={() => handleReject(cert.id, cert.certificate_number)}
-                                disabled={actionLoading}
-                                title="Reject Certificate"
-                              >
-                                <FaTimes />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )} */}
         </div>
       </div>
 
@@ -597,7 +536,7 @@ const MentorCertificatesPage = () => {
             <div className="tc-modal-header">
               <h5>Certificate Details</h5>
               <button className="tc-modal-close" onClick={() => setShowModal(false)}>
-                <FaTimes />
+                <FaTimes size={20} />
               </button>
             </div>
             
@@ -606,19 +545,25 @@ const MentorCertificatesPage = () => {
                 className={`tab-btn ${activeTab === 'certificate' ? 'active' : ''}`}
                 onClick={() => setActiveTab('certificate')}
               >
-                <FaIdCard /> Certificate Info
+                <FaCertificate size={18} /> Certificate Info
+              </button>
+              <button 
+                className={`tab-btn ${activeTab === 'issuer' ? 'active' : ''}`}
+                onClick={() => setActiveTab('issuer')}
+              >
+                <FaBuilding size={18} /> Issuer Details
               </button>
               <button 
                 className={`tab-btn ${activeTab === 'candidate' ? 'active' : ''}`}
                 onClick={() => setActiveTab('candidate')}
               >
-                <FaUser /> Candidate Info
+                <FaUser size={18} /> Candidate Info
               </button>
               <button 
                 className={`tab-btn ${activeTab === 'document' ? 'active' : ''}`}
                 onClick={() => setActiveTab('document')}
               >
-                <FaFile /> Document
+                <FaFile size={18} /> Document
               </button>
             </div>
 
@@ -673,6 +618,79 @@ const MentorCertificatesPage = () => {
                     <div className="info-item">
                       <label>Last Updated:</label>
                       <span>{formatDateTime(selectedCert.updated_at)}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Issuer Details Tab - NEW */}
+              {activeTab === 'issuer' && (
+                <div className="info-section">
+                  <h4>Issuer Information</h4>
+                  <div className="issuer-profile-header">
+                    <div className="issuer-avatar">
+                      <FaBuilding size={60} />
+                    </div>
+                    <div className="issuer-name-title">
+                      <h3>{selectedCert.issuer_name || "N/A"}</h3>
+                      <p className="text-muted">{getIssuerTypeDisplay(selectedCert.issuer_type)}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <label><FaUserTie size={14} className="info-icon" /> Issuer Name:</label>
+                      <span>{selectedCert.issuer_name || "N/A"}</span>
+                    </div>
+                    <div className="info-item">
+                      <label><FaBuilding size={14} className="info-icon" /> Issuer Type:</label>
+                      <span>{getIssuerTypeDisplay(selectedCert.issuer_type)}</span>
+                    </div>
+                    <div className="info-item">
+                      <label><FaEnvelope size={14} className="info-icon" /> Email:</label>
+                      <span>{selectedCert.issuer_email || "N/A"}</span>
+                    </div>
+                    <div className="info-item">
+                      <label><FaPhone size={14} className="info-icon" /> Phone:</label>
+                      <span>{selectedCert.issuer_phone || "N/A"}</span>
+                    </div>
+                    <div className="info-item">
+                      <label><FaGlobe size={14} className="info-icon" /> Website:</label>
+                      <span>
+                        {selectedCert.issuer_website ? (
+                          <a href={selectedCert.issuer_website} target="_blank" rel="noopener noreferrer">
+                            {selectedCert.issuer_website}
+                          </a>
+                        ) : "N/A"}
+                      </span>
+                    </div>
+                    <div className="info-item">
+                      <label><FaIdCard size={14} className="info-icon" /> Accreditation Number:</label>
+                      <span>{selectedCert.issuer_accreditation_number || "N/A"}</span>
+                    </div>
+                    <div className="info-item full-width">
+                      <label><FaMapMarkerAlt size={14} className="info-icon" /> Address:</label>
+                      <span>{selectedCert.issuer_address || "N/A"}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>City:</label>
+                      <span>{selectedCert.issuer_city || "N/A"}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>State:</label>
+                      <span>{selectedCert.issuer_state || "N/A"}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Country:</label>
+                      <span>{selectedCert.issuer_country || "N/A"}</span>
+                    </div>
+                    <div className="info-item">
+                      <label>Postal Code:</label>
+                      <span>{selectedCert.issuer_postal_code || "N/A"}</span>
+                    </div>
+                    <div className="info-item full-width">
+                      <label>Description:</label>
+                      <span>{selectedCert.issuer_description || "N/A"}</span>
                     </div>
                   </div>
                 </div>
@@ -758,10 +776,10 @@ const MentorCertificatesPage = () => {
               {activeTab === 'document' && (
                 <div className="info-section">
                   <h4>Certificate Document</h4>
-                  {selectedCert.document && (
+                  {selectedCert.document ? (
                     <div className="document-preview">
                       <div className="document-card">
-                        <FaFileAlt className="document-icon" />
+                        <FaFileAlt className="document-icon" size={48} />
                         <div className="document-info">
                           <p className="document-name">
                             {selectedCert.document.split('/').pop()}
@@ -776,10 +794,14 @@ const MentorCertificatesPage = () => {
                               selectedCert.document.split('/').pop()
                             )}
                           >
-                            <FaDownload /> Download Certificate
+                            <FaDownload size={18} /> Download Certificate
                           </button>
                         </div>
                       </div>
+                    </div>
+                  ) : (
+                    <div className="alert alert-info">
+                      <p>No document available for this certificate.</p>
                     </div>
                   )}
                 </div>
@@ -798,7 +820,7 @@ const MentorCertificatesPage = () => {
                     }}
                     disabled={actionLoading}
                   >
-                    <FaCheck /> Approve Certificate
+                    <FaCheck size={18} /> Approve Certificate
                   </button>
                   <button
                     className="tc-reject-btn-modal"
@@ -808,7 +830,7 @@ const MentorCertificatesPage = () => {
                     }}
                     disabled={actionLoading}
                   >
-                    <FaTimes /> Reject Certificate
+                    <FaTimes size={18} /> Reject Certificate
                   </button>
                 </div>
               )}
