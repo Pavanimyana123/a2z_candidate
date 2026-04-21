@@ -141,6 +141,13 @@ const MentorSidebar = () => {
             <FaUserPlus /> Candidate Requests
           </Link>
 
+          <Link
+            to="/progression-management"
+            className={`ta-menu-item ${isActive("/progression-management") ? "active" : ""}`}
+          >
+            <FaUserPlus /> Progression Management
+          </Link>
+
           {/* <Link
             to="/mentor-logbook"
             className={`ta-menu-item ${isActive("/mentor-logbook") ? "active" : ""}`}
