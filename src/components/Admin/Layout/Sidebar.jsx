@@ -17,7 +17,8 @@ import {
   FaUserCircle,
   FaEnvelope,
   FaBook,
-  FaStar, // Added for Competency icon
+  FaStar,
+  FaIdCard
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import "./Sidebar.css";
@@ -128,6 +129,13 @@ const Sidebar = () => {
             className={`ta-menu-item ${isActive("/dashboard") ? "active" : ""}`}
           >
             <FaThLarge /> Dashboard
+          </Link>
+
+          <Link
+            to="/admin-professional-identity"
+            className={`ta-menu-item ${isActive("/admin-professional-identity") ? "active" : ""}`}
+          >
+            <FaIdCard /> Professional ID
           </Link>
 
           <Link

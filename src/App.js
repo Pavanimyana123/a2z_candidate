@@ -64,6 +64,10 @@ import CandidateMentorship from "./components/Candidate/CandidateMentorship/Cand
 import FindMentor from './components/Candidate/CandidateMentorship/FindMentor';
 import Learning from "./components/Admin/Learning/Learning";
 import AddLearning from './components/Admin/Learning/AddLearning';
+import AdminProfessionalIdentity from './components/Admin/AdminProfessionalIdentity/AdminProfessionalIdentity';
+import MentorProfessionalIdentity from './components/Mentor/MentorProfessionalIdentity/MentorProfessionalIdentity';
+
+
 
 
 
@@ -109,10 +113,10 @@ function App() {
             <Route path="/email-settings" element={<EmailSettings />} />
             <Route path="/add-email-settings" element={<AddEmailSettings />} />
             <Route path="/add-email-settings/:id" element={<AddEmailSettings />} />
+            <Route path="/admin-professional-identity" element={<AdminProfessionalIdentity />} />
 
-             {/* <Route path="/candidate-layout" element={<CandidateLayout />} />
-             <Route path="/mentor-layout" element={<MentorLayout />} /> */}
               <Route path="/mentor-dashboard" element={<MentorDashboard />} />
+              <Route path="/mentor-professional-identity" element={<MentorProfessionalIdentity />} />
               <Route path="/mentor-candidates" element={<MentorCandidates />} />
               <Route path="/mentor-candidate-competency" element={<MentorCandidatesCompetency />} />
               <Route path="/mentor-competency-review/:competencyId" element={<MentorCompetencyReview />} />

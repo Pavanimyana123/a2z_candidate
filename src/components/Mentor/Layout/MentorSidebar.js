@@ -13,7 +13,8 @@ import {
   FaUserCircle,
   FaUser,
   FaUserPlus,
-  FaCertificate
+  FaCertificate,
+  FaIdCard
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import "./Sidebar.css";
@@ -124,6 +125,13 @@ const MentorSidebar = () => {
             className={`ta-menu-item ${isActive("/mentor-dashboard") ? "active" : ""}`}
           >
             <FaThLarge /> Dashboard
+          </Link>
+
+          <Link
+            to="/mentor-professional-identity"
+            className={`ta-menu-item ${isActive("/mentor-professional-identity") ? "active" : ""}`}
+          >
+            <FaIdCard /> Professional ID
           </Link>
 
           <Link
