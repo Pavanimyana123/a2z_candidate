@@ -17,6 +17,8 @@ import AddDepartment from "./components/Admin/DepartmentManagement/AddDepartment
 import DepartmentLevel from "./components/Admin/DepartmentLevel/DepartmentLevel";
 import AddDepartmentLevel from "./components/Admin/DepartmentLevel/AddDepartmentLevel";
 import RotationProgram from "./components/Admin/RotationProgram/RotationProgram";
+import AdminCompetency from "./components/Admin/Competency/AdminCompetency"
+import AddAdminCompetency from "./components/Admin/Competency/AddAdminCompetency";
 import ComplianceManagement from "./components/Admin/ComplianceManagement/ComplianceManagement";
 import AddCompliance from './components/Admin/ComplianceManagement/AddComplianceManagement';
 import AddComplianceCertificate from "./components/Candidate/CandidateCompliance/AddCandidateCompliance"
@@ -90,6 +92,8 @@ function App() {
             <Route path="/add-department-level" element={<AddDepartmentLevel />} />
              <Route path="/edit-department-level/:id" element={<AddDepartmentLevel />} />
             <Route path="/rotation" element={<RotationProgram />} />
+            <Route path="/admin-competency" element={<AdminCompetency />} />
+            <Route path="/admin-add-competency" element={<AddAdminCompetency />} />
             <Route path="/compliance" element={<ComplianceManagement />} />
             <Route path="/compliance/add" element={<AddCompliance />} />
             <Route path="/compliance/edit/:id" element={<AddCompliance />} />

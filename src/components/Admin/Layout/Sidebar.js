@@ -16,7 +16,8 @@ import {
   FaSignOutAlt,
   FaUserCircle,
   FaEnvelope,
-  FaBook, // Added for Learning icon
+  FaBook,
+  FaStar, // Added for Competency icon
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import "./Sidebar.css";
@@ -143,7 +144,6 @@ const Sidebar = () => {
             <FaUserTie /> Mentors
           </Link>
 
-
           <Link
             to="/candidate"
             className={`ta-menu-item ${isActive("/candidate") ? "active" : ""}`}
@@ -165,25 +165,25 @@ const Sidebar = () => {
             <FaBuilding /> Departments
           </Link>
 
-
           <Link
-              to="/department-level"
-              className={`ta-menu-item ${isActive("/department-level") ? "active" : ""}`}
-            >
-              <FaLayerGroup /> Department Level
-            </Link>
-
-          {/* <Link
-            to="/rotation"
-            className={`ta-menu-item ${isActive("/rotation") ? "active" : ""}`}
+            to="/department-level"
+            className={`ta-menu-item ${isActive("/department-level") ? "active" : ""}`}
           >
-            <FaSyncAlt /> Rotation Program
-          </Link> */}
+            <FaLayerGroup /> Department Level
+          </Link>
         </div>
 
         {/* COMPLIANCE */}
         <div className="ta-menu-section">
           <p className="ta-menu-title">COMPLIANCE</p>
+
+          {/* NEW: Competency - added BEFORE Compliance Manage */}
+          <Link
+            to="/admin-competency"
+            className={`ta-menu-item ${isActive("/competency") ? "active" : ""}`}
+          >
+            <FaStar /> Competency
+          </Link>
 
           <Link
             to="/compliance"
@@ -199,7 +199,7 @@ const Sidebar = () => {
             <FaCertificate /> Certifications
           </Link>
 
-          {/* New Learning item added after Certifications */}
+          {/* Learning item */}
           <Link
             to="/learning"
             className={`ta-menu-item ${isActive("/learning") ? "active" : ""}`}
@@ -225,13 +225,6 @@ const Sidebar = () => {
           >
             <FaFileAlt /> Audit Logs
           </Link>
-
-          {/* <Link
-            to="/system"
-            className={`ta-menu-item ${isActive("/system") ? "active" : ""}`}
-          >
-            <FaCog /> System Settings
-          </Link> */}
 
           <Link
             to="/email-settings"
