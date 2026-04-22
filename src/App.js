@@ -45,6 +45,7 @@ import MentorCompliance from "./components/Mentor/MentorCompliance/MentorComplia
 import MentorFeedback from "./components/Mentor/MentorFeedback/MentorFeedback";
 import MentorReports from "./components/Mentor/MentorReports/MentorReports";
 import MentorCertificatesPage from "./components/Mentor/MentorCertificates/MentorCertificates";
+import ProgressionManagement from "./components/Mentor/ProgressionManagement/ProgressionManagement";
 
 import CandidateDashboard from "./components/Candidate/CandidateDasboard/CandidateDashboard"
 import CandidateProfessionalIdentity from "./components/Candidate/CandidateProfessionality/CandidateProfessionality";
@@ -124,6 +125,7 @@ function App() {
               <Route path="/mentor-certificates" element={<MentorCertificatesPage />} />
                <Route path="/mentor-feedback" element={<MentorFeedback />} />
                 <Route path="/mentor-reports" element={<MentorReports />} />
+                <Route path="/progression-management" element={<ProgressionManagement />} />
 
 
 
