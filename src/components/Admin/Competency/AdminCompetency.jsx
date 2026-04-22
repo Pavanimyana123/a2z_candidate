@@ -400,7 +400,7 @@ const AdminCompetency = () => {
                       <th>Level</th>
                       <th>Overall Score</th>
                       <th>Status</th>
-                      <th>Progression</th>
+                      {/* <th>Progression</th> */}
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -453,7 +453,7 @@ const AdminCompetency = () => {
                                 </div>
                               </td>
                               <td>{getStatusBadge(competency.status)}</td>
-                              <td>{getProgressionBadge(competency.progression_status)}</td>
+                              {/* <td>{getProgressionBadge(competency.progression_status)}</td> */}
                               <td>
                                 <div className="ac-actions-cell">
                                   <button 

@@ -230,7 +230,7 @@ const Sidebar = () => {
             to="/email-settings"
             className={`ta-menu-item ${isActive("/email-settings") ? "active" : ""}`}
           >
-            <FaEnvelope /> Email Settings
+            <FaEnvelope /> Settings
           </Link>
         </div>
       </div>

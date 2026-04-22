@@ -35,10 +35,8 @@ const AdminAddCompetency = () => {
     documentation_quality: 0,
     ethics_independence: 0,
     communication: 0,
-    status: 'draft',
-    mentor_comments: '',
+    status: 'validated',
     admin_comments: '',
-    progression_status: 'none'
   });
 
   // Fetch all required data on component mount
@@ -118,10 +116,8 @@ const AdminAddCompetency = () => {
           documentation_quality: data.documentation_quality || 0,
           ethics_independence: data.ethics_independence || 0,
           communication: data.communication || 0,
-          status: data.status || 'draft',
-          mentor_comments: data.mentor_comments || '',
+          status: data.status || 'validated',
           admin_comments: data.admin_comments || '',
-          progression_status: data.progression_status || 'none'
         });
       }
     } catch (error) {
@@ -222,10 +218,10 @@ const AdminAddCompetency = () => {
       documentation_quality: parseInt(formData.documentation_quality) || 0,
       ethics_independence: parseInt(formData.ethics_independence) || 0,
       communication: parseInt(formData.communication) || 0,
-      status: formData.status,
-      mentor_comments: formData.mentor_comments,
+      status: mode === 'edit' ? formData.status : 'validated', // For edit mode use selected status, for add mode use 'validated'
       admin_comments: formData.admin_comments,
-      progression_status: formData.progression_status
+      mentor_comments: '',
+      progression_status: 'none'
     };
 
     const url = mode === 'edit' 
@@ -426,153 +422,49 @@ const AdminAddCompetency = () => {
                   </div>
                 </div>
 
-                {/* Scores Section */}
+                {/* Status Section - Only shown in Edit mode */}
+                {mode === 'edit' && (
+                  <>
+                    <div className="aac-section-divider">
+                      <h3 className="aac-section-heading">Status</h3>
+                    </div>
+
+                    <div className="aac-form-row">
+                      <div className="aac-form-group aac-full-width">
+                        <label className="aac-form-label">Competency Status</label>
+                        <select
+                          className="aac-form-select"
+                          name="status"
+                          value={formData.status}
+                          onChange={handleChange}
+                          disabled={loading}
+                        >
+                          <option value="draft">Draft</option>
+                          <option value="in_progress">In Progress</option>
+                          <option value="validated">Validated</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Admin Comments Section */}
                 <div className="aac-section-divider">
-                  <h3 className="aac-section-heading">Competency Scores</h3>
-                </div>
-
-                <div className="aac-scores-grid">
-                  <div className="aac-form-group">
-                    <label className="aac-form-label">Technical Knowledge</label>
-                    <input
-                      type="number"
-                      className="aac-form-input"
-                      name="technical_knowledge"
-                      min="0"
-                      max="100"
-                      value={formData.technical_knowledge}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
-                  </div>
-
-                  <div className="aac-form-group">
-                    <label className="aac-form-label">Field Execution</label>
-                    <input
-                      type="number"
-                      className="aac-form-input"
-                      name="field_execution"
-                      min="0"
-                      max="100"
-                      value={formData.field_execution}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
-                  </div>
-
-                  <div className="aac-form-group">
-                    <label className="aac-form-label">Documentation Quality</label>
-                    <input
-                      type="number"
-                      className="aac-form-input"
-                      name="documentation_quality"
-                      min="0"
-                      max="100"
-                      value={formData.documentation_quality}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
-                  </div>
-
-                  <div className="aac-form-group">
-                    <label className="aac-form-label">Ethics & Independence</label>
-                    <input
-                      type="number"
-                      className="aac-form-input"
-                      name="ethics_independence"
-                      min="0"
-                      max="100"
-                      value={formData.ethics_independence}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
-                  </div>
-
-                  <div className="aac-form-group">
-                    <label className="aac-form-label">Communication</label>
-                    <input
-                      type="number"
-                      className="aac-form-input"
-                      name="communication"
-                      min="0"
-                      max="100"
-                      value={formData.communication}
-                      onChange={handleChange}
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-
-                {/* Status Section */}
-                <div className="aac-section-divider">
-                  <h3 className="aac-section-heading">Status & Progression</h3>
-                </div>
-
-                <div className="aac-form-row">
-                  <div className="aac-form-group aac-half-width">
-                    <label className="aac-form-label">Status</label>
-                    <select
-                      className="aac-form-select"
-                      name="status"
-                      value={formData.status}
-                      onChange={handleChange}
-                      disabled={loading}
-                    >
-                      <option value="draft">Draft</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="validated">Validated</option>
-                      <option value="completed">Completed</option>
-                    </select>
-                  </div>
-
-                  <div className="aac-form-group aac-half-width">
-                    <label className="aac-form-label">Progression Status</label>
-                    <select
-                      className="aac-form-select"
-                      name="progression_status"
-                      value={formData.progression_status}
-                      onChange={handleChange}
-                      disabled={loading}
-                    >
-                      <option value="none">No Request</option>
-                      <option value="requested">Requested</option>
-                      <option value="progressed">Progressed</option>
-                      <option value="rejected">Rejected</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Comments Section */}
-                <div className="aac-section-divider">
-                  <h3 className="aac-section-heading">Comments</h3>
+                  <h3 className="aac-section-heading">Admin Comments</h3>
                 </div>
 
                 <div className="aac-form-row">
                   <div className="aac-form-group aac-full-width">
-                    <label className="aac-form-label">Mentor Comments</label>
-                    <textarea
-                      className="aac-form-textarea"
-                      name="mentor_comments"
-                      rows="3"
-                      value={formData.mentor_comments}
-                      onChange={handleChange}
-                      disabled={loading}
-                      placeholder="Enter mentor comments..."
-                    />
-                  </div>
-                </div>
-
-                <div className="aac-form-row">
-                  <div className="aac-form-group aac-full-width">
-                    <label className="aac-form-label">Admin Comments</label>
+                    <label className="aac-form-label">Comments</label>
                     <textarea
                       className="aac-form-textarea"
                       name="admin_comments"
-                      rows="3"
+                      rows="4"
                       value={formData.admin_comments}
                       onChange={handleChange}
                       disabled={loading}
-                      placeholder="Enter admin comments..."
+                      placeholder="Enter admin comments (optional)..."
                     />
                   </div>
                 </div>

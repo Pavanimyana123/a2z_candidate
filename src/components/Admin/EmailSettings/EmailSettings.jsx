@@ -22,7 +22,8 @@ import {
   FaShieldAlt,
   FaBell,
   FaGlobe,
-  FaDatabase
+  FaDatabase,
+  FaPaperPlane
 } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import { BASE_URL } from "../../../ApiUrl";
@@ -33,7 +34,7 @@ const EmailSettings = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [activeTab, setActiveTab] = useState("smtp"); // smtp, general, notifications, security
+  const [activeTab, setActiveTab] = useState("general"); // Changed default to general
   
   // System Settings State
   const [systemSettings, setSystemSettings] = useState({
@@ -324,22 +325,16 @@ const EmailSettings = () => {
             {/* Page Header */}
             <div className="email-settings-page-header">
               <div>
-                <h2>Email Settings</h2>
-                <p>Configure SMTP hosts and email system preferences</p>
+                <h2>Settings</h2>
+                <p>Configure email system preferences and SMTP hosts</p>
               </div>
               {/* <button className="btn btn-primary save-all-btn" onClick={handleSaveAllSettings}>
                 <FaSave className="me-2" /> Save All Changes
               </button> */}
             </div>
 
-            {/* Tabs Navigation */}
+            {/* Tabs Navigation - SMTP Hosts moved to last position */}
             <div className="email-settings-tabs">
-              <button 
-                className={`email-tab ${activeTab === 'smtp' ? 'active' : ''}`}
-                onClick={() => setActiveTab('smtp')}
-              >
-                <FaServer className="me-2" /> SMTP Hosts
-              </button>
               <button 
                 className={`email-tab ${activeTab === 'general' ? 'active' : ''}`}
                 onClick={() => setActiveTab('general')}
@@ -358,96 +353,13 @@ const EmailSettings = () => {
               >
                 <FaShieldAlt className="me-2" /> Security
               </button>
+              <button 
+                className={`email-tab ${activeTab === 'smtp' ? 'active' : ''}`}
+                onClick={() => setActiveTab('smtp')}
+              >
+                <FaServer className="me-2" /> SMTP Hosts
+              </button>
             </div>
-
-            {/* SMTP Hosts Tab */}
-            {activeTab === 'smtp' && (
-              <div className="email-settings-tab-content">
-                {/* Filters Bar */}
-                <div className="email-settings-filters-bar">
-                  <div className="email-search-wrapper">
-                    <FaSearch className="search-icon" />
-                    <input 
-                      type="text" 
-                      placeholder="Search SMTP hosts..." 
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                  
-                  <div className="filter-actions">
-                    <select 
-                      className="status-filter-select"
-                      value={statusFilter}
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                      <option value="All Status">All Status</option>
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="maintenance">Maintenance</option>
-                      <option value="suspended">Suspended</option>
-                    </select>
-                    
-                    <button className="btn btn-outline-secondary" onClick={fetchEmailSettings}>
-                      <FaSync />
-                    </button>
-                    
-                    <button className="btn btn-primary" onClick={handleAddEmailSetting}>
-                      <FaPlus className="me-2" /> Add SMTP Host
-                    </button>
-                  </div>
-                </div>
-
-                {/* Loading State */}
-                {loading && (
-                  <div className="email-settings-loading">
-                    <div className="spinner-border text-primary" role="status">
-                      <span className="visually-hidden">Loading...</span>
-                    </div>
-                    <p className="mt-2">Loading SMTP hosts...</p>
-                  </div>
-                )}
-
-                {/* Error State */}
-                {error && !loading && (
-                  <div className="email-settings-error">
-                    <p>Error: {error}</p>
-                    <button onClick={fetchEmailSettings} className="btn btn-primary mt-2">
-                      Retry
-                    </button>
-                  </div>
-                )}
-
-                {/* SMTP Host Cards */}
-                {!loading && !error && (
-                  <div className="smtp-hosts-grid">
-                    {filteredSettings.length > 0 ? (
-                      filteredSettings.map((setting) => (
-                        <SMTPHostCard
-                          key={setting.id}
-                          setting={setting}
-                          onEdit={handleEdit}
-                          onDelete={confirmDelete}
-                          onToggleStatus={handleToggleStatus}
-                          onTestConnection={handleTestConnection}
-                          getStatusBadgeClass={getStatusBadgeClass}
-                          getStatusDisplay={getStatusDisplay}
-                        />
-                      ))
-                    ) : (
-                      <div className="empty-state-card">
-                        <FaServer className="empty-icon" />
-                        <h5>No SMTP Hosts Found</h5>
-                        <p>Add your first SMTP host to start sending emails</p>
-                        <button className="btn btn-primary" onClick={handleAddEmailSetting}>
-                          <FaPlus className="me-2" /> Add SMTP Host
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* General Settings Tab */}
             {activeTab === 'general' && (
@@ -718,12 +630,346 @@ const EmailSettings = () => {
                 </div>
               </div>
             )}
+
+            {/* SMTP Hosts Tab */}
+            {activeTab === 'smtp' && (
+              <div className="email-settings-tab-content">
+                {/* Filters Bar */}
+                <div className="email-settings-filters-bar">
+                  <div className="email-search-wrapper">
+                    <FaSearch className="search-icon" />
+                    <input 
+                      type="text" 
+                      placeholder="Search SMTP hosts..." 
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="filter-actions">
+                    <select 
+                      className="status-filter-select"
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      <option value="All Status">All Status</option>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                      <option value="maintenance">Maintenance</option>
+                      <option value="suspended">Suspended</option>
+                    </select>
+                    
+                    <button className="btn btn-outline-secondary" onClick={fetchEmailSettings}>
+                      <FaSync />
+                    </button>
+                    
+                    <button className="btn btn-primary" onClick={handleAddEmailSetting}>
+                      <FaPlus className="me-2" /> Add SMTP Host
+                    </button>
+                  </div>
+                </div>
+
+                {/* Loading State */}
+                {loading && (
+                  <div className="email-settings-loading">
+                    <div className="spinner-border text-primary" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <p className="mt-2">Loading SMTP hosts...</p>
+                  </div>
+                )}
+
+                {/* Error State */}
+                {error && !loading && (
+                  <div className="email-settings-error">
+                    <p>Error: {error}</p>
+                    <button onClick={fetchEmailSettings} className="btn btn-primary mt-2">
+                      Retry
+                    </button>
+                  </div>
+                )}
+
+                {/* SMTP Host Cards */}
+                {!loading && !error && (
+                  <div className="smtp-hosts-grid">
+                    {filteredSettings.length > 0 ? (
+                      filteredSettings.map((setting) => (
+                        <SMTPHostCard
+                          key={setting.id}
+                          setting={setting}
+                          onEdit={handleEdit}
+                          onDelete={confirmDelete}
+                          onToggleStatus={handleToggleStatus}
+                          onTestConnection={handleTestConnection}
+                          getStatusBadgeClass={getStatusBadgeClass}
+                          getStatusDisplay={getStatusDisplay}
+                        />
+                      ))
+                    ) : (
+                      <div className="empty-state-card">
+                        <FaServer className="empty-icon" />
+                        <h5>No SMTP Hosts Found</h5>
+                        <p>Add your first SMTP host to start sending emails</p>
+                        <button className="btn btn-primary" onClick={handleAddEmailSetting}>
+                          <FaPlus className="me-2" /> Add SMTP Host
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 };
+
+/* ---- Add SMTP Form Component ---- */
+// const AddSMTPForm = ({ onSuccess, onCancel }) => {
+//   const [formData, setFormData] = useState({
+//     host_name: '',
+//     host_email: '',
+//     smtp_server: '',
+//     smtp_port: 587,
+//     username: '',
+//     password: '',
+//     use_tls: true,
+//     use_ssl: false,
+//     daily_limit: 1000,
+//     hourly_limit: 100,
+//     status: 'active'
+//   });
+  
+//   const [loading, setLoading] = useState(false);
+//   const [showPassword, setShowPassword] = useState(false);
+
+//   const handleChange = (e) => {
+//     const { name, value, type, checked } = e.target;
+//     setFormData(prev => ({
+//       ...prev,
+//       [name]: type === 'checkbox' ? checked : value
+//     }));
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//     setLoading(true);
+
+//     try {
+//       const response = await fetch(`${BASE_URL}/api/admin/host-mails/`, {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify(formData)
+//       });
+
+//       if (!response.ok) {
+//         throw new Error(`HTTP error! status: ${response.status}`);
+//       }
+
+//       Swal.fire({
+//         icon: 'success',
+//         title: 'SMTP Host Added!',
+//         text: 'New SMTP host has been configured successfully.',
+//         timer: 2000,
+//         showConfirmButton: false
+//       });
+
+//       onSuccess();
+//     } catch (err) {
+//       console.error('Error adding SMTP host:', err);
+      
+//       Swal.fire({
+//         icon: 'error',
+//         title: 'Add Failed',
+//         text: 'Failed to add SMTP host. Please try again.',
+//         timer: 3000,
+//         showConfirmButton: true
+//       });
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   return (
+//     <form onSubmit={handleSubmit} className="add-smtp-form">
+//       <div className="form-row">
+//         <div className="form-group">
+//           <label>Host Name *</label>
+//           <input
+//             type="text"
+//             className="form-control"
+//             name="host_name"
+//             value={formData.host_name}
+//             onChange={handleChange}
+//             placeholder="e.g., Primary SMTP Server"
+//             required
+//           />
+//         </div>
+        
+//         <div className="form-group">
+//           <label>Host Email *</label>
+//           <input
+//             type="email"
+//             className="form-control"
+//             name="host_email"
+//             value={formData.host_email}
+//             onChange={handleChange}
+//             placeholder="smtp@company.com"
+//             required
+//           />
+//         </div>
+//       </div>
+
+//       <div className="form-row">
+//         <div className="form-group">
+//           <label>SMTP Server *</label>
+//           <input
+//             type="text"
+//             className="form-control"
+//             name="smtp_server"
+//             value={formData.smtp_server}
+//             onChange={handleChange}
+//             placeholder="smtp.gmail.com"
+//             required
+//           />
+//         </div>
+        
+//         <div className="form-group">
+//           <label>SMTP Port *</label>
+//           <input
+//             type="number"
+//             className="form-control"
+//             name="smtp_port"
+//             value={formData.smtp_port}
+//             onChange={handleChange}
+//             placeholder="587"
+//             required
+//           />
+//         </div>
+//       </div>
+
+//       <div className="form-row">
+//         <div className="form-group">
+//           <label>Username</label>
+//           <input
+//             type="text"
+//             className="form-control"
+//             name="username"
+//             value={formData.username}
+//             onChange={handleChange}
+//             placeholder="SMTP username"
+//           />
+//         </div>
+        
+//         <div className="form-group">
+//           <label>Password</label>
+//           <div className="password-input-wrapper">
+//             <input
+//               type={showPassword ? "text" : "password"}
+//               className="form-control"
+//               name="password"
+//               value={formData.password}
+//               onChange={handleChange}
+//               placeholder="SMTP password"
+//             />
+//             <button
+//               type="button"
+//               className="password-toggle-btn"
+//               onClick={() => setShowPassword(!showPassword)}
+//             >
+//               {showPassword ? "Hide" : "Show"}
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+
+//       <div className="form-row">
+//         <div className="form-group">
+//           <label>Daily Limit</label>
+//           <input
+//             type="number"
+//             className="form-control"
+//             name="daily_limit"
+//             value={formData.daily_limit}
+//             onChange={handleChange}
+//             placeholder="1000"
+//           />
+//         </div>
+        
+//         <div className="form-group">
+//           <label>Hourly Limit</label>
+//           <input
+//             type="number"
+//             className="form-control"
+//             name="hourly_limit"
+//             value={formData.hourly_limit}
+//             onChange={handleChange}
+//             placeholder="100"
+//           />
+//         </div>
+//       </div>
+
+//       <div className="form-row">
+//         <div className="form-group">
+//           <label>Status</label>
+//           <select
+//             className="form-control"
+//             name="status"
+//             value={formData.status}
+//             onChange={handleChange}
+//           >
+//             <option value="active">Active</option>
+//             <option value="inactive">Inactive</option>
+//             <option value="maintenance">Maintenance</option>
+//           </select>
+//         </div>
+//       </div>
+
+//       <div className="form-checkboxes">
+//         <label className="checkbox-label">
+//           <input
+//             type="checkbox"
+//             name="use_tls"
+//             checked={formData.use_tls}
+//             onChange={handleChange}
+//           />
+//           <span>Use TLS</span>
+//         </label>
+        
+//         <label className="checkbox-label">
+//           <input
+//             type="checkbox"
+//             name="use_ssl"
+//             checked={formData.use_ssl}
+//             onChange={handleChange}
+//           />
+//           <span>Use SSL</span>
+//         </label>
+//       </div>
+
+//       <div className="form-actions">
+//         <button type="button" className="btn btn-secondary" onClick={onCancel}>
+//           Cancel
+//         </button>
+//         <button type="submit" className="btn btn-primary" disabled={loading}>
+//           {loading ? (
+//             <>
+//               <FaSync className="fa-spin me-2" /> Adding...
+//             </>
+//           ) : (
+//             <>
+//               <FaPlus className="me-2" /> Add SMTP Host
+//             </>
+//           )}
+//         </button>
+//       </div>
+//     </form>
+//   );
+// };
 
 /* ---- SMTP Host Card Component ---- */
 const SMTPHostCard = ({ 
@@ -802,6 +1048,22 @@ const SMTPHostCard = ({
           </span>
         </div>
       </div>
+      
+      {/* <div className="card-footer">
+        <button 
+          className="card-action-btn test-btn"
+          onClick={() => onTestConnection(setting)}
+        >
+          <FaPaperPlane /> Test
+        </button>
+        <button 
+          className="card-action-btn toggle-btn"
+          onClick={() => onToggleStatus(setting)}
+        >
+          {setting.status === 'active' ? <FaTimesCircle /> : <FaCheckCircle />}
+          {setting.status === 'active' ? 'Disable' : 'Enable'}
+        </button>
+      </div> */}
     </div>
   );
 };
