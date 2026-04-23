@@ -42,9 +42,11 @@ const Sidebar = () => {
     }
   }, []);
 
-  // Helper function to check if a path is active
-  const isActive = (path) => {
-    return location.pathname === path;
+  // Helper function to check if a path is active (including sub-routes)
+  const isActive = (paths) => {
+    // If a single string is passed, convert to array for uniform handling
+    const pathArray = Array.isArray(paths) ? paths : [paths];
+    return pathArray.some(path => location.pathname === path || location.pathname.startsWith(path + '/'));
   };
 
   // Handle logout
@@ -140,42 +142,42 @@ const Sidebar = () => {
 
           <Link
             to="/users"
-            className={`ta-menu-item ${isActive("/users") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/users", "/add-admin-users"]) ? "active" : ""}`}
           >
             <FaUsers /> Users
           </Link>
 
           <Link
             to="/mentor"
-            className={`ta-menu-item ${isActive("/mentor") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/mentor", "/add-mentor"]) ? "active" : ""}`}
           >
             <FaUserTie /> Mentors
           </Link>
 
           <Link
             to="/candidate"
-            className={`ta-menu-item ${isActive("/candidate") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/candidate", "/add-candidate"]) ? "active" : ""}`}
           >
             <FaUserGraduate /> Candidates
           </Link>
 
           <Link
             to="/level"
-            className={`ta-menu-item ${isActive("/level") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/level", "/levels/add"]) ? "active" : ""}`}
           >
             <FaLayerGroup /> Levels Management
           </Link>
 
           <Link
             to="/department"
-            className={`ta-menu-item ${isActive("/department") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/department", "/department/add"]) ? "active" : ""}`}
           >
             <FaBuilding /> Departments
           </Link>
 
           <Link
             to="/department-level"
-            className={`ta-menu-item ${isActive("/department-level") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/department-level", "/add-department-level"]) ? "active" : ""}`}
           >
             <FaLayerGroup /> Department Level
           </Link>
@@ -185,32 +187,30 @@ const Sidebar = () => {
         <div className="ta-menu-section">
           <p className="ta-menu-title">COMPLIANCE</p>
 
-          {/* NEW: Competency - added BEFORE Compliance Manage */}
           <Link
             to="/admin-competency"
-            className={`ta-menu-item ${isActive("/competency") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/admin-competency", "/admin-add-competency"]) ? "active" : ""}`}
           >
             <FaStar /> Competency
           </Link>
 
           <Link
             to="/compliance"
-            className={`ta-menu-item ${isActive("/compliance") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/compliance", "/compliance/add"]) ? "active" : ""}`}
           >
             <FaShieldAlt /> Compliance Manage
           </Link>
 
           <Link
             to="/certificate"
-            className={`ta-menu-item ${isActive("/certificate") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/certificate", "/certification-categories"]) ? "active" : ""}`}
           >
             <FaCertificate /> Certifications
           </Link>
 
-          {/* Learning item */}
           <Link
             to="/learning"
-            className={`ta-menu-item ${isActive("/learning") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/learning", "/add-learning"]) ? "active" : ""}`}
           >
             <FaBook /> Learning
           </Link>
@@ -236,7 +236,7 @@ const Sidebar = () => {
 
           <Link
             to="/email-settings"
-            className={`ta-menu-item ${isActive("/email-settings") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/email-settings", "/add-email-settings"]) ? "active" : ""}`}
           >
             <FaEnvelope /> Settings
           </Link>

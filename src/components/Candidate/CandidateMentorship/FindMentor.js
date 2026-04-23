@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CandidateSidebar from '../Layout/CandidateSidebar';
 import Header from '../Layout/CandidateHeader';
-import { FaSpinner, FaUserGraduate, FaUserTie, FaBuilding, FaLevelUpAlt } from 'react-icons/fa';
+import { FaSpinner, FaUserGraduate, FaUserTie, FaBuilding, FaLevelUpAlt, FaCheck, FaArrowLeft } from 'react-icons/fa';
 import "./FindMentor.css";
 import Swal from 'sweetalert2';
 import { BASE_URL } from "../../../ApiUrl";
@@ -19,6 +19,7 @@ const MentorRequestForm = () => {
   const [candidateData, setCandidateData] = useState(null);
   const [selectedMentorDetails, setSelectedMentorDetails] = useState(null);
   const [errors, setErrors] = useState({});
+  const [isManualSelection, setIsManualSelection] = useState(false);
 
   const [formData, setFormData] = useState({
     mentor_status: 'requested',
@@ -46,23 +47,32 @@ const MentorRequestForm = () => {
           const selectedMentor = location.state?.selectedMentor;
           const candidateIdFromState = location.state?.candidateId;
           
-          // Set form data with candidate ID and pre-selected values
-          setFormData(prev => ({
-            ...prev,
-            candidate: candidateIdFromState || parsed.user_id || '',
-            mentor: selectedMentor?.id || '',
-            department: selectedMentor?.department || '',
-            target_level: selectedMentor?.target_level || '',
-            mentor_status: 'requested',
-            status: 'active'
-          }));
-
-          console.log('Pre-filled form data:', {
-            candidate: candidateIdFromState || parsed.user_id,
-            mentor: selectedMentor?.id,
-            department: selectedMentor?.department,
-            target_level: selectedMentor?.target_level
-          });
+          if (selectedMentor) {
+            console.log('Pre-selected mentor from navigation:', selectedMentor);
+            setIsManualSelection(false);
+            
+            // Set form data with candidate ID and pre-selected values
+            setFormData(prev => ({
+              ...prev,
+              candidate: candidateIdFromState || parsed.user_id || '',
+              mentor: selectedMentor.id || '',
+              department: selectedMentor.department || '',
+              target_level: selectedMentor.target_level || '',
+              mentor_status: 'requested',
+              status: 'active'
+            }));
+          } else {
+            console.log('No mentor pre-selected, manual selection mode');
+            setIsManualSelection(true);
+            
+            // Set only candidate ID
+            setFormData(prev => ({
+              ...prev,
+              candidate: parsed.user_id || '',
+              mentor_status: 'requested',
+              status: 'active'
+            }));
+          }
         } else {
           console.error('No candidate data found in localStorage');
           Swal.fire({
@@ -98,16 +108,24 @@ const MentorRequestForm = () => {
       if (mentor && mentor.specializations) {
         setMentorSpecializations(mentor.specializations);
         
-        // Auto-select the first specialization if there's only one
-        if (mentor.specializations.length === 1) {
+        // Auto-select the first specialization if there's only one and no department selected
+        if (mentor.specializations.length === 1 && !formData.department) {
           setFormData(prev => ({
             ...prev,
             department: mentor.specializations[0].toString()
           }));
         }
+        
+        // Auto-select target level if not set
+        if (mentor.mentor_level && !formData.target_level) {
+          setFormData(prev => ({
+            ...prev,
+            target_level: mentor.mentor_level.toString()
+          }));
+        }
       }
     }
-  }, [formData.mentor, mentors]);
+  }, [formData.mentor, mentors, formData.department, formData.target_level]);
 
   const fetchMentors = async () => {
     try {
@@ -122,7 +140,9 @@ const MentorRequestForm = () => {
       
       if (result.status && result.data) {
         // Filter active mentors
-        const activeMentors = result.data.filter(mentor => mentor.mentorship_status === 'active');
+        const activeMentors = result.data.filter(mentor => 
+          mentor.mentorship_status === 'active' || mentor.mentorship_status === null
+        );
         setMentors(activeMentors);
         console.log('✅ Mentors fetched successfully:', activeMentors);
       } else {
@@ -250,15 +270,15 @@ const MentorRequestForm = () => {
 
     // Prepare payload according to requirements
     const payload = {
-      mentor_status: "requested", // Always "requested"
-      responded_at: new Date().toISOString(), // Current timestamp
-      status: "active", // Always "active"
-      current_progress: 0, // Initial progress is 0
-      completion_percentage: 0, // Initial completion is 0
-      mentor: parseInt(formData.mentor), // Existing mentor ID
-      candidate: parseInt(formData.candidate), // Logged-in candidate ID
-      department: parseInt(formData.department), // Selected department/specialization
-      target_level: parseInt(formData.target_level) // Selected target level
+      mentor_status: "requested",
+      responded_at: new Date().toISOString(),
+      status: "active",
+      current_progress: 0,
+      completion_percentage: 0,
+      mentor: parseInt(formData.mentor),
+      candidate: parseInt(formData.candidate),
+      department: parseInt(formData.department),
+      target_level: parseInt(formData.target_level)
     };
 
     console.log('📦 Submitting payload:', payload);
@@ -347,12 +367,29 @@ const MentorRequestForm = () => {
         
         <div className="ta-content-area">
           <div className="mrf-wrapper">
-            {/* Header */}
+            {/* Header with Back Button */}
             <div className="mrf-header">
-              <div>
-                <h2>Request Mentorship</h2>
-                <p>Confirm your mentorship request details</p>
+              <div className="d-flex align-items-center gap-3">
+                <button 
+                  type="button" 
+                  className="btn btn-outline-secondary back-btn"
+                  onClick={handleCancel}
+                  aria-label="Go back"
+                >
+                  <FaArrowLeft className="me-2" />
+                  Back
+                </button>
+                <div>
+                  <h2>Request Mentorship</h2>
+                  <p>Confirm your mentorship request details</p>
+                </div>
               </div>
+              {!isManualSelection && selectedMentorDetails && (
+                <span className="mrf-preselected-badge">
+                  <FaCheck className="me-1" />
+                  Mentor Pre-selected
+                </span>
+              )}
             </div>
 
             {/* Candidate Info Card */}
@@ -380,13 +417,13 @@ const MentorRequestForm = () => {
                   <input type="hidden" name="completion_percentage" value="0" />
                   <input type="hidden" name="candidate" value={formData.candidate} />
 
-                  {/* Mentor Selection - Read Only */}
+                  {/* Mentor Selection */}
                   <div className="col-md-6 mb-3">
                     <label className="form-label">
                       <FaUserGraduate className="me-2" />
-                      Selected Mentor *
+                      Select Mentor *
                     </label>
-                    {selectedMentorDetails ? (
+                    {!isManualSelection && selectedMentorDetails ? (
                       <div className="mrf-readonly-field">
                         <div className="mrf-mentor-info">
                           <span className="mrf-mentor-name">{selectedMentorDetails.full_name}</span>
@@ -395,6 +432,7 @@ const MentorRequestForm = () => {
                           )}
                           <span className="mrf-mentor-level">Level {selectedMentorDetails.mentor_level}</span>
                         </div>
+                        <input type="hidden" name="mentor" value={formData.mentor} />
                       </div>
                     ) : (
                       <select

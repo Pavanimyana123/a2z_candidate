@@ -385,3 +385,136 @@
   font-size: 0.875rem;
   font-weight: 500;
 }
+
+
+/* Add these styles to your FindMentor.css file */
+
+.mrf-preselected-badge {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.mrf-readonly-field {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 10px 12px;
+  min-height: 42px;
+}
+
+.mrf-mentor-info {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mrf-mentor-name {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.mrf-mentor-company {
+  color: #6c757d;
+  font-size: 0.9em;
+}
+
+.mrf-mentor-level {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.mrf-specialization-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mrf-specialization-name {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.mrf-specialization-badge {
+  background-color: #28a745;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+
+/* Back button styling */
+.back-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border-color: #dcdde1;
+  color: #2c3e50;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.back-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #95a5a6;
+  color: #2c3e50;
+}
+
+/* Header with back button */
+.mrf-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.mrf-header h2 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.mrf-header p {
+  margin: 8px 0 0;
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+/* Gap utility */
+.gap-3 {
+  gap: 1rem !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .mrf-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .mrf-header .d-flex {
+    flex-wrap: wrap;
+  }
+  
+  .back-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+}

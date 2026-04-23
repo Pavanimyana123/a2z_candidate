@@ -6,7 +6,7 @@ import Header from '../Layout/CandidateHeader';
 import "./AddCandidateCompetency.css";
 import Swal from 'sweetalert2';
 import { BASE_URL } from "../../../ApiUrl";
-import { FaSpinner } from 'react-icons/fa';
+import { FaSpinner, FaArrowLeft } from 'react-icons/fa';
 
 const CompetenceForm = () => {
   const navigate = useNavigate();
@@ -389,24 +389,23 @@ const CompetenceForm = () => {
         
         <div className="ta-content-area">
           <div className="competence-form-wrapper">
-            {/* Header */}
-            <div className="competence-form-header">
-              <div>
-                <h2 className="competence-form-title">
-                  {mode === 'edit' ? 'Edit Competence' : 'Add New Competence'}
-                </h2>
-                <p className="competence-form-subtitle">
-                  {mode === 'edit' ? 'Update the competence details below' : 'Fill in the competence details below'}
-                </p>
-              </div>
-              <button 
-                className="competence-cancel-btn"
-                onClick={handleCancel}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-            </div>
+            
+            {/* Header with Back Button */}
+<div className="competence-form-header">
+  <div className="competence-header-left">
+    <button 
+      className="competence-back-btn"
+      onClick={handleCancel}
+    >
+      <FaArrowLeft /> Back
+    </button>
+    <div className="competence-header-text">
+      <h2 className="competence-form-title">
+        {mode === 'edit' ? 'Edit Competence' : 'Add New Competence'}
+      </h2>
+    </div>
+  </div>
+</div>
 
             {/* Form */}
             <div className="competence-form-container">
@@ -436,9 +435,6 @@ const CompetenceForm = () => {
                     {errors.competency_name && (
                       <div className="competence-error-message">{errors.competency_name}</div>
                     )}
-                    <small className="competence-field-hint">
-                      This field is auto-generated based on selected Department and Level
-                    </small>
                   </div>
                 </div>
 
@@ -496,16 +492,8 @@ const CompetenceForm = () => {
                     {errors.level && (
                       <div className="competence-error-message">{errors.level}</div>
                     )}
-                    <small className="competence-field-hint">
-                      Default: Level 0 (Trainee)
-                    </small>
                     {levels.length === 0 && (
                       <small className="text-warning">No levels available</small>
-                    )}
-                    {formData.level && (
-                      <small className="text-success d-block mt-1">
-                        Selected: {getCurrentLevelName()}
-                      </small>
                     )}
                   </div>
                 </div>

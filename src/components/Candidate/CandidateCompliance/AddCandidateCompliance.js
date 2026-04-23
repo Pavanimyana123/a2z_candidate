@@ -5,6 +5,7 @@ import Header from '../Layout/CandidateHeader';
 import "./AddCandidateCompliance.css";
 import Swal from 'sweetalert2';
 import { BASE_URL } from "../../../ApiUrl";
+import { FaSpinner, FaArrowLeft } from 'react-icons/fa';
 
 const AddCertificate = () => {
   const navigate = useNavigate();
@@ -472,16 +473,29 @@ const AddCertificate = () => {
         <div className="ccert-content-area">
           <div className="cert-add-wrapper">
             {/* Header */}
-            <div className="cert-add-header">
-              <div>
-                <h2>{isEditMode ? 'Edit Compliance Certificate' : 'Add Compliance Certificate'}</h2>
-                <p>
-                  {isEditMode 
-                    ? 'Update your compliance certificate details' 
-                    : 'Upload your compliance certificate and fill in the details below'}
-                </p>
-              </div>
-            </div>
+            {/* Header */}
+<div className="cert-add-header">
+  <div>
+    <div className="d-flex align-items-center gap-3">
+      <button 
+        type="button" 
+        className="btn btn-outline-secondary back-btn"
+        onClick={handleCancel}
+        aria-label="Go back"
+      >
+        <FaArrowLeft /> Back
+      </button>
+      <div>
+        <h2>{isEditMode ? 'Edit Compliance Certificate' : 'Add Compliance Certificate'}</h2>
+        <p>
+          {isEditMode 
+            ? 'Update your compliance certificate details' 
+            : 'Upload your compliance certificate and fill in the details below'}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
 
             {/* Error Message */}
             {error && <div className="cert-add-error alert alert-danger">{error}</div>}
@@ -614,24 +628,24 @@ const AddCertificate = () => {
                     {errors.document && (
                       <div className="invalid-feedback">{errors.document}</div>
                     )}
-                    <small className="text-muted">
+                    {/* <small className="text-muted">
                       Supported formats: PDF, JPG, JPEG, PNG, DOC, DOCX (Max size: 5MB)
                       {isEditMode && existingDocument && (
                         <span className="d-block mt-1 text-success">
                           Current document: {existingDocument.split('/').pop()}
                         </span>
                       )}
-                    </small>
+                    </small> */}
                   </div>
                 </div>
 
                 {/* Note */}
-                <div className="cert-add-note mb-4">
+                {/* <div className="cert-add-note mb-4">
                   <small className="text-muted">
                     Note: Fields marked with * are required. Please ensure all information is accurate.
                     The document will be reviewed by the mentor for approval.
                   </small>
-                </div>
+                </div> */}
 
                 {/* Form Actions */}
                 <div className="cert-add-actions">

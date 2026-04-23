@@ -203,3 +203,42 @@
     font-size: 16px;
   }
 }
+
+
+/* Back button styling */
+.back-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border-color: #dcdde1;
+  color: #2c3e50;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.back-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #95a5a6;
+  color: #2c3e50;
+}
+
+.back-btn i {
+  margin-right: 6px;
+}
+
+/* Gap utility */
+.gap-3 {
+  gap: 1rem !important;
+}
+
+/* Responsive adjustment for header with back button */
+@media (max-width: 768px) {
+  .cert-add-header .d-flex {
+    flex-wrap: wrap;
+  }
+  
+  .back-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+}

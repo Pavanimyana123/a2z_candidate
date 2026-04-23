@@ -15,8 +15,8 @@ import {
   FaUserTie,
   FaStar,
   FaCertificate,
-  FaCheck,
-  FaUserCheck
+  FaUserCheck,
+  FaUserPlus
 } from "react-icons/fa";
 import { BASE_URL } from "../../../ApiUrl";
 import "./CandidateMentorship.css";
@@ -29,11 +29,9 @@ const CandidateMentorship = () => {
   const [yourMentorDetails, setYourMentorDetails] = useState(null);
   const [departmentsMap, setDepartmentsMap] = useState({});
   const [levelsMap, setLevelsMap] = useState({});
-  const [selectedDepartment, setSelectedDepartment] = useState("");
-  const [selectedTargetLevel, setSelectedTargetLevel] = useState("");
   const [assignedMentors, setAssignedMentors] = useState([]);
-  const [assignedDepartments, setAssignedDepartments] = useState(new Set());
-  const [connectedMentorIds, setConnectedMentorIds] = useState(new Set());
+  const [assignedMentorIds, setAssignedMentorIds] = useState(new Set());
+  const [assignedMentorDepts, setAssignedMentorDepts] = useState({});
   const navigate = useNavigate();
 
   // Get candidate user ID from localStorage
@@ -79,25 +77,29 @@ const CandidateMentorship = () => {
       const result = await response.json();
       
       if (result.status && result.data) {
-        // Filter assignments for current candidate
+        // Filter assignments for current candidate with status 'active'
         const candidateAssignments = result.data.filter(
-          assignment => assignment.candidate.toString() === candidateId
+          assignment => assignment.candidate.toString() === candidateId && 
+                       assignment.status === 'active'
         );
         setAssignedMentors(candidateAssignments);
         
-        // Extract unique department names from assignments
-        const deptSet = new Set();
-        const mentorIdSet = new Set();
+        // Create a map of mentor ID to assigned department ID
+        const mentorDeptMap = {};
+        const mentorIds = new Set();
+        
         candidateAssignments.forEach(assignment => {
-          if (assignment.department_name) {
-            deptSet.add(assignment.department_name);
-          }
           if (assignment.mentor) {
-            mentorIdSet.add(assignment.mentor);
+            mentorIds.add(assignment.mentor);
+            // Store the department ID for this mentor assignment
+            if (assignment.department) {
+              mentorDeptMap[assignment.mentor] = assignment.department;
+            }
           }
         });
-        setAssignedDepartments(deptSet);
-        setConnectedMentorIds(mentorIdSet);
+        
+        setAssignedMentorIds(mentorIds);
+        setAssignedMentorDepts(mentorDeptMap);
         
         // If there are assignments, set the first one as "Your Mentor" and fetch details
         if (candidateAssignments.length > 0) {
@@ -127,7 +129,7 @@ const CandidateMentorship = () => {
       if (result.status && result.data) {
         const deptMap = {};
         result.data.forEach(dept => {
-          deptMap[dept.id] = dept.name;
+          deptMap[dept.id] = dept;
         });
         setDepartmentsMap(deptMap);
       }
@@ -169,24 +171,11 @@ const CandidateMentorship = () => {
       const result = await response.json();
       
       if (result.status && result.data) {
-        // Filter mentors to only show those whose department matches assigned department
-        let filteredMentors = result.data;
-        
-        if (assignedDepartments.size > 0) {
-          // Filter mentors who have specializations matching assigned departments
-          filteredMentors = result.data.filter(mentor => {
-            if (mentor.specializations && Array.isArray(mentor.specializations)) {
-              // Check if any of mentor's specializations match assigned departments
-              return mentor.specializations.some(specId => {
-                const deptName = departmentsMap[specId];
-                return deptName && assignedDepartments.has(deptName);
-              });
-            }
-            return false;
-          });
-        }
-        
-        setMentors(filteredMentors);
+        // Filter active mentors
+        const activeMentors = result.data.filter(mentor => 
+          mentor.mentorship_status === 'active' || mentor.mentorship_status === null
+        );
+        setMentors(activeMentors);
       } else {
         throw new Error(result.message || 'Failed to fetch mentors');
       }
@@ -203,34 +192,23 @@ const CandidateMentorship = () => {
       await fetchDepartments();
       await fetchLevels();
       await fetchMentorshipAssignments();
+      await fetchMentors();
     };
     loadData();
-  }, []);
+  }, [candidateId]);
 
-  useEffect(() => {
-    if (Object.keys(departmentsMap).length > 0) {
-      fetchMentors();
-    }
-  }, [assignedDepartments, departmentsMap]);
-
-  // Handle Connect button click
+  // Handle Connect button click - Always allow connection even if already assigned
   const handleConnect = (mentor) => {
-    // Get the first department from mentor's specializations or use selected department
-    const mentorDepartment = mentor.specializations && mentor.specializations.length > 0 
-      ? mentor.specializations[0] 
-      : selectedDepartment || "";
+    console.log('Connect clicked for mentor:', mentor);
     
-    // Get target level (use mentor's level or selected target level)
-    const targetLevel = mentor.mentor_level || selectedTargetLevel || "";
-
-    // Navigate to form with mentor data
+    // Navigate to find-mentor with selected mentor data
     navigate('/find-mentor', {
       state: {
         selectedMentor: {
           id: mentor.id,
           name: mentor.full_name,
-          department: mentorDepartment,
-          target_level: targetLevel,
+          department: mentor.specializations && mentor.specializations.length > 0 ? mentor.specializations[0] : "",
+          target_level: mentor.mentor_level || "",
           status: 'active',
           mentor_status: 'requested'
         },
@@ -239,15 +217,54 @@ const CandidateMentorship = () => {
     });
   };
 
-  // Get department names from IDs
-  const getDepartments = (departmentIds) => {
-    if (!departmentIds || !Array.isArray(departmentIds)) return [];
-    return departmentIds.map(id => departmentsMap[id] || `Department ${id}`).filter(Boolean);
+  // Handle Find a Mentor button click
+  const handleFindMentor = () => {
+    navigate('/find-mentor');
   };
 
-  // Check if mentor is already connected
-  const isMentorConnected = (mentorId) => {
-    return connectedMentorIds.has(mentorId);
+  // Get department names from IDs
+  const getDepartmentNames = (departmentIds) => {
+    if (!departmentIds || !Array.isArray(departmentIds)) return [];
+    return departmentIds
+      .map(id => departmentsMap[id]?.name || null)
+      .filter(Boolean);
+  };
+
+  // Get filtered specializations for a mentor (exclude already assigned department)
+  const getFilteredSpecializations = (mentor) => {
+    if (!mentor.specializations || mentor.specializations.length === 0) {
+      return [];
+    }
+    
+    const assignedDeptId = assignedMentorDepts[mentor.id];
+    
+    // If mentor is not assigned, show all specializations
+    if (!assignedDeptId) {
+      return mentor.specializations;
+    }
+    
+    // Filter out the assigned department
+    return mentor.specializations.filter(specId => specId !== assignedDeptId);
+  };
+
+  // Get filtered department names for display
+  const getFilteredDepartmentNames = (mentor) => {
+    const filteredSpecs = getFilteredSpecializations(mentor);
+    return filteredSpecs.map(id => departmentsMap[id]?.name || null).filter(Boolean);
+  };
+
+  // Check if mentor should be shown in available mentors
+  const shouldShowMentor = (mentor) => {
+    // Always show mentor if they have any specializations
+    // (even if assigned, they might have other specializations)
+    const filteredSpecs = getFilteredSpecializations(mentor);
+    return filteredSpecs.length > 0;
+  };
+
+  // Get the department name for an assigned mentor
+  const getAssignedDepartmentName = (mentorId) => {
+    const deptId = assignedMentorDepts[mentorId];
+    return deptId && departmentsMap[deptId] ? departmentsMap[deptId].name : 'N/A';
   };
 
   // Get level badge color
@@ -267,11 +284,11 @@ const CandidateMentorship = () => {
     if (!years) return 'N/A';
     const exp = parseFloat(years);
     if (exp === 1) return '1 year';
-    if (exp < 1) return `${exp * 12} months`;
+    if (exp < 1) return `${Math.round(exp * 12)} months`;
     return `${exp} years`;
   };
 
-  if (loading && assignedDepartments.size === 0) {
+  if (loading) {
     return (
       <div className="cm-layout-wrapper">
         <CandidateSidebar />
@@ -288,7 +305,7 @@ const CandidateMentorship = () => {
     );
   }
 
-  if (error && assignedDepartments.size === 0) {
+  if (error) {
     return (
       <div className="cm-layout-wrapper">
         <CandidateSidebar />
@@ -329,15 +346,15 @@ const CandidateMentorship = () => {
 
             <button 
               className="btn cm-primary-btn"
-              onClick={() => navigate('/find-mentor')}
+              onClick={handleFindMentor}
             >
               <FaUsers className="me-2" />
               Find a Mentor
             </button>
           </div>
 
-          {/* Your Mentor Section - Now with complete details */}
-          {yourMentor && yourMentorDetails && (
+          {/* Your Mentor Section - Show only if mentor is assigned */}
+          {yourMentor && yourMentorDetails ? (
             <div className="cm-card mb-4">
               <h5>Your Mentor</h5>
               <p className="cm-muted">Your assigned senior guide</p>
@@ -377,24 +394,12 @@ const CandidateMentorship = () => {
                       )}
                     </p>
 
-                    {/* Department Badge */}
+                    {/* Department Badge - Only show the assigned department */}
                     <div className="mb-2">
                       <span className="cm-department-badge">
-                        {yourMentor.department_name}
-                      </span>
-                      <span className="cm-target-level ms-2">
-                        Target: {yourMentor.target_level_name}
+                        {getAssignedDepartmentName(yourMentorDetails.id)}
                       </span>
                     </div>
-
-                    {/* Specializations/Departments */}
-                    {yourMentorDetails.specializations && yourMentorDetails.specializations.length > 0 && (
-                      <div className="cm-specializations mb-2">
-                        {getDepartments(yourMentorDetails.specializations).slice(0, 2).map((dept, idx) => (
-                          <span key={idx} className="cm-tag me-1">{dept}</span>
-                        ))}
-                      </div>
-                    )}
 
                     {/* Contact Info */}
                     <div className="cm-contact-info mb-2">
@@ -409,20 +414,6 @@ const CandidateMentorship = () => {
                         </span>
                       )}
                     </div>
-
-                    {/* Progress */}
-                    {/* <div className="cm-progress-info mt-2">
-                      <div className="d-flex justify-content-between mb-1">
-                        <small>Progress</small>
-                        <small>{yourMentor.completion_percentage || 0}%</small>
-                      </div>
-                      <div className="cm-progress-bar">
-                        <div 
-                          className="cm-progress-fill" 
-                          style={{ width: `${yourMentor.completion_percentage || 0}%` }}
-                        ></div>
-                      </div>
-                    </div> */}
                   </div>
                 </div>
 
@@ -464,24 +455,42 @@ const CandidateMentorship = () => {
                 </div>
               </div>
             </div>
+          ) : (
+            /* No Mentor Assigned Message */
+            <div className="cm-card text-center py-5 mb-4">
+              <FaUserCheck className="cm-empty-icon" />
+              <h5>No Mentor Assigned</h5>
+              <p className="cm-muted">
+                You don't have any mentor assigned yet. Please click "Find a Mentor" to request one.
+              </p>
+              <button 
+                className="btn cm-primary-btn mt-3"
+                onClick={handleFindMentor}
+              >
+                <FaUsers className="me-2" />
+                Find a Mentor
+              </button>
+            </div>
           )}
 
-          {/* Available Mentors - Only show those from assigned departments */}
-          {mentors.length > 0 && assignedDepartments.size > 0 && (
+          {/* Available Mentors Section */}
+          {mentors.length > 0 && (
             <div className="cm-card">
               <h5>Available Mentors</h5>
               <p className="cm-muted">
-                Senior professionals from {Array.from(assignedDepartments).join(', ')} department
+                Senior professionals you can connect with
               </p>
 
               <div className="row g-4 mt-2">
                 {mentors.map((mentor) => {
                   const mentorLevelBadge = getLevelBadge(mentor.mentor_level);
-                  const departments = getDepartments(mentor.specializations);
-                  const isConnected = isMentorConnected(mentor.id);
+                  const filteredDepartments = getFilteredDepartmentNames(mentor);
+                  const isAssigned = assignedMentorIds.has(mentor.id);
+                  const assignedDeptName = isAssigned ? getAssignedDepartmentName(mentor.id) : null;
+                  const showMentor = shouldShowMentor(mentor);
                   
-                  // Don't show the current mentor in available mentors list
-                  if (yourMentor && mentor.id === yourMentor.mentor) {
+                  // Skip if mentor has no additional specializations to show
+                  if (!showMentor) {
                     return null;
                   }
                   
@@ -493,40 +502,36 @@ const CandidateMentorship = () => {
                       name={mentor.full_name}
                       role={mentorLevelBadge.text}
                       company={mentor.current_company}
-                      departments={departments.slice(0, 2)}
+                      departments={filteredDepartments}
                       level={`Level ${mentor.mentor_level}`}
                       experience={formatExperience(mentor.years_of_experience)}
                       mentees={`${mentor.current_trainees || 0} mentees`}
                       backgroundVerified={mentor.background_verified}
                       mentorshipCertified={mentor.mentorship_certified}
-                      isConnected={isConnected}
+                      isAssigned={isAssigned}
+                      assignedDepartment={assignedDeptName}
                       onConnect={() => handleConnect(mentor)}
                     />
                   );
                 })}
               </div>
+              
+              {/* Show message if no mentors are displayed after filtering */}
+              {mentors.filter(mentor => shouldShowMentor(mentor)).length === 0 && (
+                <div className="text-center py-4">
+                  <p className="cm-muted">No additional mentors available at this time.</p>
+                </div>
+              )}
             </div>
           )}
 
           {/* No mentors available message */}
-          {mentors.length === 0 && assignedDepartments.size > 0 && (
+          {mentors.length === 0 && (
             <div className="cm-card text-center py-5">
               <FaUsers className="cm-empty-icon" />
               <h5>No Available Mentors</h5>
               <p className="cm-muted">
-                No mentors are currently available in your assigned departments.
-                Please check back later.
-              </p>
-            </div>
-          )}
-
-          {/* No assignment message */}
-          {assignedDepartments.size === 0 && (
-            <div className="cm-card text-center py-5">
-              <FaExclamationCircle className="cm-empty-icon" />
-              <h5>No Mentor Assigned</h5>
-              <p className="cm-muted">
-                You don't have any mentor assigned yet. Please contact your administrator.
+                No mentors are currently available. Please check back later.
               </p>
             </div>
           )}
@@ -550,7 +555,8 @@ const MentorCard = ({
   mentees,
   backgroundVerified,
   mentorshipCertified,
-  isConnected,
+  isAssigned,
+  assignedDepartment,
   onConnect
 }) => (
   <div className="col-lg-4 col-md-6">
@@ -578,9 +584,20 @@ const MentorCard = ({
         </div>
       </div>
 
-      {/* Departments */}
+      {/* Already Assigned Department Badge */}
+      {isAssigned && assignedDepartment && (
+        <div className="mt-2">
+          <span className="cm-assigned-badge">
+            <FaUserCheck className="me-1" size={10} />
+            Already assigned for: {assignedDepartment}
+          </span>
+        </div>
+      )}
+
+      {/* Available Departments (excluding assigned one) */}
       {departments.length > 0 && (
         <div className="mt-2">
+          <span className="cm-muted small me-2">Available for:</span>
           {departments.map((dept, idx) => (
             <span key={idx} className="cm-tag-light me-1">{dept}</span>
           ))}
@@ -606,14 +623,13 @@ const MentorCard = ({
       </div>
 
       <button 
-        className={`btn ${isConnected ? 'cm-connected-btn' : 'cm-connect-btn'} w-100 mt-3`}
+        className={`btn ${isAssigned ? 'cm-connect-again-btn' : 'cm-connect-btn'} w-100 mt-3`}
         onClick={onConnect}
-        disabled={isConnected}
       >
-        {isConnected ? (
+        {isAssigned ? (
           <>
-            <FaCheck className="me-2" />
-            Connected
+            <FaUserPlus className="me-2" />
+            Connect for Another Department
           </>
         ) : (
           'Connect'

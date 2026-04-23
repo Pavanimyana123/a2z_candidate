@@ -34,8 +34,11 @@ const CandidateSidebar = () => {
     }
   }, []);
 
-  const isActive = (path) => {
-    return location.pathname === path;
+  // Helper function to check if a path is active (including sub-routes)
+  const isActive = (paths) => {
+    // If a single string is passed, convert to array for uniform handling
+    const pathArray = Array.isArray(paths) ? paths : [paths];
+    return pathArray.some(path => location.pathname === path || location.pathname.startsWith(path + '/'));
   };
 
   // Handle logout
@@ -135,14 +138,14 @@ const CandidateSidebar = () => {
 
           <Link
             to="/candidate-digital"
-            className={`ta-menu-item ${isActive("/candidate-digital") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/candidate-digital", "/candidate/logbook/add"]) ? "active" : ""}`}
           >
             <FaBook /> Digital Logbook
           </Link>
 
           <Link
             to="/candidate-competence"
-            className={`ta-menu-item ${isActive("/candidate-competence") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/candidate-competence", "/add-competence"]) ? "active" : ""}`}
           >
             <FaCheckCircle /> Competency
           </Link>
@@ -161,14 +164,14 @@ const CandidateSidebar = () => {
 
           <Link
             to="/candidate-compliance"
-            className={`ta-menu-item ${isActive("/candidate-compliance") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/candidate-compliance", "/candidate-compliance/add-certificate"]) ? "active" : ""}`}
           >
             <FaShieldAlt /> Compliance & Safety
           </Link>
 
           <Link
             to="/candidate-certificate"
-            className={`ta-menu-item ${isActive("/candidate-certificate") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/candidate-certificate", "/candidate-certifications/add"]) ? "active" : ""}`}
           >
             <FaCertificate /> Certifications
           </Link>
@@ -187,7 +190,7 @@ const CandidateSidebar = () => {
 
           <Link
             to="/candidate-mentorship"
-            className={`ta-menu-item ${isActive("/candidate-mentorship") ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/candidate-mentorship", "/find-mentor"]) ? "active" : ""}`}
           >
             <FaUsers /> Mentorship
           </Link>

@@ -488,3 +488,85 @@
     width: 100%;
   }
 }
+
+
+/* Update these styles in your AddCandidateCompetency.css */
+
+/* Back Button */
+.competence-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px 8px 0;
+  background: none;
+  border: none;
+  color: #6c757d;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.competence-back-btn:hover {
+  color: #007bff;
+}
+
+.competence-back-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Header Styles */
+.competence-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.competence-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.competence-header-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.competence-form-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.competence-form-subtitle {
+  color: #6c757d;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Responsive styles */
+@media (max-width: 576px) {
+  .competence-header-left {
+    gap: 4px;
+  }
+  
+  .competence-back-btn {
+    padding: 8px 12px 8px 0;
+  }
+  
+  .competence-form-title {
+    font-size: 20px;
+  }
+  
+  .competence-form-subtitle {
+    font-size: 12px;
+  }
+}

@@ -92,39 +92,46 @@ const CandidateCompetencyProgression = () => {
   };
 
   // Fetch all competencies
-  const fetchAllCompetencies = async () => {
-    try {
-      const response = await fetch(`${BASE_URL}/api/candidate/competencies/`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const result = await response.json();
-      
-      if (result.status && result.data) {
-        setCompetencies(result.data);
-        
-        // Fetch evidence for all competencies
-        for (const comp of result.data) {
-          await fetchEvidenceForCompetency(comp.id);
-        }
-        
-        // Set default selected competency (first one or based on candidate)
-        if (result.data.length > 0) {
-          // Try to find a competency with the current candidate ID
-          const userCompetency = result.data.find(
-            comp => comp.candidate === parseInt(candidateId) || comp.candidate === candidateId
-          );
-          
-          const defaultCompetency = userCompetency || result.data[0];
-          setSelectedCompetencyId(defaultCompetency.id);
-          setCurrentCompetency(defaultCompetency);
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching competencies:', err);
-      throw err;
+  // Fetch all competencies
+const fetchAllCompetencies = async () => {
+  try {
+    const response = await fetch(`${BASE_URL}/api/candidate/competencies/`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  };
+    const result = await response.json();
+    
+    if (result.status && result.data) {
+      // ✅ FILTER: Only keep competencies with status === "validated"
+      const validatedCompetencies = result.data.filter(
+        comp => comp.status === "validated"
+      );
+      
+      setCompetencies(validatedCompetencies);
+      
+      // Fetch evidence for all validated competencies
+      for (const comp of validatedCompetencies) {
+        await fetchEvidenceForCompetency(comp.id);
+      }
+      
+      // Set default selected competency (first one or based on candidate)
+      if (validatedCompetencies.length > 0) {
+        // Try to find a competency with the current candidate ID
+        const userCompetency = validatedCompetencies.find(
+          comp => comp.candidate === parseInt(candidateId) || comp.candidate === candidateId
+        );
+        
+        const defaultCompetency = userCompetency || validatedCompetencies[0];
+        setSelectedCompetencyId(defaultCompetency.id);
+        setCurrentCompetency(defaultCompetency);
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching competencies:', err);
+    throw err;
+  }
+};
+
 
   // Handle competency selection change
   const handleCompetencyChange = (e) => {
