@@ -17,7 +17,7 @@ import {
   FaShieldAlt,
   FaFileAlt,
   FaBalanceScale,
-  FaHeartbeat as FaMedical
+  FaHeartbeat as FaMedical,
 } from "react-icons/fa";
 
 const Dashboard = () => {
@@ -62,6 +62,115 @@ const Dashboard = () => {
     navigate(path);
   };
 
+  const AnnouncementsCard = () => {
+    const [showForm, setShowForm] = useState(false);
+    const [announcements, setAnnouncements] = useState([]);
+    const [formData, setFormData] = useState({
+      title: "",
+      description: "",
+      expiry_date: "",
+    });
+
+    const handleChange = (e) => {
+      setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleAdd = () => {
+      if (!formData.title || !formData.description) return;
+
+      setAnnouncements([...announcements, { ...formData, id: Date.now() }]);
+
+      setFormData({ title: "", description: "", expiry_date: "" });
+      setShowForm(false);
+    };
+
+    return (
+      <div className="dashboard-card">
+        {/* Header */}
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h5 className="mb-0">Announcements</h5>
+
+          <div
+            className="announcement-add-btn"
+            onClick={() => setShowForm(!showForm)}
+          >
+            +
+          </div>
+        </div>
+
+        <hr />
+
+        {/* Form */}
+        {showForm && (
+          <div className="mb-3">
+            {/* Title */}
+            <div className="mb-2">
+              <label className="form-label fw-semibold">Title</label>
+              <input
+                type="text"
+                name="title"
+                className="form-control"
+                value={formData.title}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Description */}
+            <div className="mb-2">
+              <label className="form-label fw-semibold">Description</label>
+              <textarea
+                name="description"
+                className="form-control"
+                rows="3"
+                value={formData.description}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Expiry Date */}
+            <div className="mb-3">
+              <label className="form-label fw-semibold">Expiry Date</label>
+              <input
+                type="date"
+                name="expiry_date"
+                className="form-control"
+                value={formData.expiry_date}
+                onChange={handleChange}
+              />
+            </div>
+
+            {/* Button */}
+            <button className="btn btn-primary w-100" onClick={handleAdd}>
+              Add Announcement
+            </button>
+          </div>
+        )}
+
+        {/* List */}
+        {announcements.length === 0 ? (
+          <p className="text-muted">No announcements available</p>
+        ) : (
+          announcements.map((item) => (
+            <div key={item.id} className="d-flex mb-3">
+              <div className="announcement-avatar">
+                {item.title.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <strong>{item.title}</strong>
+                <p className="mb-1">{item.description}</p>
+                {item.expiry_date && (
+                  <small className="text-muted">
+                    Expires: {item.expiry_date}
+                  </small>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="ta-layout-wrapper">
       {/* Sidebar */}
@@ -83,32 +192,32 @@ const Dashboard = () => {
 
             {/* Top Stats - Only Candidates and Mentors cards */}
             {/* Top Stats */}
-<div className="dashboard-stats">
-  <StatCard 
-    title="Total Candidates" 
-    value={loading ? "Loading..." : candidatesCount} 
-    // trend="+12% from last month" 
-    icon={<FaUsers />} 
-    color="blue"
-    onClick={() => handleCardClick("/candidate")}
-  />
+            <div className="dashboard-stats">
+              <StatCard
+                title="Total Candidates"
+                value={loading ? "Loading..." : candidatesCount}
+                // trend="+12% from last month"
+                icon={<FaUsers />}
+                color="blue"
+                onClick={() => handleCardClick("/candidate")}
+              />
 
-  <StatCard 
-    title="Total Mentors" 
-    value={loading ? "Loading..." : mentorsCount} 
-    // trend="+3 from last month" 
-    icon={<FaUserTie />} 
-    color="green"
-    onClick={() => handleCardClick("/mentor")}
-  />
+              <StatCard
+                title="Total Mentors"
+                value={loading ? "Loading..." : mentorsCount}
+                // trend="+3 from last month"
+                icon={<FaUserTie />}
+                color="green"
+                onClick={() => handleCardClick("/mentor")}
+              />
 
-  <StatCard 
-    title="Compliance Alerts" 
-    value="7" 
-    icon={<FaExclamationTriangle />} 
-    color="red"
-  />
-</div>
+              <StatCard
+                title="Compliance Alerts"
+                value="7"
+                icon={<FaExclamationTriangle />}
+                color="red"
+              />
+            </div>
 
             {/* Bottom Section */}
             <div className="row g-4 mt-2">
@@ -128,7 +237,10 @@ const Dashboard = () => {
                     <div className="level-row" key={label}>
                       <span>{label}</span>
                       <div className="level-bar">
-                        <div className={`level-fill ${color}`} style={{ width: `${(value / 82) * 100}%` }} />
+                        <div
+                          className={`level-fill ${color}`}
+                          style={{ width: `${(value / 82) * 100}%` }}
+                        />
                       </div>
                       <strong>{value}</strong>
                     </div>
@@ -141,10 +253,30 @@ const Dashboard = () => {
                 <div className="dashboard-card">
                   <h5 className="card-title mb-3">Compliance Alerts</h5>
 
-                  <AlertItem icon={<FaMedical />} text="Medical Certificates Expiring" count="5" color="red" />
-                  <AlertItem icon={<FaShieldAlt />} text="Safety Induction Due" count="8" color="orange" />
-                  <AlertItem icon={<FaFileAlt />} text="Missing Documentation" count="3" color="yellow" />
-                  <AlertItem icon={<FaBalanceScale />} text="Ethics Compliance Review" count="2" color="gray" />
+                  <AlertItem
+                    icon={<FaMedical />}
+                    text="Medical Certificates Expiring"
+                    count="5"
+                    color="red"
+                  />
+                  <AlertItem
+                    icon={<FaShieldAlt />}
+                    text="Safety Induction Due"
+                    count="8"
+                    color="orange"
+                  />
+                  <AlertItem
+                    icon={<FaFileAlt />}
+                    text="Missing Documentation"
+                    count="3"
+                    color="yellow"
+                  />
+                  <AlertItem
+                    icon={<FaBalanceScale />}
+                    text="Ethics Compliance Review"
+                    count="2"
+                    color="gray"
+                  />
                 </div>
               </div>
             </div>
@@ -199,7 +331,7 @@ const Dashboard = () => {
               </div>
 
               {/* System Status */}
-              <div className="col-lg-6">
+              {/* <div className="col-lg-6">
                 <div className="dashboard-card dash-system-status">
                   <h5 className="card-title">System Status</h5>
 
@@ -223,6 +355,10 @@ const Dashboard = () => {
                     <span className="dash-status-pill green">Up to date</span>
                   </div>
                 </div>
+              </div> */}
+
+              <div className="col-lg-6">
+                <AnnouncementsCard />
               </div>
             </div>
           </div>
@@ -237,7 +373,7 @@ const Dashboard = () => {
 /* ---- Components ---- */
 
 const StatCard = ({ title, value, trend, icon, color, onClick }) => (
-  <div 
+  <div
     className="stat-card-wrapper"
     onClick={onClick}
     style={{ cursor: onClick ? "pointer" : "default" }}

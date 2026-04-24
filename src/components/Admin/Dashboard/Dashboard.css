@@ -219,6 +219,44 @@
   min-height: 110px;
 }
 
+
+.announcement-avatar {
+  width: 40px;
+  height: 40px;
+  background-color: #8d6e63;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.dashboard-card h5 {
+  font-weight: 600;
+}
+
+
+.announcement-add-btn {
+  width: 60px;
+  height: 30px;
+  border: 1.5px solid #ff4d4f;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff4d4f;
+  font-size: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.announcement-add-btn:hover {
+  background-color: #ff4d4f;
+  color: #fff;
+}
 /* Responsive */
 
 @media (max-width: 992px) {
