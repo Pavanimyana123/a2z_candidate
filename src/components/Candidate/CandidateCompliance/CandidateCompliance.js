@@ -158,9 +158,9 @@ const CandidateComplianceDashboard = () => {
                 >
                   <FaPlus className="me-1" /> Add Certificate
                 </button>
-                <button className="btn ccd-review-btn">
+                {/* <button className="btn ccd-review-btn">
                   Schedule Review
-                </button>
+                </button> */}
               </div>
             </div>
 

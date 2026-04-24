@@ -181,12 +181,12 @@ const CandidateSidebar = () => {
         <div className="ta-menu-section">
           <p className="ta-menu-title">DEVELOPMENT</p>
 
-          <Link
+          {/* <Link
             to="/candidate-learning"
             className={`ta-menu-item ${isActive("/candidate-learning") ? "active" : ""}`}
           >
             <FaGraduationCap /> Learning
-          </Link>
+          </Link> */}
 
           <Link
             to="/candidate-mentorship"
