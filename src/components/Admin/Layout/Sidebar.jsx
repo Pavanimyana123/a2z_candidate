@@ -18,7 +18,8 @@ import {
   FaEnvelope,
   FaBook,
   FaStar,
-  FaIdCard
+  FaIdCard,
+  FaBullhorn
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import "./Sidebar.css";
@@ -207,6 +208,14 @@ const Sidebar = () => {
           >
             <FaCertificate /> Certifications
           </Link>
+
+          <Link
+            to="/announcements"
+            className={`ta-menu-item ${isActive(["/announcements", "/add-announcement"]) ? "active" : ""}`}
+          >
+            <FaBullhorn /> Announcements
+          </Link>
+
 
           {/* <Link
             to="/learning"

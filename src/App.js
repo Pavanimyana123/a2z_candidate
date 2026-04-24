@@ -30,6 +30,10 @@ import SystemSettings from "./components/Admin/SystemSettings/SystemSettings";
 import EmailSettings from "./components/Admin/EmailSettings/EmailSettings";
 import AddEmailSettings from "./components/Admin/EmailSettings/AddEmailSettings";
 
+import Announcements from './components/Admin/AdminAnnouncements/AdminAnnouncements';
+import AddAnnouncement from './components/Admin/AdminAnnouncements/AddAnnouncements';
+
+
 import CandidateLayout from "./components/Candidate/Layout/CandidateLayout";
 import MentorLayout from "./components/Mentor/Layout/MentorLayout";
 import MentorDashboard from "./components/Mentor/MentorDashboard/MentorDashboard";
@@ -119,6 +123,11 @@ function App() {
           path="/admin-professional-identity"
           element={<AdminProfessionalIdentity />}
         />
+
+        <Route path="/announcements" element={<Announcements />} />
+        <Route path="/add-announcement" element={<AddAnnouncement />} />
+        <Route path="/add-announcement/:id" element={<AddAnnouncement />} />
+
 
         <Route path="/mentor-dashboard" element={<MentorDashboard />} />
         <Route
