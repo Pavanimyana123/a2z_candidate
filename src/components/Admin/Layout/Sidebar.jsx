@@ -163,7 +163,7 @@ const Sidebar = () => {
 
           <Link
             to="/level"
-            className={`ta-menu-item ${isActive(["/level", "/levels/add"]) ? "active" : ""}`}
+            className={`ta-menu-item ${isActive(["/level", "/level/add"]) ? "active" : ""}`}
           >
             <FaLayerGroup /> Levels Management
           </Link>

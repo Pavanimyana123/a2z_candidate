@@ -81,7 +81,7 @@ const CandidateDigitalLogbook = () => {
   };
 
   const handleEdit = (entryId) => {
-    navigate(`/candidate/logbook/edit/${entryId}`);
+    navigate(`/candidate/logbook/add/${entryId}`);
   };
 
   const handleDelete = async (entryId, entryTitle) => {

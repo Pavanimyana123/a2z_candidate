@@ -274,7 +274,7 @@ const CandidateCertifications = () => {
   };
 
   const handleEditCertificate = (certId) => {
-    navigate(`/candidate-certifications/edit/${certId}`);
+    navigate(`/candidate-certifications/add/${certId}`);
   };
 
   const handleDeleteCertificate = async (certId, certName) => {

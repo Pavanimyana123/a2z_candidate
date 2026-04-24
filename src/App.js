@@ -88,14 +88,14 @@ function App() {
              <Route path="/add-mentor" element={<AddMentor />} />
                <Route path="/add-mentor/:id" element={<AddMentor />} />
             <Route path="/level" element={<LevelsManagement />} />
-            <Route path="/levels/add" element={<AddLevel />} />
-            <Route path="/levels/edit/:id" element={<AddLevel />} />
+            <Route path="/level/add" element={<AddLevel />} />
+            <Route path="/level/edit/:id" element={<AddLevel />} />
             <Route path="/department" element={<DepartmentManagement />} />
             <Route path="/department/add" element={<AddDepartment />} />
             <Route path="/department/edit/:id" element={<AddDepartment />} />
             <Route path="/department-level" element={<DepartmentLevel />} />
             <Route path="/add-department-level" element={<AddDepartmentLevel />} />
-             <Route path="/edit-department-level/:id" element={<AddDepartmentLevel />} />
+             <Route path="/add-department-level/:id" element={<AddDepartmentLevel />} />
             <Route path="/rotation" element={<RotationProgram />} />
             <Route path="/admin-competency" element={<AdminCompetency />} />
             <Route path="/admin-add-competency" element={<AddAdminCompetency />} />
@@ -137,7 +137,7 @@ function App() {
               <Route path="/candidate-professionality" element={<CandidateProfessionalIdentity />} />
               <Route path="/candidate-digital" element={<CandidateDigitalLogbook />} />
               <Route path="/candidate/logbook/add" element={<AddLogbookEntry />} />
-              <Route path="/candidate/logbook/edit/:id" element={<AddLogbookEntry />} />
+              <Route path="/candidate/logbook/add/:id" element={<AddLogbookEntry />} />
               <Route path="/candidate/logbook/:id" element={<CandidateDigitalLogbookDetails />} />
                <Route path="/candidate-competence" element={<CandidateCompetency />} />
                <Route path="/add-competence" element={<CompetenceForm />} />
@@ -149,7 +149,7 @@ function App() {
                <Route path="/candidate-compliance/edit-certificate/:id" element={<AddComplianceCertificate />} />
                 <Route path="/candidate-certificate" element={<CandidateCertifications />} />
                  <Route path="/candidate-certifications/add" element={<AddCandidateCertificate />} />
-                <Route path="/candidate-certifications/edit/:id" element={<AddCandidateCertificate />} />
+                <Route path="/candidate-certifications/add/:id" element={<AddCandidateCertificate />} />
                  <Route path="/candidate-learning" element={<CandidateLearning />} />
                  <Route path="/candidate-mentorship" element={<CandidateMentorship />} />
                  <Route path="/find-mentor" element={<FindMentor />} />

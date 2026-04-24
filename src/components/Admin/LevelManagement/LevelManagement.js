@@ -39,11 +39,11 @@ const LevelsManagement = () => {
   };
 
   const handleAddLevel = () => {
-    navigate('/levels/add');
+    navigate('/level/add');
   };
 
   const handleEditLevel = (levelId) => {
-    navigate(`/levels/edit/${levelId}`);
+    navigate(`/level/edit/${levelId}`);
   };
 
   const handleDeleteLevel = async (levelId, levelName) => {

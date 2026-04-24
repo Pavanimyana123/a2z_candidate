@@ -94,7 +94,7 @@ const DepartmentLevel = () => {
 
   const handleEdit = (id) => {
     // Navigate to edit page with the id
-    navigate(`/edit-department-level/${id}`);
+    navigate(`/add-department-level/${id}`);
   };
 
   const handleDelete = async (id, departmentName, levelName) => {
