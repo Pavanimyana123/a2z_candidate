@@ -40,8 +40,11 @@ const MentorSidebar = () => {
   }, []);
 
   const isActive = (path) => {
-    return location.pathname === path;
-  };
+  if (Array.isArray(path)) {
+    return path.includes(location.pathname);
+  }
+  return location.pathname === path;
+};
 
   // Handle logout
   const handleLogout = () => {
