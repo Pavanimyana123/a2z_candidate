@@ -11,6 +11,7 @@ import {
   FaUsers,
   FaSignOutAlt,
   FaUserCircle,
+  FaBullhorn,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import "./Sidebar.css";
@@ -38,7 +39,10 @@ const CandidateSidebar = () => {
   const isActive = (paths) => {
     // If a single string is passed, convert to array for uniform handling
     const pathArray = Array.isArray(paths) ? paths : [paths];
-    return pathArray.some(path => location.pathname === path || location.pathname.startsWith(path + '/'));
+    return pathArray.some(
+      (path) =>
+        location.pathname === path || location.pathname.startsWith(path + "/"),
+    );
   };
 
   // Handle logout
@@ -174,6 +178,13 @@ const CandidateSidebar = () => {
             className={`ta-menu-item ${isActive(["/candidate-certificate", "/candidate-certifications/add"]) ? "active" : ""}`}
           >
             <FaCertificate /> Certifications
+          </Link>
+
+          <Link
+            to="/candidate-announcements"
+            className={`ta-menu-item ${isActive(["/candidate-announcements", "/candidate-add-announcement"]) ? "active" : ""}`}
+          >
+            <FaBullhorn /> Announcements
           </Link>
         </div>
 

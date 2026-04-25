@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "../Layout/Sidebar";
-import Header from "../Layout/Header";
+import Sidebar from "../Layout/MentorSidebar";
+import Header from "../Layout/MentorHeader";
 import "./Announcements.css";
 import { FaSearch, FaEdit, FaTrash } from "react-icons/fa";
 import Swal from "sweetalert2";
@@ -19,49 +19,59 @@ const Announcements = () => {
     fetchAnnouncements();
   }, []);
 
-  const fetchAnnouncements = async () => {
-    try {
-      setLoading(true);
+const fetchAnnouncements = async () => {
+  try {
+    setLoading(true);
 
-      const response = await fetch(`${BASE_URL}/api/admin/news-announcements/`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log("Announcements API Response:", result);
-
-      let fetchedData = [];
-      if (result.status && result.data) {
-        fetchedData = result.data;
-      } else if (Array.isArray(result)) {
-        fetchedData = result;
-      }
-
-      setAnnouncements(fetchedData);
-      setError(null);
-    } catch (err) {
-      console.error("Error fetching announcements:", err);
-
-      setError("Failed to load announcements");
-      setAnnouncements([]);
-
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "Failed to fetch announcements. Please try again.",
-      });
-    } finally {
-      setLoading(false);
+    const response = await fetch(`${BASE_URL}/api/admin/news-announcements/`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  };
+
+    const result = await response.json();
+    console.log("Announcements API Response:", result);
+
+    let fetchedData = [];
+    if (result.status && result.data) {
+      fetchedData = result.data;
+    } else if (Array.isArray(result)) {
+      fetchedData = result;
+    }
+
+    // ✅ Get mentor user
+    const mentorUser = JSON.parse(localStorage.getItem("mentor_user"));
+
+    // ✅ Filter announcements based on author_type
+    const filteredData = mentorUser
+      ? fetchedData.filter(
+          (item) => item.author_type === mentorUser.user_type
+        )
+      : fetchedData;
+
+    setAnnouncements(filteredData);
+    setError(null);
+  } catch (err) {
+    console.error("Error fetching announcements:", err);
+
+    setError("Failed to load announcements");
+    setAnnouncements([]);
+
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Failed to fetch announcements. Please try again.",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleAddAnnouncement = () => {
-    navigate("/add-announcement");
+    navigate("/mentor-add-announcement");
   };
 
   const handleEdit = (id) => {
-    navigate(`/add-announcement/${id}`);
+    navigate(`/mentor-add-announcement/${id}`);
   };
 
   const handleDelete = async (id, title) => {
@@ -192,8 +202,6 @@ const Announcements = () => {
                     <th>Content Type</th>
                     <th>Priority</th>
                     <th>Target Audience</th>
-                    <th>Author</th>
-                    <th>Status</th>
                     <th>Date</th>
                     <th>Actions</th>
                   </tr>
@@ -253,21 +261,6 @@ const AUDIENCE_LABELS = {
   specific_level: "Specific Level",
 };
 
-const STATUS_LABELS = {
-  draft: "Draft",
-  pending_approval: "Pending Approval",
-  approved: "Approved",
-  published: "Published",
-  rejected: "Rejected",
-  archived: "Archived",
-};
-
-const AUTHOR_TYPE_LABELS = {
-  admin: "Admin",
-  mentor: "Mentor",
-  candidate: "Candidate",
-}
-
 /* Row Component */
 const AnnouncementRow = ({ announcement, formatDate, onEdit, onDelete }) => {
   const truncate = (text, len = 100) =>
@@ -289,16 +282,6 @@ const AnnouncementRow = ({ announcement, formatDate, onEdit, onDelete }) => {
       </td>
       <td>
         {AUDIENCE_LABELS[announcement.target_audience] ||
-          announcement.target_audience ||
-          "N/A"}
-      </td>
-      <td>
-        {AUTHOR_TYPE_LABELS[announcement.author_type] ||
-          announcement.target_audience ||
-          "N/A"}
-      </td>
-      <td>
-        {STATUS_LABELS[announcement.status] ||
           announcement.target_audience ||
           "N/A"}
       </td>

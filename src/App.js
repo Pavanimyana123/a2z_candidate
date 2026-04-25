@@ -50,6 +50,8 @@ import MentorFeedback from "./components/Mentor/MentorFeedback/MentorFeedback";
 import MentorReports from "./components/Mentor/MentorReports/MentorReports";
 import MentorCertificatesPage from "./components/Mentor/MentorCertificates/MentorCertificates";
 import ProgressionManagement from "./components/Mentor/ProgressionManagement/ProgressionManagement";
+import MentorAnnouncements from './components/Mentor/MentorAnnouncements/MentorAnnouncements';
+import MentorAddAnnouncement from './components/Mentor/MentorAnnouncements/AddAnnouncements';
 
 import CandidateDashboard from "./components/Candidate/CandidateDasboard/CandidateDashboard";
 import CandidateProfessionalIdentity from "./components/Candidate/CandidateProfessionality/CandidateProfessionality";
@@ -70,6 +72,9 @@ import Learning from "./components/Admin/Learning/Learning";
 import AddLearning from "./components/Admin/Learning/AddLearning";
 import AdminProfessionalIdentity from "./components/Admin/AdminProfessionalIdentity/AdminProfessionalIdentity";
 import MentorProfessionalIdentity from "./components/Mentor/MentorProfessionalIdentity/MentorProfessionalIdentity";
+
+import CandidateAnnouncements from './components/Candidate/CandidateAnnouncements/CandidateAnnouncements';
+import CandidateAddAnnouncement from './components/Candidate/CandidateAnnouncements/AddAnnouncements';
 
 function App() {
   return (
@@ -160,6 +165,10 @@ function App() {
           element={<ProgressionManagement />}
         />
 
+        <Route path="/mentor-announcements" element={<MentorAnnouncements />} />
+        <Route path="/mentor-add-announcement" element={<MentorAddAnnouncement />} />
+        <Route path="/mentor-add-announcement/:id" element={<MentorAddAnnouncement />} />
+
         <Route path="/candidate-dashboard" element={<CandidateDashboard />} />
         <Route
           path="/candidate-professionality"
@@ -207,6 +216,10 @@ function App() {
         <Route path="/candidate-learning" element={<CandidateLearning />} />
         <Route path="/candidate-mentorship" element={<CandidateMentorship />} />
         <Route path="/find-mentor" element={<FindMentor />} />
+
+         <Route path="/candidate-announcements" element={<CandidateAnnouncements />} />
+        <Route path="/candidate-add-announcement" element={<CandidateAddAnnouncement />} />
+        <Route path="/candidate-add-announcement/:id" element={<CandidateAddAnnouncement />} />
       </Routes>
     </Router>
   );

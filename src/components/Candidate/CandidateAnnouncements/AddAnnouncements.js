@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import Sidebar from "../Layout/Sidebar";
-import Header from "../Layout/Header";
+import Sidebar from "../Layout/CandidateSidebar";
+import Header from "../Layout/CandidateHeader";
 import "./AddAnnouncements.css";
 import Swal from "sweetalert2";
 import { BASE_URL } from "../../../ApiUrl";
@@ -418,8 +418,8 @@ const AddAnnouncement = () => {
 
     try {
       // ✅ Get author_id
-      const adminUser = JSON.parse(localStorage.getItem("admin_user"));
-      const author_id = Number(adminUser?.user_id);
+      const candidateUser = JSON.parse(localStorage.getItem("candidate_user"));
+      const author_id = Number(candidateUser?.user_id);
 
       if (!author_id) {
         throw new Error("User not found. Please login again.");
@@ -432,7 +432,7 @@ const AddAnnouncement = () => {
         content_type: formData.content_type,
         priority: formData.priority,
         target_audience: formData.target_audience,
-        author_type: "admin",
+        author_type: "candidate",
         author_id: author_id,
         status: isEditMode ? formData.status : status,
         expires_at: formData.expires_at
@@ -497,7 +497,7 @@ const AddAnnouncement = () => {
           showConfirmButton: false,
         });
 
-        navigate("/announcements");
+        navigate("/candidate-announcements");
         return;
       }
 
@@ -514,7 +514,7 @@ const AddAnnouncement = () => {
           showConfirmButton: false,
         });
 
-        navigate("/announcements");
+        navigate("/candidate-announcements");
         return;
       }
 
@@ -558,7 +558,7 @@ const AddAnnouncement = () => {
   };
 
   const handleCancel = () => {
-    navigate("/announcements");
+    navigate("/candidate-announcements");
   };
 
   if (fetchLoading) {
@@ -704,7 +704,7 @@ const AddAnnouncement = () => {
                     </select>
                   </div>
 
-                  {isEditMode && (
+                  {/* {isEditMode && (
                     <div className="col-md-4 mb-3">
                       <label className="form-label">Status *</label>
                       <select
@@ -729,7 +729,7 @@ const AddAnnouncement = () => {
                         <option value="archived">Archived</option>
                       </select>
                     </div>
-                  )}
+                  )} */}
 
                   {/* Target Audience */}
                   <div className="col-md-4 mb-3">

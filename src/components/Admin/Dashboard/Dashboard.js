@@ -25,144 +25,128 @@ const Dashboard = () => {
   const [candidatesCount, setCandidatesCount] = useState(0);
   const [mentorsCount, setMentorsCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [announcements, setAnnouncements] = useState([]);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   // Fetch candidates count
+
+  const fetchCandidates = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/candidate/candidates/`);
+      const data = await response.json();
+      if (data.status && data.data) {
+        setCandidatesCount(data.data.length);
+      }
+    } catch (error) {
+      console.error("Error fetching candidates:", error);
+    }
+  };
+
+  const fetchMentors = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/mentor/mentors/`);
+      const data = await response.json();
+      if (data.status && data.data) {
+        setMentorsCount(data.data.length);
+      }
+    } catch (error) {
+      console.error("Error fetching mentors:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAnnouncements = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/admin/news-announcements/`);
+      const data = await response.json();
+
+      if (data.status && data.data) {
+        setAnnouncements(data.data);
+      } else if (Array.isArray(data)) {
+        setAnnouncements(data);
+      }
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+    }
+  };
   useEffect(() => {
-    const fetchCandidates = async () => {
-      try {
-        const response = await fetch(`${BASE_URL}/api/candidate/candidates/`);
-        const data = await response.json();
-        if (data.status && data.data) {
-          setCandidatesCount(data.data.length);
-        }
-      } catch (error) {
-        console.error("Error fetching candidates:", error);
-      }
-    };
-
-    const fetchMentors = async () => {
-      try {
-        const response = await fetch(`${BASE_URL}/api/mentor/mentors/`);
-        const data = await response.json();
-        if (data.status && data.data) {
-          setMentorsCount(data.data.length);
-        }
-      } catch (error) {
-        console.error("Error fetching mentors:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchCandidates();
     fetchMentors();
+    fetchAnnouncements();
   }, []);
 
   const handleCardClick = (path) => {
     navigate(path);
   };
 
+  const handleOpenModal = (item) => {
+    setSelectedAnnouncement(item);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedAnnouncement(null);
+  };
+
+  const CONTENT_TYPE_LABELS = {
+    news: "News",
+    announcement: "Announcement",
+    incident_report: "Incident Report",
+    circular: "Circular",
+    notice: "Notice",
+    alert: "Alert",
+    update: "Update",
+  };
+
+  const PRIORITY_LABELS = {
+    low: "Low",
+    medium: "Medium",
+    high: "High",
+    urgent: "Urgent",
+  };
+
+  const AUDIENCE_LABELS = {
+    all: "All Users",
+    admin_only: "Admin Only",
+    mentor_only: "Mentor Only",
+    candidate_only: "Candidate Only",
+    specific_department: "Specific Department",
+    specific_level: "Specific Level",
+  };
+
+  const formatDate = (date) => {
+    if (!date) return "N/A";
+    return new Date(date).toLocaleDateString();
+  };
+
   const AnnouncementsCard = () => {
-    const [showForm, setShowForm] = useState(false);
-    const [announcements, setAnnouncements] = useState([]);
-    const [formData, setFormData] = useState({
-      title: "",
-      description: "",
-      expiry_date: "",
-    });
-
-    const handleChange = (e) => {
-      setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const handleAdd = () => {
-      if (!formData.title || !formData.description) return;
-
-      setAnnouncements([...announcements, { ...formData, id: Date.now() }]);
-
-      setFormData({ title: "", description: "", expiry_date: "" });
-      setShowForm(false);
-    };
-
     return (
       <div className="dashboard-card">
-        {/* Header */}
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5 className="mb-0">Announcements</h5>
-
-          <div
-            className="announcement-add-btn"
-            onClick={() => setShowForm(!showForm)}
-          >
-            +
-          </div>
+          <h5 className="mb-0">News/Announcements</h5>
         </div>
 
         <hr />
 
-        {/* Form */}
-        {showForm && (
-          <div className="mb-3">
-            {/* Title */}
-            <div className="mb-2">
-              <label className="form-label fw-semibold">Title</label>
-              <input
-                type="text"
-                name="title"
-                className="form-control"
-                value={formData.title}
-                onChange={handleChange}
-              />
-            </div>
-
-            {/* Description */}
-            <div className="mb-2">
-              <label className="form-label fw-semibold">Description</label>
-              <textarea
-                name="description"
-                className="form-control"
-                rows="3"
-                value={formData.description}
-                onChange={handleChange}
-              />
-            </div>
-
-            {/* Expiry Date */}
-            <div className="mb-3">
-              <label className="form-label fw-semibold">Expiry Date</label>
-              <input
-                type="date"
-                name="expiry_date"
-                className="form-control"
-                value={formData.expiry_date}
-                onChange={handleChange}
-              />
-            </div>
-
-            {/* Button */}
-            <button className="btn btn-primary w-100" onClick={handleAdd}>
-              Add Announcement
-            </button>
-          </div>
-        )}
-
-        {/* List */}
         {announcements.length === 0 ? (
           <p className="text-muted">No announcements available</p>
         ) : (
           announcements.map((item) => (
-            <div key={item.id} className="d-flex mb-3">
-              <div className="announcement-avatar">
-                {item.title.charAt(0).toUpperCase()}
+            <div key={item.id} className="d-flex align-items-center mb-3">
+              <div className="announcement-avatar me-2">
+                {item.title?.charAt(0).toUpperCase()}
               </div>
-              <div>
-                <strong>{item.title}</strong>
-                <p className="mb-1">{item.description}</p>
-                {item.expiry_date && (
-                  <small className="text-muted">
-                    Expires: {item.expiry_date}
-                  </small>
-                )}
+
+              <div className="flex-grow-1">
+                <strong
+                  style={{ cursor: "pointer", color: "#040c3b" }}
+                  onClick={() => handleOpenModal(item)}
+                >
+                  {item.title}
+                </strong>
               </div>
             </div>
           ))
@@ -360,6 +344,64 @@ const Dashboard = () => {
               <div className="col-lg-6">
                 <AnnouncementsCard />
               </div>
+
+              {/* ✅ Modal MUST be inside return */}
+              {showModal && selectedAnnouncement && (
+                <div className="modal fade show d-block" tabIndex="-1">
+                  <div className="modal-dialog">
+                    <div className="modal-content">
+                      <div className="modal-header">
+                        <h5 className="modal-title">News/Announcements</h5>
+                        <button
+                          className="btn-close"
+                          onClick={handleCloseModal}
+                        ></button>
+                      </div>
+
+                      <div className="modal-body">
+                        <div className="mb-2">
+                          <strong>Title:</strong>{" "}
+                          {selectedAnnouncement.title || "N/A"}
+                        </div>
+                        <div className="mb-2">
+                          <strong>Content:</strong>{" "}
+                          {selectedAnnouncement.content || "N/A"}
+                        </div>
+                        <div className="mb-2">
+                          <strong>Content Type:</strong>{" "}
+                          {CONTENT_TYPE_LABELS[
+                            selectedAnnouncement.content_type
+                          ] || "N/A"}
+                        </div>
+                        <div className="mb-2">
+                          <strong>Priority:</strong>{" "}
+                          {PRIORITY_LABELS[selectedAnnouncement.priority] ||
+                            "N/A"}
+                        </div>
+                        <div className="mb-2">
+                          <strong>Target Audience:</strong>{" "}
+                          {AUDIENCE_LABELS[
+                            selectedAnnouncement.target_audience
+                          ] || "N/A"}
+                        </div>
+                        <div className="mb-2">
+                          <strong>Date:</strong>{" "}
+                          {formatDate(selectedAnnouncement.created_at)}
+                        </div>
+                      </div>
+
+                      {/* <div className="modal-footer">
+                        <button
+                          className="btn btn-secondary"
+                          onClick={handleCloseModal}
+                        >
+                          Close
+                        </button>
+                      </div> */}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -367,10 +409,6 @@ const Dashboard = () => {
     </div>
   );
 };
-
-/* ---- Components ---- */
-
-/* ---- Components ---- */
 
 const StatCard = ({ title, value, trend, icon, color, onClick }) => (
   <div

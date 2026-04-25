@@ -14,7 +14,8 @@ import {
   FaUser,
   FaUserPlus,
   FaCertificate,
-  FaIdCard
+  FaIdCard,
+  FaBullhorn,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import "./Sidebar.css";
@@ -185,11 +186,18 @@ const MentorSidebar = () => {
           </Link>
 
           <Link
-              to="/mentor-certificates"
-              className={`ta-menu-item ${isActive("/mentor-certificates") ? "active" : ""}`}
-            >
-              <FaCertificate /> Certifications
-            </Link>
+            to="/mentor-certificates"
+            className={`ta-menu-item ${isActive("/mentor-certificates") ? "active" : ""}`}
+          >
+            <FaCertificate /> Certifications
+          </Link>
+
+          <Link
+            to="/mentor-announcements"
+            className={`ta-menu-item ${isActive(["/mentor-announcements", "/mentor-add-announcement"]) ? "active" : ""}`}
+          >
+            <FaBullhorn /> Announcements
+          </Link>
 
           <Link
             to="/mentor-feedback"
