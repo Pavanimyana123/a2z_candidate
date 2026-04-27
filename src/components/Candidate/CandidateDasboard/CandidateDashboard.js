@@ -1,4 +1,4 @@
-// CandidateDashboard.jsx (Updated with dynamic user data + announcements)
+// CandidateDashboard.jsx (Updated - News & Announcements below Competency Level)
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CandidateSidebar from "../Layout/CandidateSidebar";
@@ -65,13 +65,11 @@ const CandidateDashboard = () => {
       const data = await response.json();
 
       if (data.status && data.data) {
-        // Filter only published announcements
         const publishedAnnouncements = data.data.filter(
           item => item.status === "published"
         );
         setAnnouncements(publishedAnnouncements);
       } else if (Array.isArray(data)) {
-        // Filter only published announcements
         const publishedAnnouncements = data.filter(
           item => item.status === "published"
         );
@@ -89,12 +87,10 @@ const CandidateDashboard = () => {
       const data = await response.json();
       
       if (data.status && data.data) {
-        // Filter entries for this candidate
         const candidateEntries = data.data.filter(
           entry => entry.candidate_name === candidateName
         );
         
-        // Calculate total exposure hours
         let totalHours = 0;
         candidateEntries.forEach(entry => {
           if (entry.total_hours) {
@@ -102,7 +98,6 @@ const CandidateDashboard = () => {
           }
         });
         
-        // Calculate total evidence uploads (count all evidence_documents)
         let totalEvidenceCount = 0;
         candidateEntries.forEach(entry => {
           if (entry.evidence_documents && Array.isArray(entry.evidence_documents)) {
@@ -120,7 +115,6 @@ const CandidateDashboard = () => {
     }
   };
 
-  // Get user's full name
   const getUserName = () => {
     if (user?.full_name) {
       return user.full_name;
@@ -130,12 +124,10 @@ const CandidateDashboard = () => {
     return "Candidate";
   };
 
-  // Get user's role/level
   const getUserRole = () => {
     return "Junior Surveyor • Level 2 - Developing";
   };
 
-  // Handle quick action clicks
   const handleNewLogbook = () => {
     navigate("/candidate/logbook/add");
   };
@@ -160,35 +152,29 @@ const CandidateDashboard = () => {
     navigate("/candidate-certificate");
   };
 
-  // Handle navigation to digital logbook
   const handleNavigateToDigitalLogbook = () => {
     navigate("/candidate-digital");
   };
 
-  // Handle opening announcement modal
   const handleOpenModal = (item) => {
     setSelectedAnnouncement(item);
     setShowModal(true);
   };
 
-  // Handle closing announcement modal
   const handleCloseModal = () => {
     setShowModal(false);
     setSelectedAnnouncement(null);
   };
 
-  // Format hours with commas
   const formatHours = (hours) => {
     return hours.toLocaleString();
   };
 
-  // Format date
   const formatDate = (date) => {
     if (!date) return "N/A";
     return new Date(date).toLocaleDateString();
   };
 
-  // Content type labels
   const CONTENT_TYPE_LABELS = {
     news: "News",
     announcement: "Announcement",
@@ -199,7 +185,6 @@ const CandidateDashboard = () => {
     update: "Update",
   };
 
-  // Priority labels
   const PRIORITY_LABELS = {
     low: "Low",
     medium: "Medium",
@@ -207,7 +192,6 @@ const CandidateDashboard = () => {
     urgent: "Urgent",
   };
 
-  // Audience labels
   const AUDIENCE_LABELS = {
     all: "All Users",
     admin_only: "Admin Only",
@@ -215,6 +199,13 @@ const CandidateDashboard = () => {
     candidate_only: "Candidate Only",
     specific_department: "Specific Department",
     specific_level: "Specific Level",
+  };
+
+  const PRIORITY_COLORS = {
+    urgent: "#dc3545",
+    high: "#fd7e14",
+    medium: "#0d6efd",
+    low: "#6c757d",
   };
 
   return (
@@ -230,15 +221,13 @@ const CandidateDashboard = () => {
         {/* Dashboard Content */}
         <div className="ta-content-area">
           <div className="container-fluid training-dashboard">
+            
             {/* ================= HEADER ================= */}
             <div className="d-flex justify-content-between align-items-start mb-4">
               <div>
                 <h2 className="td-title">{greeting}, {getUserName()}</h2>
-                <p className="td-subtitle">
-                  {getUserRole()}
-                </p>
+                <p className="td-subtitle">{getUserRole()}</p>
               </div>
-
               <div className="td-demo-box">
                 <span className="me-2">Role:</span>
                 <select className="form-select td-demo-select">
@@ -257,20 +246,17 @@ const CandidateDashboard = () => {
                 icon={<FaClock />}
                 onClick={handleNavigateToDigitalLogbook}
               />
-
               <StatCard 
                 title="Evidence Uploads" 
                 value={loading ? "Loading..." : evidenceUploads} 
                 icon={<FaCamera />}
                 onClick={handleNavigateToDigitalLogbook}
               />
-
               <StatCard 
                 title="Active Certifications" 
                 value="2" 
                 icon={<FaCertificate />} 
               />
-
               <StatCard 
                 title="Compliance Score" 
                 value="94%" 
@@ -278,13 +264,13 @@ const CandidateDashboard = () => {
               />
             </div>
 
-            {/* ================= COMPETENCY + ACTIONS ================= */}
-            <div className="row g-4">
+            {/* ================= COMPETENCY + QUICK ACTIONS ================= */}
+            <div className="row g-4 mb-4">
+              {/* Competency Level */}
               <div className="col-lg-8">
                 <div className="td-card">
                   <h5 className="mb-1">Competency Level</h5>
                   <p className="td-muted">Your progression journey</p>
-
                   <div className="td-progress-line">
                     {["Aspirant", "SIT", "Junior", "Surveyor", "Senior", "Principal"].map(
                       (item, index) => (
@@ -297,7 +283,6 @@ const CandidateDashboard = () => {
                       )
                     )}
                   </div>
-
                   <div className="td-level-box">
                     <strong>Level 2 - Developing</strong>
                     <p className="mb-0">
@@ -307,41 +292,30 @@ const CandidateDashboard = () => {
                 </div>
               </div>
 
+              {/* Quick Actions */}
               <div className="col-lg-4">
                 <div className="td-card">
                   <h5 className="mb-1">Quick Actions</h5>
                   <p className="td-muted">Common tasks</p>
-
                   <div className="qa-grid qa-grid-2">
-                    {/* New Logbook */}
                     <div className="qa-box qa-primary" onClick={handleNewLogbook}>
-                      <div className="qa-icon dark">
-                        <FaPlus />
-                      </div>
+                      <div className="qa-icon dark"><FaPlus /></div>
                       <h6>New Logbook Entry</h6>
                       <p>Record field activity</p>
                       <span className="qa-arrow">→</span>
                     </div>
-
-                    {/* Upload Evidence */}
                     <div className="qa-box" onClick={handleUploadEvidence}>
-                      <div className="qa-icon">
-                        <FaUpload />
-                      </div>
+                      <div className="qa-icon"><FaUpload /></div>
                       <h6>Upload Evidence</h6>
                       <p>Add photos & documents</p>
                       <span className="qa-arrow">→</span>
                     </div>
-
-                    {/* View Learning */}
                     <div className="qa-box" onClick={handleViewLearning}>
                       <div className="qa-icon">📘</div>
                       <h6>View Learning</h6>
                       <p>Continue training</p>
                       <span className="qa-arrow">→</span>
                     </div>
-
-                    {/* Compliance */}
                     <div className="qa-box" onClick={handleCheckCompliance}>
                       <div className="qa-icon">📄</div>
                       <h6>Check Compliance</h6>
@@ -353,8 +327,88 @@ const CandidateDashboard = () => {
               </div>
             </div>
 
-            {/* ================= BELOW SECTION (IMAGE MATCH) ================= */}
-            <div className="row g-4 mt-3 cd-section">
+            {/* ================= NEWS & ANNOUNCEMENTS (Below Competency Level) ================= */}
+            <div className="row g-4 mb-4">
+              <div className="col-12">
+                <div className="td-card">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h5 className="mb-0">News & Announcements</h5>
+                  </div>
+                  <hr />
+
+                  {announcements.length === 0 ? (
+                    <p className="text-muted">No published announcements available</p>
+                  ) : (
+                    <div className="row">
+                      {announcements.slice(0, 4).map((item) => (
+                        <div key={item.id} className="col-md-6 mb-3">
+                          <div 
+                            className="d-flex align-items-start p-3"
+                            style={{
+                              border: "1px solid #e5e7eb",
+                              borderRadius: "12px",
+                              cursor: "pointer",
+                              transition: "all 0.25s ease",
+                              backgroundColor: "#fff"
+                            }}
+                            onClick={() => handleOpenModal(item)}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = "translateY(-2px)";
+                              e.currentTarget.style.boxShadow = "0 6px 18px rgba(0, 0, 0, 0.08)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = "translateY(0)";
+                              e.currentTarget.style.boxShadow = "none";
+                            }}
+                          >
+                            <div 
+                              className="me-3"
+                              style={{
+                                width: "44px",
+                                height: "44px",
+                                borderRadius: "50%",
+                                backgroundColor: PRIORITY_COLORS[item.priority] || "#6c757d",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                color: "white",
+                                fontWeight: "bold",
+                                fontSize: "18px",
+                                flexShrink: 0
+                              }}
+                            >
+                              {item.title?.charAt(0).toUpperCase()}
+                            </div>
+
+                            <div className="flex-grow-1">
+                              <div className="d-flex align-items-center gap-2 mb-1">
+                                <strong style={{ color: "#040c3b", fontSize: "14px" }}>
+                                  {item.title}
+                                </strong>
+                                {item.priority === "urgent" && (
+                                  <FaExclamationTriangle className="text-danger" />
+                                )}
+                              </div>
+                              <p className="text-muted mb-1" style={{ fontSize: "13px", lineHeight: "1.4" }}>
+                                {item.content?.length > 80 
+                                  ? item.content.substring(0, 80) + "..." 
+                                  : item.content || "No description available"}
+                              </p>
+                              <small className="text-muted">
+                                {formatDate(item.created_at)} • {PRIORITY_LABELS[item.priority] || "N/A"} Priority
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* ================= RECENT LOGBOOK + CERTIFICATIONS ================= */}
+            <div className="row g-4 mb-4">
               {/* Recent Logbook */}
               <div className="col-lg-8">
                 <div className="cd-card">
@@ -370,7 +424,6 @@ const CandidateDashboard = () => {
                       View All →
                     </button>
                   </div>
-
                   <LogItem 
                     title="FPSO Harmony" 
                     status="Validated" 
@@ -379,7 +432,6 @@ const CandidateDashboard = () => {
                     hours="8h" 
                     files="3" 
                   />
-
                   <LogItem 
                     title="Platform Bravo" 
                     status="Pending" 
@@ -388,7 +440,6 @@ const CandidateDashboard = () => {
                     hours="14h" 
                     files="2" 
                   />
-
                   <LogItem 
                     title="Drilling Rig Delta" 
                     status="Validated" 
@@ -400,7 +451,7 @@ const CandidateDashboard = () => {
                 </div>
               </div>
 
-              {/* Right Column */}
+              {/* Certifications */}
               <div className="col-lg-4">
                 <div className="cd-card">
                   <div className="d-flex justify-content-between mb-3">
@@ -415,7 +466,6 @@ const CandidateDashboard = () => {
                       Manage →
                     </button>
                   </div>
-
                   <CertCard 
                     title="API 510 Pressure Vessel Inspector" 
                     org="American Petroleum Institute"
@@ -424,7 +474,6 @@ const CandidateDashboard = () => {
                     issued="01 Aug 2023" 
                     expires="01 Aug 2026" 
                   />
-
                   <CertCard 
                     title="CSWIP 3.1 Welding Inspector" 
                     org="TWI Certification Ltd"
@@ -436,19 +485,18 @@ const CandidateDashboard = () => {
                 </div>
               </div>
             </div>
+
             {/* ================= COMPETENCY ASSESSMENT + ROTATION ================= */}
-            <div className="row g-4 mt-4">
+            <div className="row g-4 mb-4">
               {/* Competency Assessment */}
               <div className="col-lg-6">
                 <div className="ca-card">
                   <h5 className="mb-1">Competency Assessment</h5>
                   <p className="ca-muted">Cross-cutting skill evaluation</p>
-
                   <div className="ca-radar-wrapper">
                     <div className="ca-radar">
                       <div className="ca-radar-grid"></div>
                       <div className="ca-radar-fill"></div>
-
                       <span className="ca-label top">Technical</span>
                       <span className="ca-label right">Field Discipline</span>
                       <span className="ca-label bottom-right">Documentation</span>
@@ -456,8 +504,6 @@ const CandidateDashboard = () => {
                       <span className="ca-label left">Communication</span>
                     </div>
                   </div>
-
-                  {/* Scores */}
                   <div className="row g-3 mt-3">
                     <Score label="Technical" value="78%" />
                     <Score label="Field Discipline" value="85%" good />
@@ -478,11 +524,9 @@ const CandidateDashboard = () => {
                       <p className="dr-muted">2 of 6 departments completed</p>
                     </div>
                   </div>
-
                   <div className="dr-progress">
                     <div className="dr-progress-fill" style={{ width: "33%" }} />
                   </div>
-
                   <div className="dr-list mt-4">
                     <RotationItem title="Manufacturing" score="88%" done />
                     <RotationItem title="Coating" score="92%" done />
@@ -495,114 +539,53 @@ const CandidateDashboard = () => {
               </div>
             </div>
 
-            {/* ================= ANNOUNCEMENTS SECTION ================= */}
-            <div className="row g-4 mt-3">
-              <div className="col-lg-6">
-                <div className="td-card">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h5 className="mb-0">News & Announcements</h5>
-                  </div>
-
-                  <hr />
-
-                  {announcements.length === 0 ? (
-                    <p className="text-muted">No published announcements available</p>
-                  ) : (
-                    announcements.map((item) => (
-                      <div key={item.id} className="d-flex align-items-center mb-3">
-                        <div 
-                          className="me-2"
-                          style={{
-                            width: "40px",
-                            height: "40px",
-                            borderRadius: "50%",
-                            backgroundColor: item.priority === "urgent" ? "#dc3545" : 
-                                           item.priority === "high" ? "#fd7e14" : 
-                                           item.priority === "medium" ? "#0d6efd" : "#6c757d",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "white",
-                            fontWeight: "bold",
-                            fontSize: "18px",
-                            flexShrink: 0
-                          }}
-                        >
-                          {item.title?.charAt(0).toUpperCase()}
-                        </div>
-
-                        <div className="flex-grow-1">
-                          <strong
-                            style={{ cursor: "pointer", color: "#040c3b" }}
-                            onClick={() => handleOpenModal(item)}
-                          >
-                            {item.title}
-                          </strong>
-                          <br />
-                          <small className="text-muted">
-                            {formatDate(item.created_at)} • {PRIORITY_LABELS[item.priority] || "N/A"} Priority
-                          </small>
-                        </div>
-
-                        {item.priority === "urgent" && (
-                          <FaExclamationTriangle className="text-danger ms-2" />
-                        )}
+            {/* ================= ANNOUNCEMENT MODAL ================= */}
+            {showModal && selectedAnnouncement && (
+              <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+                <div className="modal-dialog modal-dialog-centered">
+                  <div className="modal-content">
+                    <div className="modal-header">
+                      <h5 className="modal-title">News/Announcement Details</h5>
+                      <button className="btn-close" onClick={handleCloseModal}></button>
+                    </div>
+                    <div className="modal-body">
+                      <div className="mb-3">
+                        <strong>Title:</strong> {selectedAnnouncement.title || "N/A"}
                       </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              {/* Announcement Modal */}
-              {showModal && selectedAnnouncement && (
-                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-                  <div className="modal-dialog">
-                    <div className="modal-content">
-                      <div className="modal-header">
-                        <h5 className="modal-title">News/Announcement Details</h5>
-                        <button
-                          className="btn-close"
-                          onClick={handleCloseModal}
-                        ></button>
-                      </div>
-
-                      <div className="modal-body">
-                        <div className="mb-2">
-                          <strong>Title:</strong>{" "}
-                          {selectedAnnouncement.title || "N/A"}
-                        </div>
-                        <div className="mb-2">
-                          <strong>Content:</strong>{" "}
+                      <div className="mb-3">
+                        <strong>Content:</strong>
+                        <p className="mt-1 mb-0" style={{ whiteSpace: "pre-wrap" }}>
                           {selectedAnnouncement.content || "N/A"}
-                        </div>
-                        <div className="mb-2">
-                          <strong>Content Type:</strong>{" "}
-                          {CONTENT_TYPE_LABELS[selectedAnnouncement.content_type] || "N/A"}
-                        </div>
-                        <div className="mb-2">
-                          <strong>Priority:</strong>{" "}
-                          {PRIORITY_LABELS[selectedAnnouncement.priority] || "N/A"}
-                        </div>
-                        <div className="mb-2">
-                          <strong>Target Audience:</strong>{" "}
-                          {AUDIENCE_LABELS[selectedAnnouncement.target_audience] || "N/A"}
-                        </div>
-                        <div className="mb-2">
-                          <strong>Published Date:</strong>{" "}
-                          {formatDate(selectedAnnouncement.published_at)}
-                        </div>
-                        {selectedAnnouncement.expires_at && (
-                          <div className="mb-2">
-                            <strong>Expires:</strong>{" "}
-                            {formatDate(selectedAnnouncement.expires_at)}
-                          </div>
-                        )}
+                        </p>
                       </div>
+                      <div className="mb-2">
+                        <strong>Content Type:</strong> {CONTENT_TYPE_LABELS[selectedAnnouncement.content_type] || "N/A"}
+                      </div>
+                      <div className="mb-2">
+                        <strong>Priority:</strong>{" "}
+                        <span style={{ color: PRIORITY_COLORS[selectedAnnouncement.priority] || "#000", fontWeight: "bold" }}>
+                          {PRIORITY_LABELS[selectedAnnouncement.priority] || "N/A"}
+                        </span>
+                      </div>
+                      <div className="mb-2">
+                        <strong>Target Audience:</strong> {AUDIENCE_LABELS[selectedAnnouncement.target_audience] || "N/A"}
+                      </div>
+                      <div className="mb-2">
+                        <strong>Published Date:</strong> {formatDate(selectedAnnouncement.published_at)}
+                      </div>
+                      {selectedAnnouncement.expires_at && (
+                        <div className="mb-2">
+                          <strong>Expires:</strong> {formatDate(selectedAnnouncement.expires_at)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="modal-footer">
+                      <button className="btn btn-secondary" onClick={handleCloseModal}>Close</button>
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
           </div>
         </div>
@@ -615,23 +598,14 @@ const CandidateDashboard = () => {
 
 const StatCard = ({ title, value, desc, change, icon, onClick }) => (
   <div className="col-xl-3 col-md-6">
-    <div 
-      className="td-stat-card clickable-card"
-      onClick={onClick}
-    >
+    <div className="td-stat-card clickable-card" onClick={onClick}>
       <div className="td-stat-top">
         <h6>{title}</h6>
         <div className="td-icon-box">{icon}</div>
       </div>
-
       <h3>{value}</h3>
       <p className="td-muted">{desc}</p>
-
-      {change && (
-        <span className="td-positive">
-          {change} vs last month
-        </span>
-      )}
+      {change && <span className="td-positive">{change} vs last month</span>}
     </div>
   </div>
 );
