@@ -40,6 +40,8 @@ const AddAnnouncement = () => {
     target_departments: [],
     target_levels: [],
     status: "", // ✅ add this
+    author_type: "", // ✅ add
+    author_id: "", // ✅ add
   });
 
   // Fetch departments and levels on component mount
@@ -150,6 +152,8 @@ const AddAnnouncement = () => {
           target_departments: announcementData.target_departments || [],
           target_levels: announcementData.target_levels || [],
           status: announcementData.status || "",
+          author_type: announcementData.author_type || "", // ✅ add
+          author_id: announcementData.author_id || "", // ✅ add
         };
         setFormData(formattedData);
 
@@ -432,8 +436,8 @@ const AddAnnouncement = () => {
         content_type: formData.content_type,
         priority: formData.priority,
         target_audience: formData.target_audience,
-        author_type: "admin",
-        author_id: author_id,
+        author_type: isEditMode ? formData.author_type : "admin",
+        author_id: isEditMode ? formData.author_id : author_id,
         status: isEditMode ? formData.status : status,
         expires_at: formData.expires_at
           ? new Date(formData.expires_at).toISOString().slice(0, 19)
@@ -717,9 +721,7 @@ const AddAnnouncement = () => {
                         <option value="" disabled>
                           Select
                         </option>
-                         <option value="draft">
-                          Draft
-                        </option>
+                        <option value="draft">Draft</option>
                         <option value="pending_approval">
                           Pending Approval
                         </option>
