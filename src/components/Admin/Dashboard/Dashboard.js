@@ -71,6 +71,7 @@ const Dashboard = () => {
       console.error("Error fetching announcements:", error);
     }
   };
+  
   useEffect(() => {
     fetchCandidates();
     fetchMentors();
