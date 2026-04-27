@@ -1,4 +1,4 @@
-// CandidateDashboard.jsx (Updated with dynamic user data)
+// CandidateDashboard.jsx (Updated with dynamic user data + announcements)
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import CandidateSidebar from "../Layout/CandidateSidebar";
@@ -10,7 +10,8 @@ import {
   FaShieldAlt,
   FaPlus,
   FaUpload,
-  FaCheck
+  FaCheck,
+  FaExclamationTriangle
 } from "react-icons/fa";
 import "./CandidateDashboard.css";
 import { BASE_URL } from "../../../ApiUrl";
@@ -22,6 +23,9 @@ const CandidateDashboard = () => {
   const [totalExposureHours, setTotalExposureHours] = useState(0);
   const [evidenceUploads, setEvidenceUploads] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [announcements, setAnnouncements] = useState([]);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     // Load user data from localStorage
@@ -49,7 +53,34 @@ const CandidateDashboard = () => {
     if (hour < 12) setGreeting("Good morning");
     else if (hour < 18) setGreeting("Good afternoon");
     else setGreeting("Good evening");
+
+    // Fetch announcements
+    fetchAnnouncements();
   }, []);
+
+  // Fetch announcements and filter only published ones
+  const fetchAnnouncements = async () => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/admin/news-announcements/`);
+      const data = await response.json();
+
+      if (data.status && data.data) {
+        // Filter only published announcements
+        const publishedAnnouncements = data.data.filter(
+          item => item.status === "published"
+        );
+        setAnnouncements(publishedAnnouncements);
+      } else if (Array.isArray(data)) {
+        // Filter only published announcements
+        const publishedAnnouncements = data.filter(
+          item => item.status === "published"
+        );
+        setAnnouncements(publishedAnnouncements);
+      }
+    } catch (error) {
+      console.error("Error fetching announcements:", error);
+    }
+  };
 
   // Fetch logbook data and calculate totals
   const fetchLogbookData = async (candidateName) => {
@@ -99,10 +130,8 @@ const CandidateDashboard = () => {
     return "Candidate";
   };
 
-  // Get user's role/level (you can customize this based on your data)
+  // Get user's role/level
   const getUserRole = () => {
-    // You can fetch this from API or add to localStorage
-    // For now, showing default role
     return "Junior Surveyor • Level 2 - Developing";
   };
 
@@ -136,9 +165,56 @@ const CandidateDashboard = () => {
     navigate("/candidate-digital");
   };
 
+  // Handle opening announcement modal
+  const handleOpenModal = (item) => {
+    setSelectedAnnouncement(item);
+    setShowModal(true);
+  };
+
+  // Handle closing announcement modal
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedAnnouncement(null);
+  };
+
   // Format hours with commas
   const formatHours = (hours) => {
     return hours.toLocaleString();
+  };
+
+  // Format date
+  const formatDate = (date) => {
+    if (!date) return "N/A";
+    return new Date(date).toLocaleDateString();
+  };
+
+  // Content type labels
+  const CONTENT_TYPE_LABELS = {
+    news: "News",
+    announcement: "Announcement",
+    incident_report: "Incident Report",
+    circular: "Circular",
+    notice: "Notice",
+    alert: "Alert",
+    update: "Update",
+  };
+
+  // Priority labels
+  const PRIORITY_LABELS = {
+    low: "Low",
+    medium: "Medium",
+    high: "High",
+    urgent: "Urgent",
+  };
+
+  // Audience labels
+  const AUDIENCE_LABELS = {
+    all: "All Users",
+    admin_only: "Admin Only",
+    mentor_only: "Mentor Only",
+    candidate_only: "Candidate Only",
+    specific_department: "Specific Department",
+    specific_level: "Specific Level",
   };
 
   return (
@@ -175,39 +251,32 @@ const CandidateDashboard = () => {
 
             {/* ================= STATS ================= */}
             <div className="row g-4 mb-4">
-  <StatCard 
-    title="Total Exposure Hours" 
-    value={loading ? "Loading..." : formatHours(totalExposureHours)} 
-    // desc="Logged field time" 
-    // change="+12%" 
-    icon={<FaClock />}
-    onClick={handleNavigateToDigitalLogbook}
-  />
+              <StatCard 
+                title="Total Exposure Hours" 
+                value={loading ? "Loading..." : formatHours(totalExposureHours)} 
+                icon={<FaClock />}
+                onClick={handleNavigateToDigitalLogbook}
+              />
 
-  <StatCard 
-    title="Evidence Uploads" 
-    value={loading ? "Loading..." : evidenceUploads} 
-    // desc="Photos & documents" 
-    // change="+8%" 
-    icon={<FaCamera />}
-    onClick={handleNavigateToDigitalLogbook}
-  />
+              <StatCard 
+                title="Evidence Uploads" 
+                value={loading ? "Loading..." : evidenceUploads} 
+                icon={<FaCamera />}
+                onClick={handleNavigateToDigitalLogbook}
+              />
 
-  <StatCard 
-    title="Active Certifications" 
-    value="2" 
-    // desc="1 expiring soon" 
-    icon={<FaCertificate />} 
-  />
+              <StatCard 
+                title="Active Certifications" 
+                value="2" 
+                icon={<FaCertificate />} 
+              />
 
-  <StatCard 
-    title="Compliance Score" 
-    value="94%" 
-    // desc="All requirements met" 
-    // change="+2%" 
-    icon={<FaShieldAlt />} 
-  />
-</div>
+              <StatCard 
+                title="Compliance Score" 
+                value="94%" 
+                icon={<FaShieldAlt />} 
+              />
+            </div>
 
             {/* ================= COMPETENCY + ACTIONS ================= */}
             <div className="row g-4">
@@ -367,7 +436,6 @@ const CandidateDashboard = () => {
                 </div>
               </div>
             </div>
-
             {/* ================= COMPETENCY ASSESSMENT + ROTATION ================= */}
             <div className="row g-4 mt-4">
               {/* Competency Assessment */}
@@ -426,6 +494,116 @@ const CandidateDashboard = () => {
                 </div>
               </div>
             </div>
+
+            {/* ================= ANNOUNCEMENTS SECTION ================= */}
+            <div className="row g-4 mt-3">
+              <div className="col-lg-6">
+                <div className="td-card">
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h5 className="mb-0">News & Announcements</h5>
+                  </div>
+
+                  <hr />
+
+                  {announcements.length === 0 ? (
+                    <p className="text-muted">No published announcements available</p>
+                  ) : (
+                    announcements.map((item) => (
+                      <div key={item.id} className="d-flex align-items-center mb-3">
+                        <div 
+                          className="me-2"
+                          style={{
+                            width: "40px",
+                            height: "40px",
+                            borderRadius: "50%",
+                            backgroundColor: item.priority === "urgent" ? "#dc3545" : 
+                                           item.priority === "high" ? "#fd7e14" : 
+                                           item.priority === "medium" ? "#0d6efd" : "#6c757d",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "white",
+                            fontWeight: "bold",
+                            fontSize: "18px",
+                            flexShrink: 0
+                          }}
+                        >
+                          {item.title?.charAt(0).toUpperCase()}
+                        </div>
+
+                        <div className="flex-grow-1">
+                          <strong
+                            style={{ cursor: "pointer", color: "#040c3b" }}
+                            onClick={() => handleOpenModal(item)}
+                          >
+                            {item.title}
+                          </strong>
+                          <br />
+                          <small className="text-muted">
+                            {formatDate(item.created_at)} • {PRIORITY_LABELS[item.priority] || "N/A"} Priority
+                          </small>
+                        </div>
+
+                        {item.priority === "urgent" && (
+                          <FaExclamationTriangle className="text-danger ms-2" />
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Announcement Modal */}
+              {showModal && selectedAnnouncement && (
+                <div className="modal fade show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+                  <div className="modal-dialog">
+                    <div className="modal-content">
+                      <div className="modal-header">
+                        <h5 className="modal-title">News/Announcement Details</h5>
+                        <button
+                          className="btn-close"
+                          onClick={handleCloseModal}
+                        ></button>
+                      </div>
+
+                      <div className="modal-body">
+                        <div className="mb-2">
+                          <strong>Title:</strong>{" "}
+                          {selectedAnnouncement.title || "N/A"}
+                        </div>
+                        <div className="mb-2">
+                          <strong>Content:</strong>{" "}
+                          {selectedAnnouncement.content || "N/A"}
+                        </div>
+                        <div className="mb-2">
+                          <strong>Content Type:</strong>{" "}
+                          {CONTENT_TYPE_LABELS[selectedAnnouncement.content_type] || "N/A"}
+                        </div>
+                        <div className="mb-2">
+                          <strong>Priority:</strong>{" "}
+                          {PRIORITY_LABELS[selectedAnnouncement.priority] || "N/A"}
+                        </div>
+                        <div className="mb-2">
+                          <strong>Target Audience:</strong>{" "}
+                          {AUDIENCE_LABELS[selectedAnnouncement.target_audience] || "N/A"}
+                        </div>
+                        <div className="mb-2">
+                          <strong>Published Date:</strong>{" "}
+                          {formatDate(selectedAnnouncement.published_at)}
+                        </div>
+                        {selectedAnnouncement.expires_at && (
+                          <div className="mb-2">
+                            <strong>Expires:</strong>{" "}
+                            {formatDate(selectedAnnouncement.expires_at)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </div>
