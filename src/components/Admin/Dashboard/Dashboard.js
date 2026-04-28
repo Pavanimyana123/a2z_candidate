@@ -57,20 +57,29 @@ const Dashboard = () => {
     }
   };
 
-  const fetchAnnouncements = async () => {
-    try {
-      const response = await fetch(`${BASE_URL}/api/admin/news-announcements/`);
-      const data = await response.json();
+const fetchAnnouncements = async () => {
+  try {
+    const response = await fetch(`${BASE_URL}/api/admin/news-announcements/`);
+    const data = await response.json();
 
-      if (data.status && data.data) {
-        setAnnouncements(data.data);
-      } else if (Array.isArray(data)) {
-        setAnnouncements(data);
-      }
-    } catch (error) {
-      console.error("Error fetching announcements:", error);
+    let announcementsData = [];
+
+    if (data.status && data.data) {
+      announcementsData = data.data;
+    } else if (Array.isArray(data)) {
+      announcementsData = data;
     }
-  };
+
+    // ✅ Filter only published announcements
+    const publishedAnnouncements = announcementsData.filter(
+      (item) => item.status === "published"
+    );
+
+    setAnnouncements(publishedAnnouncements);
+  } catch (error) {
+    console.error("Error fetching announcements:", error);
+  }
+};
   
   useEffect(() => {
     fetchCandidates();

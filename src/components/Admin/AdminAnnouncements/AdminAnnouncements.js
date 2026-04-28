@@ -259,8 +259,9 @@ const Announcements = () => {
   const getPendingCount = () => {
     return announcements.filter((item) => {
       return (
-        item.status !== "published" &&
-        (item.author_type === "candidate" || item.author_type === "mentor")
+        item.status !== "published" 
+        // &&
+        // (item.author_type === "candidate" || item.author_type === "mentor")
       );
     }).length;
   };
@@ -571,7 +572,7 @@ const Announcements = () => {
             </div>
 
             {/* Active Filter Indicator */}
-            {activeFilter === "pending" && (
+            {/* {activeFilter === "pending" && (
               <div className="alert alert-info mt-2 mb-2">
                 <strong>Showing Pending Approvals:</strong> Announcements from
                 Candidates and Mentors that are not yet published.
@@ -582,7 +583,7 @@ const Announcements = () => {
                   View All
                 </button>
               </div>
-            )}
+            )} */}
 
             {/* Bulk Update Button for Pending Approvals */}
             {activeFilter === "pending" && selectedAnnouncements.length > 0 && (
