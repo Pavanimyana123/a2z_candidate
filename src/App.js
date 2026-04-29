@@ -76,6 +76,9 @@ import MentorProfessionalIdentity from "./components/Mentor/MentorProfessionalId
 import CandidateAnnouncements from './components/Candidate/CandidateAnnouncements/CandidateAnnouncements';
 import CandidateAddAnnouncement from './components/Candidate/CandidateAnnouncements/AddAnnouncements';
 
+import RegisterMentor from "./components/Pages/Login/RegisterMentor"
+import RegisterCandidate from "./components/Pages/Login/RegisterCandidate";
+
 function App() {
   return (
     <Router>
@@ -92,6 +95,8 @@ function App() {
         <Route path="/mentor" element={<Mentors />} />
         <Route path="/add-mentor" element={<AddMentor />} />
         <Route path="/add-mentor/:id" element={<AddMentor />} />
+        <Route path="/register-mentor" element={<RegisterMentor />} />
+        <Route path="/register-candidate" element={<RegisterCandidate />} />
         <Route path="/level" element={<LevelsManagement />} />
         <Route path="/level/add" element={<AddLevel />} />
         <Route path="/level/edit/:id" element={<AddLevel />} />

@@ -33,6 +33,7 @@ const AddCandidate = () => {
     current_level: '', // This will store the level_id
     blood_group: '',
     medical_expiry_date: '',
+    candidate_status: 'Pending', // Add candidate_status field
   });
 
   // Fetch levels on component mount
@@ -111,6 +112,7 @@ const AddCandidate = () => {
           current_level: candidateData.current_level ? parseInt(candidateData.current_level) : '',
           blood_group: candidateData.blood_group || '',
           medical_expiry_date: candidateData.medical_expiry_date ? candidateData.medical_expiry_date.split('T')[0] : '',
+          candidate_status: candidateData.candidate_status || 'Pending', // Add candidate_status
         };
         setFormData(formattedData);
         console.log('✅ Candidate data loaded for edit:', formattedData);
@@ -277,6 +279,11 @@ const AddCandidate = () => {
       current_level: formData.current_level ? parseInt(formData.current_level) : null
     };
 
+    // Add candidate_status only in edit mode
+    if (isEditMode) {
+      payload.candidate_status = formData.candidate_status;
+    }
+
     // Remove empty values
     Object.keys(payload).forEach(key => {
       if (payload[key] === undefined || payload[key] === null || payload[key] === '') {
@@ -390,6 +397,7 @@ const AddCandidate = () => {
             <div className="ac-form-container">
               <form onSubmit={handleSubmit}>
                 <div className="row">
+
                   {/* Full Name */}
                   <div className="col-md-4 mb-3">
                     <label className="form-label">Full Name *</label>
@@ -599,7 +607,7 @@ const AddCandidate = () => {
                   </div>
 
                   {/* Current Level - Dropdown with level_id (Fixed) */}
-                  <div className="col-md-4 mb-3">
+                  {/* <div className="col-md-4 mb-3">
                     <label className="form-label">Current Level *</label>
                     <div className="position-relative">
                       <select
@@ -644,7 +652,26 @@ const AddCandidate = () => {
                     {levels.length === 0 && !levelsLoading && (
                       <small className="text-warning">No active levels available</small>
                     )}
-                  </div>
+                  </div> */}
+
+
+                   {/* Candidate Status - Only show in edit mode */}
+                  {isEditMode && (
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Candidate Status</label>
+                      <select
+                        className="form-select"
+                        name="candidate_status"
+                        value={formData.candidate_status || 'Pending'}
+                        onChange={handleChange}
+                        disabled={loading}
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </div>
+                  )}
 
                   {/* Blood Group */}
                   <div className="col-md-4 mb-3">

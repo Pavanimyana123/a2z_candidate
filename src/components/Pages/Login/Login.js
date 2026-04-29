@@ -1,7 +1,7 @@
 // components/Pages/Login/Login.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaUserPlus } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import "./Login.css";
 import { BASE_URL } from "../../../ApiUrl";
@@ -13,6 +13,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showRegistrationOptions, setShowRegistrationOptions] = useState(false);
 
 const handleLogin = async (e) => {
   e.preventDefault();
@@ -137,6 +138,127 @@ const handleLogin = async (e) => {
     setShowPassword(!showPassword);
   };
 
+  const handleRegisterClick = () => {
+    setShowRegistrationOptions(true);
+  };
+
+  const handleBackToLogin = () => {
+    setShowRegistrationOptions(false);
+  };
+
+  const handleRegisterAsMentor = () => {
+    navigate('/register-mentor');
+  };
+
+  const handleRegisterAsCandidate = () => {
+    navigate('/register-candidate');
+  };
+
+  // Registration selection view
+  if (showRegistrationOptions) {
+    return (
+      <div className="training-admin-login d-flex align-items-center justify-content-center min-vh-100 bg-light">
+        <div className="training-admin-login-card card p-4 shadow" style={{ width: "100%", maxWidth: "400px" }}>
+          <div className="card-body">
+            <div className="training-admin-login-header login-text-center mb-4">
+              <div className="mb-3">
+                <div className="training-admin-logo" style={{ 
+                  width: "50px",
+                  height: "50px",
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  margin: "0 auto",
+                  fontSize: "40px",
+                  color: "white"
+                }}>
+                  <FaUserPlus />
+                </div>
+              </div>
+
+              <h3 className="training-admin-login-title" style={{ fontSize: "24px", fontWeight: "600", color: "#333" }}>
+                Create Account
+              </h3>
+
+              <p className="training-admin-login-subtitle text-muted" style={{ fontSize: "14px" }}>
+                Choose your registration type
+              </p>
+            </div>
+
+            <div className="registration-options">
+              <button
+                onClick={handleRegisterAsMentor}
+                className="btn btn-primary w-100 mb-3"
+                style={{
+                  padding: "16px",
+                  fontSize: "16px",
+                  fontWeight: "500",
+                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  border: "none",
+                  borderRadius: "8px",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  position: "relative",
+                  overflow: "hidden"
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = "translateY(-2px)";
+                  e.target.style.boxShadow = "0 4px 15px rgba(102, 126, 234, 0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = "translateY(0)";
+                  e.target.style.boxShadow = "none";
+                }}
+              >
+                <div style={{ fontSize: "24px", marginBottom: "4px" }}>👨‍🏫</div>
+                Register as Mentor
+              </button>
+
+              <button
+                onClick={handleRegisterAsCandidate}
+                className="btn btn-primary w-100 mb-3"
+                style={{
+                  padding: "16px",
+                  fontSize: "16px",
+                  fontWeight: "500",
+                  background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                  border: "none",
+                  borderRadius: "8px",
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  position: "relative",
+                  overflow: "hidden"
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = "translateY(-2px)";
+                  e.target.style.boxShadow = "0 4px 15px rgba(245, 87, 108, 0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = "translateY(0)";
+                  e.target.style.boxShadow = "none";
+                }}
+              >
+                <div style={{ fontSize: "24px", marginBottom: "4px" }}>👨‍🎓</div>
+                Register as Candidate
+              </button>
+
+              <div className="text-center mt-3">
+                <button
+                  type="button"
+                  className="training-admin-forgot-link"
+                  onClick={handleBackToLogin}
+                >
+                  ← Back to Login
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main Login View
   return (
     <div className="training-admin-login d-flex align-items-center justify-content-center min-vh-100 bg-light">
       <div className="training-admin-login-card card p-4 shadow" style={{ width: "100%", maxWidth: "400px", maxHeight: "600px"  }}>
@@ -164,9 +286,9 @@ const handleLogin = async (e) => {
               Training Admin
             </h3>
 
-            <p className="training-admin-login-subtitle text-muted" style={{ fontSize: "14px" }}>
+            {/* <p className="training-admin-login-subtitle text-muted" style={{ fontSize: "14px" }}>
               Surveyor Management System
-            </p>
+            </p> */}
           </div>
 
           {error && (
@@ -251,13 +373,30 @@ const handleLogin = async (e) => {
               </button>
             </div>
 
+            <div className="d-grid mb-3">
+              <button
+                type="button"
+                className="btn btn-outline-primary"
+                onClick={handleRegisterClick}
+                style={{
+                  padding: "12px",
+                  fontSize: "16px",
+                  fontWeight: "500",
+                  borderRadius: "8px"
+                }}
+              >
+                <FaUserPlus className="me-2" />
+                Register New Account
+              </button>
+            </div>
+
             <div className="text-center mb-3">
               <button
                 type="button"
                 className="training-admin-forgot-link"
                 onClick={() => navigate("/forgot-password")}
               >
-                Add / Forgot Password
+                Forgot Password?
               </button>
             </div>
 
