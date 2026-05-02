@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../Layout/Sidebar";
 import Header from "../Layout/Header";
 import "./Mentors.css";
-import { FaEdit, FaTrash, FaCheckCircle } from "react-icons/fa";
+import { FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import { BASE_URL } from "../../../ApiUrl";
 
@@ -14,6 +14,7 @@ const Mentors = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
   
   const navigate = useNavigate();
 
@@ -117,37 +118,145 @@ const Mentors = () => {
     }
   };
 
-  const confirmDelete = (mentor) => {
+  // Handle approve mentor
+  const handleApprove = async (mentorId, mentorName) => {
     Swal.fire({
-      title: 'Are you sure?',
-      text: `You are about to delete ${mentor.full_name}. This action cannot be undone!`,
-      icon: 'warning',
+      title: 'Approve Mentor?',
+      text: `Are you sure you want to approve "${mentorName}"?`,
+      icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!',
-      cancelButtonText: 'Cancel'
-    }).then((result) => {
+      confirmButtonColor: '#28a745',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, Approve',
+      cancelButtonText: 'Cancel',
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        handleDelete(mentor.id, mentor.full_name);
+        setActionLoading(true);
+        try {
+          const response = await fetch(`${BASE_URL}/api/mentor/mentors/${mentorId}/`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+            body: JSON.stringify({
+              mentorship_status: 'active'
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          await fetchAllData();
+          
+          Swal.fire({
+            icon: 'success',
+            title: 'Approved!',
+            text: `${mentorName} has been approved successfully.`,
+            timer: 2000,
+            showConfirmButton: false
+          });
+        } catch (error) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: 'Failed to approve mentor. Please try again.',
+          });
+        } finally {
+          setActionLoading(false);
+        }
       }
     });
   };
 
-  // Get level name by ID - using 'id' field
+  // Handle reject mentor
+  const handleReject = async (mentorId, mentorName) => {
+    Swal.fire({
+      title: 'Reject Mentor?',
+      text: `Are you sure you want to reject "${mentorName}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, Reject',
+      cancelButtonText: 'Cancel',
+      input: 'textarea',
+      inputPlaceholder: 'Please provide a reason for rejection...',
+      inputValidator: (value) => {
+        if (!value) {
+          return 'You need to provide a reason for rejection!';
+        }
+      }
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        setActionLoading(true);
+        try {
+          const response = await fetch(`${BASE_URL}/api/mentor/mentors/${mentorId}/`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+            body: JSON.stringify({
+              mentorship_status: 'rejected'
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          await fetchAllData();
+          
+          Swal.fire({
+            icon: 'success',
+            title: 'Rejected!',
+            text: `${mentorName} has been rejected.`,
+            timer: 2000,
+            showConfirmButton: false
+          });
+        } catch (error) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: 'Failed to reject mentor. Please try again.',
+          });
+        } finally {
+          setActionLoading(false);
+        }
+      }
+    });
+  };
+
+  // Get level name by ID
   const getLevelName = (levelId) => {
     if (!levelId) return 'No Level';
     const level = levels.find(l => l.id === levelId);
     return level ? `${level.name} (Level ${level.number})` : 'Unknown Level';
   };
 
-  // Get department names by IDs - using 'id' field
+  // Get department names by IDs
   const getDepartmentNames = (deptIds) => {
     if (!deptIds || !Array.isArray(deptIds) || deptIds.length === 0) return 'No specializations';
     return deptIds.map(id => {
       const dept = departments.find(d => d.id === id);
       return dept ? `${dept.name} (${dept.code})` : null;
     }).filter(Boolean).join(', ') || 'No specializations';
+  };
+
+  // Get mentor status display
+  const getStatusInfo = (mentorshipStatus) => {
+    switch(mentorshipStatus) {
+      case "active":
+        return { text: "Active", class: "status-active" };
+      case "pending":
+        return { text: "Pending", class: "status-pending" };
+      case "rejected":
+        return { text: "Rejected", class: "status-rejected" };
+      default:
+        return { text: mentorshipStatus || "Pending", class: "status-pending" };
+    }
   };
 
   // Calculate stats from actual data
@@ -264,7 +373,11 @@ const Mentors = () => {
                         levelName={getLevelName(mentor.mentor_level)}
                         departmentNames={getDepartmentNames(mentor.specializations)}
                         onEdit={handleEdit}
-                        onDelete={confirmDelete}
+                        onDelete={handleDelete}
+                        onApprove={handleApprove}
+                        onReject={handleReject}
+                        actionLoading={actionLoading}
+                        getStatusInfo={getStatusInfo}
                       />
                     ))
                   ) : (
@@ -301,12 +414,11 @@ const StatBox = ({ title, value }) => (
 );
 
 /* -------- MentorCard Component -------- */
-const MentorCard = ({ mentor, initials, levelName, departmentNames, onEdit, onDelete }) => {
+const MentorCard = ({ mentor, initials, levelName, departmentNames, onEdit, onDelete, onApprove, onReject, actionLoading, getStatusInfo }) => {
   // Calculate approval rate based on background verification and certification
   const approvalRate = mentor.background_verified && mentor.mentorship_certified ? 100 : 50;
   
-  // Determine status class
-  const statusClass = mentor.mentorship_status === 'active' ? 'active' : 'inactive';
+  const statusInfo = getStatusInfo(mentor.mentorship_status);
   
   // Calculate pending validations
   const pendingValidations = (mentor.max_trainees || 0) - (mentor.current_trainees || 0);
@@ -334,7 +446,7 @@ const MentorCard = ({ mentor, initials, levelName, departmentNames, onEdit, onDe
             />
             <FaTrash 
               className="action-icon delete-icon" 
-              onClick={() => onDelete(mentor)}
+              onClick={() => onDelete(mentor.id, mentor.full_name)}
               title="Delete Mentor"
               style={{ cursor: 'pointer', color: '#dc3545' }}
             />
@@ -392,24 +504,31 @@ const MentorCard = ({ mentor, initials, levelName, departmentNames, onEdit, onDe
         </div>
 
         <div className="mm-card-footer">
-          <span className={`mm-status ${statusClass}`}>
-            {mentor.mentorship_status}
+          <span className={`mm-status ${statusInfo.class}`}>
+            {statusInfo.text}
           </span>
-          <div className="mm-verification-badges">
-            {mentor.background_verified && (
-              <span className="badge bg-success me-1" title="Background Verified">
-                ✓ BG
-              </span>
-            )}
-            {mentor.mentorship_certified && (
-              <span className="badge bg-info" title="Mentorship Certified">
-                ★ Certified
-              </span>
-            )}
-          </div>
-          <button className="btn btn-outline-primary btn-sm">
-            <FaCheckCircle /> Review
-          </button>
+          
+          {/* Approval/Rejection Buttons - Only show for pending mentors */}
+          {mentor.mentorship_status === "pending" && (
+            <div className="mm-approval-buttons">
+              <button 
+                className="btn btn-sm btn-success me-1"
+                onClick={() => onApprove(mentor.id, mentor.full_name)}
+                disabled={actionLoading}
+                title="Approve Mentor"
+              >
+                <FaCheck /> Approve
+              </button>
+              <button 
+                className="btn btn-sm btn-danger"
+                onClick={() => onReject(mentor.id, mentor.full_name)}
+                disabled={actionLoading}
+                title="Reject Mentor"
+              >
+                <FaTimes /> Reject
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -341,3 +341,80 @@
 .candidates-action-icon {
   user-select: none;
 }
+
+
+/* Status pills for candidates */
+.candidates-pill.status-approved {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.candidates-pill.status-pending {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.candidates-pill.status-rejected {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+/* Action icons */
+.candidates-action-icon {
+  transition: all 0.3s ease;
+}
+
+.candidates-action-icon.approve-icon:hover {
+  transform: scale(1.1);
+}
+
+.candidates-action-icon.reject-icon:hover {
+  transform: scale(1.1);
+}
+
+
+/* Status pills for candidates - Updated to match API values */
+.candidates-pill.status-active {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.candidates-pill.status-inactive {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.candidates-pill.status-pending {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}

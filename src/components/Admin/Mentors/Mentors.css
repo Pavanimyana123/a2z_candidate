@@ -559,3 +559,43 @@
     padding: 3px 8px;
   }
 }
+
+
+
+/* Status styles for mentors */
+.mm-status.status-active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.mm-status.status-pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.mm-status.status-rejected {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Approval buttons */
+.mm-approval-buttons {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.mm-approval-buttons .btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.mm-approval-buttons .btn-success {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+.mm-approval-buttons .btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}

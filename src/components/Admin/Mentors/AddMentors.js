@@ -16,6 +16,7 @@ const AddMentor = () => {
 
   // State for dropdown options
   const [levels, setLevels] = useState([]);
+  const [filteredLevels, setFilteredLevels] = useState([]); // New state for filtered levels (level > 3)
   const [departments, setDepartments] = useState([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
 
@@ -29,7 +30,7 @@ const AddMentor = () => {
     years_of_experience: "",
     max_trainees: "",
     current_trainees: "",
-    mentorship_status: "active",
+    mentorship_status: "active", // Default value for new mentors
     background_verified: true,
     mentorship_certified: true,
   });
@@ -76,6 +77,13 @@ const AddMentor = () => {
         deptsData.data?.filter((dept) => dept.is_active) || [];
 
       setLevels(activeLevels);
+      
+      // Filter levels to only show levels with number greater than 3 (Level 4 and above)
+      // AND also include the currently selected level in edit mode
+      const filtered = activeLevels.filter(level => level.number > 3);
+      setFilteredLevels(filtered);
+      console.log("✅ Filtered levels (number > 3):", filtered);
+      
       setDepartments(activeDepartments);
     } catch (err) {
       console.error("❌ Error fetching options:", err);
@@ -274,10 +282,16 @@ const AddMentor = () => {
       years_of_experience: Number(formData.years_of_experience),
       max_trainees: Number(formData.max_trainees),
       current_trainees: Number(formData.current_trainees || 0),
-      mentorship_status: formData.mentorship_status,
       background_verified: formData.background_verified,
       mentorship_certified: formData.mentorship_certified,
     };
+
+    // Only add mentorship_status in edit mode
+    if (isEditMode) {
+      payload.mentorship_status = formData.mentorship_status;
+    }
+    // For new mentors, default is 'active' and not sent in payload
+    // (or you can send it if your API requires it)
 
     console.log("📦 Sending payload:", payload);
 
@@ -376,6 +390,30 @@ const AddMentor = () => {
     return dept ? getDepartmentDisplay(dept) : "Unknown Department";
   };
 
+  // Function to check if the selected level is valid (for edit mode)
+  const isValidLevelForDisplay = (levelId) => {
+    const level = levels.find(l => l.id === levelId);
+    if (!level) return false;
+    // In edit mode, if the level number is <= 3, we still show it because it's already assigned
+    if (isEditMode && formData.mentor_level === levelId) {
+      return true;
+    }
+    // For new mentors or other levels, only show levels with number > 3
+    return level.number > 3;
+  };
+
+  // Get the levels to display in dropdown
+  const getDisplayLevels = () => {
+    if (isEditMode) {
+      // In edit mode, include all filtered levels AND the currently selected level if it's not already included
+      const currentLevel = levels.find(l => l.id === formData.mentor_level);
+      if (currentLevel && currentLevel.number <= 3 && !filteredLevels.some(l => l.id === currentLevel.id)) {
+        return [...filteredLevels, currentLevel];
+      }
+    }
+    return filteredLevels;
+  };
+
   if (fetchLoading || loadingOptions) {
     return (
       <div className="ta-layout-wrapper">
@@ -399,6 +437,8 @@ const AddMentor = () => {
     );
   }
 
+  const displayLevels = getDisplayLevels();
+
   return (
     <div className="ta-layout-wrapper">
       <Sidebar />
@@ -419,6 +459,14 @@ const AddMentor = () => {
                 </p>
               </div>
             </div>
+
+            {/* Info Alert for Level Restriction */}
+            {!isEditMode && (
+              <div className="alert alert-info mb-3">
+                <i className="bi bi-info-circle-fill me-2"></i>
+                <strong>Note:</strong> Only Level 4 and above (Mentor levels) are available for selection.
+              </div>
+            )}
 
             {/* Error Message */}
             {error && (
@@ -494,7 +542,7 @@ const AddMentor = () => {
                     )}
                   </div>
 
-                  {/* Mentor Level - Using id field */}
+                  {/* Mentor Level - Only show levels with number > 3 */}
                   <div className="col-md-4 mb-3">
                     <label className="form-label">Mentor Level *</label>
                     <div className="position-relative">
@@ -503,10 +551,10 @@ const AddMentor = () => {
                         name="mentor_level"
                         value={formData.mentor_level || ""}
                         onChange={handleChange}
-                        disabled={loading || levels.length === 0}
+                        disabled={loading || displayLevels.length === 0}
                       >
                         <option value="">Select Mentor Level</option>
-                        {levels.map((level) => (
+                        {displayLevels.map((level) => (
                           <option key={level.id} value={level.id}>
                             {getLevelDisplay(level)}
                           </option>
@@ -528,9 +576,9 @@ const AddMentor = () => {
                         {errors.mentor_level}
                       </div>
                     )}
-                    {levels.length === 0 && (
+                    {displayLevels.length === 0 && (
                       <small className="text-warning">
-                        No active levels available
+                        No mentor levels available (Level 4 and above)
                       </small>
                     )}
                   </div>
@@ -606,22 +654,24 @@ const AddMentor = () => {
                     />
                   </div>
 
-                  {/* Mentorship Status */}
-                  <div className="col-md-4 mb-3">
-                    <label className="form-label">Mentorship Status</label>
-                    <select
-                      className="form-select"
-                      name="mentorship_status"
-                      value={formData.mentorship_status}
-                      onChange={handleChange}
-                      disabled={loading}
-                    >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="on-leave">On Leave</option>
-                      <option value="pending">Pending</option>
-                    </select>
-                  </div>
+                  {/* Mentorship Status - Only show in edit mode */}
+                  {isEditMode && (
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Mentorship Status</label>
+                      <select
+                        className="form-select"
+                        name="mentorship_status"
+                        value={formData.mentorship_status}
+                        onChange={handleChange}
+                        disabled={loading}
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="pending">Pending</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                    </div>
+                  )}
 
                   {/* Specializations - Multi-select using id field */}
                   <div className="col-md-6 mb-3">

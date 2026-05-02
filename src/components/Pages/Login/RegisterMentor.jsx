@@ -14,6 +14,7 @@ const RegisterMentor = () => {
 
   // State for dropdown options
   const [levels, setLevels] = useState([]);
+  const [filteredLevels, setFilteredLevels] = useState([]); // New state for filtered levels (level > 3)
   const [departments, setDepartments] = useState([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
 
@@ -66,6 +67,12 @@ const RegisterMentor = () => {
       const activeDepartments = deptsData.data?.filter((dept) => dept.is_active) || [];
 
       setLevels(activeLevels);
+      
+      // Filter levels to only show levels with number greater than 3 (Level 4 and above)
+      const filtered = activeLevels.filter(level => level.number > 3);
+      setFilteredLevels(filtered);
+      console.log("✅ Filtered levels (number > 3):", filtered);
+      
       setDepartments(activeDepartments);
     } catch (err) {
       console.error("❌ Error fetching options:", err);
@@ -341,6 +348,18 @@ const RegisterMentor = () => {
     return `${dept.name} (${dept.code})`;
   };
 
+  // Function to get the levels to display in dropdown
+  const getDisplayLevels = () => {
+    if (isEditMode) {
+      // In edit mode, include all filtered levels AND the currently selected level if it's not already included
+      const currentLevel = levels.find(l => l.id === formData.mentor_level);
+      if (currentLevel && currentLevel.number <= 3 && !filteredLevels.some(l => l.id === currentLevel.id)) {
+        return [...filteredLevels, currentLevel];
+      }
+    }
+    return filteredLevels;
+  };
+
   if (fetchLoading || loadingOptions) {
     return (
       <div className="register-mentor-page">
@@ -355,6 +374,8 @@ const RegisterMentor = () => {
       </div>
     );
   }
+
+  const displayLevels = getDisplayLevels();
 
   return (
     <div className="register-mentor-page">
@@ -380,6 +401,15 @@ const RegisterMentor = () => {
             </p>
           </div>
         </div>
+
+        {/* Info Alert for Level Restriction - Only show for new mentors */}
+        {!isEditMode && (
+          <div className="register-mentor-alert register-mentor-alert--info" role="alert">
+            <span className="register-mentor-alert__message">
+              <strong>Note:</strong> Only Level 4 and above (Mentor levels) are available for selection.
+            </span>
+          </div>
+        )}
 
         {/* Error Message */}
         {error && (
@@ -491,10 +521,10 @@ const RegisterMentor = () => {
                       name="mentor_level"
                       value={formData.mentor_level || ""}
                       onChange={handleChange}
-                      disabled={loading || levels.length === 0}
+                      disabled={loading || displayLevels.length === 0}
                     >
                       <option value="">Select Mentor Level</option>
-                      {levels.map((level) => (
+                      {displayLevels.map((level) => (
                         <option key={level.id} value={level.id}>
                           {getLevelDisplay(level)}
                         </option>
@@ -514,9 +544,9 @@ const RegisterMentor = () => {
                   {errors.mentor_level && (
                     <span className="register-mentor-form__error-text">{errors.mentor_level}</span>
                   )}
-                  {levels.length === 0 && (
+                  {displayLevels.length === 0 && (
                     <small className="register-mentor-form__warning-text">
-                      No active levels available
+                      No mentor levels available (Level 4 and above)
                     </small>
                   )}
                 </div>

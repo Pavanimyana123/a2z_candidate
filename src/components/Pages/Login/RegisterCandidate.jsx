@@ -9,11 +9,9 @@ const RegisterCandidate = () => {
   const { id } = useParams();
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
-  const [levelsLoading, setLevelsLoading] = useState(false);
   const [error, setError] = useState('');
   const [errors, setErrors] = useState({});
   const [isEditMode, setIsEditMode] = useState(false);
-  const [levels, setLevels] = useState([]);
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -28,46 +26,9 @@ const RegisterCandidate = () => {
     pincode: '',
     emergency_contact_name: '',
     emergency_contact_phone: '',
-    current_level: '',
     blood_group: '',
     medical_expiry_date: '',
   });
-
-  useEffect(() => {
-    fetchLevels();
-  }, []);
-
-  const fetchLevels = async () => {
-    try {
-      setLevelsLoading(true);
-      const response = await fetch(`${BASE_URL}/api/admin/levels/`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      
-      if (result.status && result.data) {
-        const activeLevels = result.data.filter(level => level.is_active);
-        setLevels(activeLevels);
-        console.log('✅ Levels fetched successfully:', activeLevels);
-      } else {
-        throw new Error(result.message || 'Failed to fetch levels');
-      }
-    } catch (err) {
-      console.error('Error fetching levels:', err);
-      Swal.fire({
-        icon: 'error',
-        title: 'Failed to Load Levels',
-        text: err.message || 'An error occurred while loading levels',
-        timer: 3000,
-        showConfirmButton: true
-      });
-    } finally {
-      setLevelsLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (id) {
@@ -102,7 +63,6 @@ const RegisterCandidate = () => {
           pincode: candidateData.pincode || '',
           emergency_contact_name: candidateData.emergency_contact_name || '',
           emergency_contact_phone: candidateData.emergency_contact_phone || '',
-          current_level: candidateData.current_level ? parseInt(candidateData.current_level) : '',
           blood_group: candidateData.blood_group || '',
           medical_expiry_date: candidateData.medical_expiry_date ? candidateData.medical_expiry_date.split('T')[0] : '',
         };
@@ -128,34 +88,16 @@ const RegisterCandidate = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
     
-    if (name === "current_level") {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value ? parseInt(value) : ""
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
     
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
-  };
-
-  const clearCurrentLevel = () => {
-    setFormData(prev => ({
-      ...prev,
-      current_level: ""
-    }));
-  };
-
-  const getLevelDisplay = (level) => {
-    return `${level.name} (Level ${level.number})`;
   };
 
   const validateForm = () => {
@@ -216,10 +158,6 @@ const RegisterCandidate = () => {
       newErrors.emergency_contact_phone = "Please enter a valid 10-digit phone number";
     }
 
-    if (!formData.current_level && formData.current_level !== 0) {
-      newErrors.current_level = "Current level is required";
-    }
-
     const isValid = Object.keys(newErrors).length === 0;
     console.log('Validation result:', isValid ? 'PASSED' : 'FAILED');
     if (!isValid) {
@@ -247,6 +185,7 @@ const RegisterCandidate = () => {
     setLoading(true);
     setError('');
 
+    // Prepare payload - REMOVED current_level field
     const payload = {
       full_name: formData.full_name,
       date_of_birth: formData.date_of_birth,
@@ -263,9 +202,14 @@ const RegisterCandidate = () => {
       blood_group: formData.blood_group || '',
       medical_expiry_date: formData.medical_expiry_date || '',
       safety_induction_status: true,
-      current_level: formData.current_level ? parseInt(formData.current_level) : null
     };
 
+    // Add candidate_status only in edit mode
+    if (isEditMode) {
+      payload.candidate_status = formData.candidate_status;
+    }
+
+    // Remove empty values
     Object.keys(payload).forEach(key => {
       if (payload[key] === undefined || payload[key] === null || payload[key] === '') {
         delete payload[key];
@@ -337,13 +281,13 @@ const RegisterCandidate = () => {
     navigate('/candidate');
   };
 
-  if (fetchLoading || levelsLoading) {
+  if (fetchLoading) {
     return (
       <div className="register-candidate-page">
         <div className="register-candidate-loading">
           <div className="register-candidate-loading__spinner"></div>
           <p className="register-candidate-loading__text">
-            {fetchLoading ? 'Loading candidate data...' : 'Loading levels...'}
+            Loading candidate data...
           </p>
         </div>
       </div>
@@ -405,7 +349,8 @@ const RegisterCandidate = () => {
                   <label className="register-candidate-form__label">
                     Full Name <span className="register-candidate-form__required">*</span>
                   </label>
-                  <input                    type="text"
+                  <input
+                    type="text"
                     className={`register-candidate-form__input ${errors.full_name ? 'register-candidate-form__input--error' : ''}`}
                     name="full_name"
                     value={formData.full_name || ''}
@@ -700,56 +645,6 @@ const RegisterCandidate = () => {
                   />
                   {errors.emergency_contact_phone && (
                     <span className="register-candidate-form__error-text">{errors.emergency_contact_phone}</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Training Information Section */}
-          <div className="register-candidate-section">
-            <h3 className="register-candidate-section__title">
-              <span className="register-candidate-section__title-icon">📚</span>
-              Training Information
-            </h3>
-            <div className="register-candidate-form__row">
-              {/* Current Level */}
-              <div className="register-candidate-form__col-half">
-                <div className="register-candidate-form__field-group">
-                  <label className="register-candidate-form__label">
-                    Current Level <span className="register-candidate-form__required">*</span>
-                  </label>
-                  <div className="register-candidate-form__select-wrapper">
-                    <select
-                      className={`register-candidate-form__select ${errors.current_level ? 'register-candidate-form__select--error' : ''} ${formData.current_level ? 'register-candidate-form__select--has-value' : ''}`}
-                      name="current_level"
-                      value={formData.current_level || ''}
-                      onChange={handleChange}
-                      disabled={loading || levelsLoading || levels.length === 0}
-                    >
-                      <option value="">-- Select Level --</option>
-                      {levels.map((level) => (
-                        <option key={level.id} value={level.id}>
-                          {getLevelDisplay(level)}
-                        </option>
-                      ))}
-                    </select>
-                    {formData.current_level && (
-                      <button
-                        type="button"
-                        className="register-candidate-form__clear-btn"
-                        onClick={clearCurrentLevel}
-                        title="Clear selection"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                  {errors.current_level && (
-                    <span className="register-candidate-form__error-text">{errors.current_level}</span>
-                  )}
-                  {levels.length === 0 && !levelsLoading && (
-                    <small className="register-candidate-form__warning-text">No active levels available</small>
                   )}
                 </div>
               </div>

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../Layout/Sidebar";
 import Header from "../Layout/Header";
 import "./Candidates.css";
-import { FaSearch, FaFilter, FaEdit, FaTrash } from "react-icons/fa";
+import { FaSearch, FaFilter, FaEdit, FaTrash, FaCheck, FaTimes } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import { BASE_URL } from "../../../ApiUrl";
 
@@ -15,6 +15,7 @@ const Candidates = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [levelFilter, setLevelFilter] = useState("All Levels");
   const [statusFilter, setStatusFilter] = useState("All Status");
+  const [actionLoading, setActionLoading] = useState(false);
   
   const navigate = useNavigate();
 
@@ -67,6 +68,122 @@ const Candidates = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle approve candidate (sets status to "active")
+  const handleApprove = async (candidateId, candidateName) => {
+    Swal.fire({
+      title: 'Approve Candidate?',
+      text: `Are you sure you want to approve "${candidateName}"?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#28a745',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, Approve',
+      cancelButtonText: 'Cancel',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        setActionLoading(true);
+        try {
+          const response = await fetch(`${BASE_URL}/api/candidate/candidates/${candidateId}/`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+            body: JSON.stringify({
+              candidate_status: 'active'  // Changed from 'approved' to 'active'
+            })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
+          }
+
+          await fetchAllData();
+          
+          Swal.fire({
+            icon: 'success',
+            title: 'Approved!',
+            text: `${candidateName} has been approved successfully.`,
+            timer: 2000,
+            showConfirmButton: false
+          });
+        } catch (error) {
+          console.error('Approve error:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: error.message || 'Failed to approve candidate. Please try again.',
+          });
+        } finally {
+          setActionLoading(false);
+        }
+      }
+    });
+  };
+
+  // Handle reject candidate (sets status to "inactive")
+  const handleReject = async (candidateId, candidateName) => {
+    Swal.fire({
+      title: 'Reject Candidate?',
+      text: `Are you sure you want to reject "${candidateName}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Yes, Reject',
+      cancelButtonText: 'Cancel',
+      input: 'textarea',
+      inputPlaceholder: 'Please provide a reason for rejection...',
+      inputValidator: (value) => {
+        if (!value) {
+          return 'You need to provide a reason for rejection!';
+        }
+      }
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        setActionLoading(true);
+        try {
+          const response = await fetch(`${BASE_URL}/api/candidate/candidates/${candidateId}/`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+            body: JSON.stringify({
+              candidate_status: 'inactive',  // Changed from 'rejected' to 'inactive'
+              rejection_reason: result.value
+            })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => null);
+            throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
+          }
+
+          await fetchAllData();
+          
+          Swal.fire({
+            icon: 'success',
+            title: 'Rejected!',
+            text: `${candidateName} has been rejected.`,
+            timer: 2000,
+            showConfirmButton: false
+          });
+        } catch (error) {
+          console.error('Reject error:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: error.message || 'Failed to reject candidate. Please try again.',
+          });
+        } finally {
+          setActionLoading(false);
+        }
+      }
+    });
   };
 
   const handleAddCandidate = () => {
@@ -135,6 +252,20 @@ const Candidates = () => {
     return level ? `${level.name} (Level ${level.number})` : 'Unknown Level';
   };
 
+  // Get candidate status display - Map API status to display text
+  const getStatusInfo = (candidateStatus) => {
+    switch(candidateStatus) {
+      case "active":
+        return { text: "Active", class: "status-active" };
+      case "inactive":
+        return { text: "Inactive", class: "status-inactive" };
+      case "pending":
+        return { text: "Pending", class: "status-pending" };
+      default:
+        return { text: candidateStatus || "Pending", class: "status-pending" };
+    }
+  };
+
   // Filter candidates based on search and filters
   const filteredCandidates = candidates.filter(candidate => {
     const matchesSearch = searchTerm === "" || 
@@ -147,9 +278,8 @@ const Candidates = () => {
     const matchesLevel = levelFilter === "All Levels" || 
       (candidate.current_level && parseInt(candidate.current_level) === parseInt(levelFilter));
     
-    const candidateStatus = candidate.safety_induction_status ? "active" : "blocked";
     const matchesStatus = statusFilter === "All Status" || 
-      candidateStatus === statusFilter.toLowerCase();
+      candidate.candidate_status === statusFilter.toLowerCase();
     
     return matchesSearch && matchesLevel && matchesStatus;
   });
@@ -217,7 +347,8 @@ const Candidates = () => {
                 >
                   <option value="All Status">All Status</option>
                   <option value="active">Active</option>
-                  <option value="blocked">Blocked</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="pending">Pending</option>
                 </select>
 
                 <button className="candidates-filter-btn" onClick={fetchAllData}>
@@ -253,7 +384,6 @@ const Candidates = () => {
                   <thead>
                     <tr>
                       <th>Candidate Name</th>
-                      {/* <th>Level</th> */}
                       <th>Email</th>
                       <th>Phone</th>
                       <th>City</th>
@@ -272,11 +402,15 @@ const Candidates = () => {
                           levelName={getLevelName(candidate.current_level)}
                           onEdit={handleEdit}
                           onDelete={confirmDelete}
+                          onApprove={handleApprove}
+                          onReject={handleReject}
+                          actionLoading={actionLoading}
+                          getStatusInfo={getStatusInfo}
                         />
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="9" className="text-center py-4">
+                        <td colSpan="8" className="text-center py-4">
                           No candidates found
                           {searchTerm && (
                             <div>
@@ -303,7 +437,7 @@ const Candidates = () => {
 };
 
 /* ---- Row Component ---- */
-const CandidateRow = ({ candidate, levelName, onEdit, onDelete }) => {
+const CandidateRow = ({ candidate, levelName, onEdit, onDelete, onApprove, onReject, actionLoading, getStatusInfo }) => {
   // Format date function
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -327,19 +461,14 @@ const CandidateRow = ({ candidate, levelName, onEdit, onDelete }) => {
     return expiryDate < today;
   };
 
-  const status = candidate.safety_induction_status ? 'active' : 'blocked';
   const medicalExpired = isMedicalExpired();
+  const statusInfo = getStatusInfo(candidate.candidate_status);
 
   return (
     <tr>
       <td className="candidates-name">
         {candidate.full_name || 'N/A'}
       </td>
-      {/* <td>
-        <span className="candidates-level">
-          {levelName}
-        </span>
-      </td> */}
       <td>{candidate.email || 'N/A'}</td>
       <td>{candidate.phone_number || 'N/A'}</td>
       <td>{candidate.city || 'N/A'}</td>
@@ -351,8 +480,8 @@ const CandidateRow = ({ candidate, levelName, onEdit, onDelete }) => {
         </span>
       </td>
       <td>
-        <span className={`candidates-pill ${status}`}>
-          {status === 'active' ? 'Active' : 'Blocked'}
+        <span className={`candidates-pill ${statusInfo.class}`}>
+          {statusInfo.text}
         </span>
       </td>
       <td>
@@ -369,6 +498,24 @@ const CandidateRow = ({ candidate, levelName, onEdit, onDelete }) => {
             title="Delete Candidate"
             style={{ cursor: 'pointer', color: '#dc3545' }}
           />
+          {candidate.candidate_status === "pending" && (
+            <>
+              <FaCheck 
+                className="candidates-action-icon approve-icon" 
+                onClick={() => onApprove(candidate.id, candidate.full_name)}
+                disabled={actionLoading}
+                title="Approve Candidate"
+                style={{ cursor: 'pointer', marginLeft: '10px', color: '#28a745' }}
+              />
+              <FaTimes 
+                className="candidates-action-icon reject-icon" 
+                onClick={() => onReject(candidate.id, candidate.full_name)}
+                disabled={actionLoading}
+                title="Reject Candidate"
+                style={{ cursor: 'pointer', marginLeft: '10px', color: '#dc3545' }}
+              />
+            </>
+          )}
         </div>
       </td>
     </tr>

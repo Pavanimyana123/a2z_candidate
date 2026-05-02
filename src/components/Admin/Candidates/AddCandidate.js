@@ -11,11 +11,9 @@ const AddCandidate = () => {
   const { id } = useParams(); // Get ID from URL for edit mode
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
-  const [levelsLoading, setLevelsLoading] = useState(false);
   const [error, setError] = useState('');
   const [errors, setErrors] = useState({});
   const [isEditMode, setIsEditMode] = useState(false);
-  const [levels, setLevels] = useState([]);
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -30,49 +28,10 @@ const AddCandidate = () => {
     pincode: '',
     emergency_contact_name: '',
     emergency_contact_phone: '',
-    current_level: '', // This will store the level_id
     blood_group: '',
     medical_expiry_date: '',
-    candidate_status: 'Pending', // Add candidate_status field
+    candidate_status: 'pending', // Add candidate_status field with correct value
   });
-
-  // Fetch levels on component mount
-  useEffect(() => {
-    fetchLevels();
-  }, []);
-
-  const fetchLevels = async () => {
-    try {
-      setLevelsLoading(true);
-      const response = await fetch(`${BASE_URL}/api/admin/levels/`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      
-      if (result.status && result.data) {
-        // Filter active levels
-        const activeLevels = result.data.filter(level => level.is_active);
-        setLevels(activeLevels);
-        console.log('✅ Levels fetched successfully:', activeLevels);
-      } else {
-        throw new Error(result.message || 'Failed to fetch levels');
-      }
-    } catch (err) {
-      console.error('Error fetching levels:', err);
-      Swal.fire({
-        icon: 'error',
-        title: 'Failed to Load Levels',
-        text: err.message || 'An error occurred while loading levels',
-        timer: 3000,
-        showConfirmButton: true
-      });
-    } finally {
-      setLevelsLoading(false);
-    }
-  };
 
   // Fetch candidate data if in edit mode
   useEffect(() => {
@@ -109,10 +68,9 @@ const AddCandidate = () => {
           pincode: candidateData.pincode || '',
           emergency_contact_name: candidateData.emergency_contact_name || '',
           emergency_contact_phone: candidateData.emergency_contact_phone || '',
-          current_level: candidateData.current_level ? parseInt(candidateData.current_level) : '',
           blood_group: candidateData.blood_group || '',
           medical_expiry_date: candidateData.medical_expiry_date ? candidateData.medical_expiry_date.split('T')[0] : '',
-          candidate_status: candidateData.candidate_status || 'Pending', // Add candidate_status
+          candidate_status: candidateData.candidate_status || 'pending',
         };
         setFormData(formattedData);
         console.log('✅ Candidate data loaded for edit:', formattedData);
@@ -136,38 +94,17 @@ const AddCandidate = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
     
-    if (name === "current_level") {
-      // Convert level to integer
-      setFormData(prev => ({
-        ...prev,
-        [name]: value ? parseInt(value) : ""
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
     
     // Clear error for this field
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
-  };
-
-  // Clear selected level
-  const clearCurrentLevel = () => {
-    setFormData(prev => ({
-      ...prev,
-      current_level: ""
-    }));
-  };
-
-  // Get level display name with number
-  const getLevelDisplay = (level) => {
-    return `${level.name} (Level ${level.number})`;
   };
 
   const validateForm = () => {
@@ -228,10 +165,6 @@ const AddCandidate = () => {
       newErrors.emergency_contact_phone = "Please enter a valid 10-digit phone number";
     }
 
-    if (!formData.current_level && formData.current_level !== 0) {
-      newErrors.current_level = "Current level is required";
-    }
-
     const isValid = Object.keys(newErrors).length === 0;
     console.log('Validation result:', isValid ? 'PASSED' : 'FAILED');
     if (!isValid) {
@@ -243,116 +176,118 @@ const AddCandidate = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Validation Failed',
-        text: 'Please check all required fields and try again.',
-        timer: 3000,
-        showConfirmButton: true
-      });
-      return;
+  e.preventDefault();
+  
+  if (!validateForm()) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Validation Failed',
+      text: 'Please check all required fields and try again.',
+      timer: 3000,
+      showConfirmButton: true
+    });
+    return;
+  }
+
+  setLoading(true);
+  setError('');
+
+  // Prepare payload
+  const payload = {
+    full_name: formData.full_name,
+    date_of_birth: formData.date_of_birth,
+    gender: formData.gender,
+    phone_number: formData.phone_number,
+    email: formData.email,
+    address: formData.address,
+    city: formData.city,
+    state: formData.state,
+    country: formData.country,
+    pincode: formData.pincode,
+    emergency_contact_name: formData.emergency_contact_name,
+    emergency_contact_phone: formData.emergency_contact_phone,
+    blood_group: formData.blood_group || '',
+    medical_expiry_date: formData.medical_expiry_date || '',
+    safety_induction_status: true,
+  };
+
+  // Add candidate_status for both create and edit
+  if (isEditMode) {
+    payload.candidate_status = formData.candidate_status;
+  } else {
+    // For new candidates, you can set default status
+    payload.candidate_status = 'active'; // or 'pending' based on your requirement
+  }
+
+  // Remove empty values
+  Object.keys(payload).forEach(key => {
+    if (payload[key] === undefined || payload[key] === null || payload[key] === '') {
+      delete payload[key];
     }
+  });
 
-    setLoading(true);
-    setError('');
+  console.log('📦 Payload:', payload);
+  
+  const method = isEditMode ? 'PUT' : 'POST';
+  const url = isEditMode 
+    ? `${BASE_URL}/api/candidate/candidates/${id}/` 
+    : `${BASE_URL}/api/candidate/candidates/`;
 
-    // Prepare payload
-    const payload = {
-      full_name: formData.full_name,
-      date_of_birth: formData.date_of_birth,
-      gender: formData.gender,
-      phone_number: formData.phone_number,
-      email: formData.email,
-      address: formData.address,
-      city: formData.city,
-      state: formData.state,
-      country: formData.country,
-      pincode: formData.pincode,
-      emergency_contact_name: formData.emergency_contact_name,
-      emergency_contact_phone: formData.emergency_contact_phone,
-      blood_group: formData.blood_group || '',
-      medical_expiry_date: formData.medical_expiry_date || '',
-      safety_induction_status: true,
-      current_level: formData.current_level ? parseInt(formData.current_level) : null
-    };
-
-    // Add candidate_status only in edit mode
-    if (isEditMode) {
-      payload.candidate_status = formData.candidate_status;
-    }
-
-    // Remove empty values
-    Object.keys(payload).forEach(key => {
-      if (payload[key] === undefined || payload[key] === null || payload[key] === '') {
-        delete payload[key];
-      }
+  try {
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
     });
 
-    console.log('📦 Payload:', payload);
-    
-    const method = isEditMode ? 'PUT' : 'POST';
-    const url = isEditMode 
-      ? `${BASE_URL}/api/candidate/candidates/${id}/` 
-      : `${BASE_URL}/api/candidate/candidates/`;
+    const responseData = await response.json().catch(() => null);
 
-    try {
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const responseData = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        if (responseData && responseData.errors) {
-          const serverErrors = {};
-          Object.keys(responseData.errors).forEach(key => {
-            serverErrors[key] = Array.isArray(responseData.errors[key]) 
-              ? responseData.errors[key][0] 
-              : responseData.errors[key];
-          });
-          setErrors(serverErrors);
-          throw new Error('Please check the form for errors');
-        }
-        throw new Error(responseData?.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate`);
+    if (!response.ok) {
+      if (responseData && responseData.errors) {
+        const serverErrors = {};
+        Object.keys(responseData.errors).forEach(key => {
+          serverErrors[key] = Array.isArray(responseData.errors[key]) 
+            ? responseData.errors[key][0] 
+            : responseData.errors[key];
+        });
+        setErrors(serverErrors);
+        throw new Error('Please check the form for errors');
       }
-
-      await Swal.fire({
-        icon: 'success',
-        title: isEditMode ? 'Updated!' : 'Created!',
-        text: `Candidate has been ${isEditMode ? 'updated' : 'created'} successfully.`,
-        timer: 2000,
-        showConfirmButton: false
-      });
-      
-      navigate('/candidate');
-    } catch (err) {
-      console.error(`❌ Error:`, err);
-      setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`);
-      
-      Swal.fire({
-        icon: 'error',
-        title: isEditMode ? 'Update Failed' : 'Creation Failed',
-        text: err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`,
-        timer: 3000,
-        showConfirmButton: true
-      });
-    } finally {
-      setLoading(false);
+      throw new Error(responseData?.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate`);
     }
-  };
+
+    await Swal.fire({
+      icon: 'success',
+      title: isEditMode ? 'Updated!' : 'Created!',
+      text: `Candidate has been ${isEditMode ? 'updated' : 'created'} successfully.`,
+      timer: 2000,
+      showConfirmButton: false
+    });
+    
+    navigate('/candidate');
+  } catch (err) {
+    console.error(`❌ Error:`, err);
+    setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`);
+    
+    Swal.fire({
+      icon: 'error',
+      title: isEditMode ? 'Update Failed' : 'Creation Failed',
+      text: err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`,
+      timer: 3000,
+      showConfirmButton: true
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleCancel = () => {
     navigate('/candidate');
   };
 
-  if (fetchLoading || levelsLoading) {
+  if (fetchLoading) {
     return (
       <div className="ta-layout-wrapper">
         <Sidebar />
@@ -363,9 +298,7 @@ const AddCandidate = () => {
               <div className="spinner-border text-primary" role="status">
                 <span className="visually-hidden">Loading...</span>
               </div>
-              <p className="mt-2">
-                {fetchLoading ? 'Loading candidate data...' : 'Loading levels...'}
-              </p>
+              <p className="mt-2">Loading candidate data...</p>
             </div>
           </div>
         </div>
@@ -606,73 +539,6 @@ const AddCandidate = () => {
                     )}
                   </div>
 
-                  {/* Current Level - Dropdown with level_id (Fixed) */}
-                  {/* <div className="col-md-4 mb-3">
-                    <label className="form-label">Current Level *</label>
-                    <div className="position-relative">
-                      <select
-                        className={`form-select ${errors.current_level ? 'is-invalid' : ''} ${formData.current_level ? 'has-value' : ''}`}
-                        name="current_level"
-                        value={formData.current_level || ''}
-                        onChange={handleChange}
-                        disabled={loading || levelsLoading || levels.length === 0}
-                      >
-                        <option value="">-- Select Level --</option>
-                        {levels.map((level) => (
-                          <option key={level.id} value={level.id}>
-                            {getLevelDisplay(level)}
-                          </option>
-                        ))}
-                      </select>
-                      {formData.current_level && (
-                        <button
-                          type="button"
-                          className="btn-clear-selection"
-                          onClick={clearCurrentLevel}
-                          title="Clear selection"
-                          style={{
-                            position: 'absolute',
-                            right: '10px',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            border: 'none',
-                            background: 'transparent',
-                            cursor: 'pointer',
-                            fontSize: '16px',
-                            color: '#666'
-                          }}
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                    {errors.current_level && (
-                      <div className="invalid-feedback d-block">{errors.current_level}</div>
-                    )}
-                    {levels.length === 0 && !levelsLoading && (
-                      <small className="text-warning">No active levels available</small>
-                    )}
-                  </div> */}
-
-
-                   {/* Candidate Status - Only show in edit mode */}
-                  {isEditMode && (
-                    <div className="col-md-4 mb-3">
-                      <label className="form-label">Candidate Status</label>
-                      <select
-                        className="form-select"
-                        name="candidate_status"
-                        value={formData.candidate_status || 'Pending'}
-                        onChange={handleChange}
-                        disabled={loading}
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                      </select>
-                    </div>
-                  )}
-
                   {/* Blood Group */}
                   <div className="col-md-4 mb-3">
                     <label className="form-label">Blood Group</label>
@@ -707,6 +573,24 @@ const AddCandidate = () => {
                       disabled={loading}
                     />
                   </div>
+
+                  {/* Candidate Status - Only show in edit mode */}
+                  {isEditMode && (
+                    <div className="col-md-4 mb-3">
+                      <label className="form-label">Candidate Status</label>
+                      <select
+                        className="form-select"
+                        name="candidate_status"
+                        value={formData.candidate_status || 'pending'}
+                        onChange={handleChange}
+                        disabled={loading}
+                      >
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="pending">Pending</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 {/* Form Actions */}
