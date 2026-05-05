@@ -33,6 +33,11 @@ const AddDepartmentLevel = () => {
     level: 0
   });
 
+  // State for dynamic arrays
+  const [mandatoryRequirements, setMandatoryRequirements] = useState([]);
+  const [promotionRules, setPromotionRules] = useState([]);
+  const [authorityLimits, setAuthorityLimits] = useState([]);
+
   // Check if we're in edit mode based on URL params
   useEffect(() => {
     if (id) {
@@ -71,6 +76,11 @@ const AddDepartmentLevel = () => {
           department: levelData.department,
           level: levelData.level
         });
+        
+        // Set dynamic arrays if they exist in the data
+        setMandatoryRequirements(levelData.mandatory_requirements || []);
+        setPromotionRules(levelData.promotion_rules || []);
+        setAuthorityLimits(levelData.authority_limits || []);
       } else {
         setError('Failed to fetch department level details');
         Swal.fire({
@@ -164,6 +174,75 @@ const AddDepartmentLevel = () => {
     }));
   };
 
+  // Handlers for Mandatory Requirements
+  const addMandatoryRequirement = () => {
+    setMandatoryRequirements([...mandatoryRequirements, {
+      type: 'training',
+      name: '',
+      description: '',
+      mandatory: true,
+      expiry_required: false,
+      minimum_duration: 0
+    }]);
+  };
+
+  const removeMandatoryRequirement = (index) => {
+    const updated = mandatoryRequirements.filter((_, i) => i !== index);
+    setMandatoryRequirements(updated);
+  };
+
+  const updateMandatoryRequirement = (index, field, value) => {
+    const updated = [...mandatoryRequirements];
+    updated[index][field] = field === 'mandatory' || field === 'expiry_required' ? value : value;
+    setMandatoryRequirements(updated);
+  };
+
+  // Handlers for Promotion Rules
+  const addPromotionRule = () => {
+    setPromotionRules([...promotionRules, {
+      rule_type: 'score',
+      name: '',
+      description: '',
+      condition: '',
+      weight: 1.0,
+      mandatory: true
+    }]);
+  };
+
+  const removePromotionRule = (index) => {
+    const updated = promotionRules.filter((_, i) => i !== index);
+    setPromotionRules(updated);
+  };
+
+  const updatePromotionRule = (index, field, value) => {
+    const updated = [...promotionRules];
+    updated[index][field] = field === 'mandatory' ? value : value;
+    setPromotionRules(updated);
+  };
+
+  // Handlers for Authority Limits
+  const addAuthorityLimit = () => {
+    setAuthorityLimits([...authorityLimits, {
+      authority_type: 'approval',
+      area: '',
+      limit: '',
+      description: '',
+      requires_escalation: false,
+      escalation_threshold: ''
+    }]);
+  };
+
+  const removeAuthorityLimit = (index) => {
+    const updated = authorityLimits.filter((_, i) => i !== index);
+    setAuthorityLimits(updated);
+  };
+
+  const updateAuthorityLimit = (index, field, value) => {
+    const updated = [...authorityLimits];
+    updated[index][field] = field === 'requires_escalation' ? value : value;
+    setAuthorityLimits(updated);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -194,6 +273,9 @@ const AddDepartmentLevel = () => {
       min_communication: formData.min_communication,
       min_overall_score: formData.min_overall_score,
       required_competencies: formData.required_competencies || '',
+      mandatory_requirements: mandatoryRequirements,
+      promotion_rules: promotionRules,
+      authority_limits: authorityLimits,
       strict_validation: formData.strict_validation,
       grace_period_weeks: formData.grace_period_weeks,
       department: parseInt(formData.department),
@@ -334,7 +416,7 @@ const AddDepartmentLevel = () => {
                     value={formData.department}
                     onChange={handleChange}
                     required
-                    disabled={isEditMode && submitting}
+                    disabled={submitting}
                   >
                     <option value="">Select Department</option>
                     {departments.map(dept => (
@@ -353,7 +435,7 @@ const AddDepartmentLevel = () => {
                     value={formData.level}
                     onChange={handleChange}
                     required
-                    disabled={isEditMode && submitting}
+                    disabled={submitting}
                   >
                     <option value="">Select Level</option>
                     {levels.map(level => (
@@ -537,6 +619,313 @@ const AddDepartmentLevel = () => {
                   rows="3"
                   disabled={submitting}
                 />
+              </div>
+
+              {/* Mandatory Requirements Section */}
+              <div className="form-section">
+                <div className="section-header">
+                  <h3>Mandatory Requirements</h3>
+                  <button 
+                    type="button" 
+                    className="btn btn-sm btn-primary"
+                    onClick={addMandatoryRequirement}
+                    disabled={submitting}
+                  >
+                    + Add Requirement
+                  </button>
+                </div>
+                
+                {mandatoryRequirements.map((req, index) => (
+                  <div key={index} className="dynamic-item-card">
+                    <div className="dynamic-item-header">
+                      <span>Requirement #{index + 1}</span>
+                      <button 
+                        type="button" 
+                        className="btn btn-sm btn-danger"
+                        onClick={() => removeMandatoryRequirement(index)}
+                        disabled={submitting}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Type</label>
+                        <select
+                          value={req.type}
+                          onChange={(e) => updateMandatoryRequirement(index, 'type', e.target.value)}
+                          disabled={submitting}
+                        >
+                          <option value="certification">Certification</option>
+                          <option value="training">Training</option>
+                          <option value="experience">Experience</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Name</label>
+                        <input
+                          type="text"
+                          value={req.name}
+                          onChange={(e) => updateMandatoryRequirement(index, 'name', e.target.value)}
+                          placeholder="Requirement name"
+                          disabled={submitting}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Description</label>
+                      <textarea
+                        value={req.description}
+                        onChange={(e) => updateMandatoryRequirement(index, 'description', e.target.value)}
+                        placeholder="Describe the requirement"
+                        rows="2"
+                        disabled={submitting}
+                      />
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Minimum Duration (weeks)</label>
+                        <input
+                          type="number"
+                          value={req.minimum_duration}
+                          onChange={(e) => updateMandatoryRequirement(index, 'minimum_duration', parseInt(e.target.value) || 0)}
+                          min="0"
+                          disabled={submitting}
+                        />
+                      </div>
+                      <div className="form-group checkbox-group">
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={req.mandatory}
+                            onChange={(e) => updateMandatoryRequirement(index, 'mandatory', e.target.checked)}
+                            disabled={submitting}
+                          />
+                          Mandatory
+                        </label>
+                      </div>
+                      <div className="form-group checkbox-group">
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={req.expiry_required}
+                            onChange={(e) => updateMandatoryRequirement(index, 'expiry_required', e.target.checked)}
+                            disabled={submitting}
+                          />
+                          Expiry Required
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Promotion Rules Section */}
+              <div className="form-section">
+                <div className="section-header">
+                  <h3>Promotion Rules</h3>
+                  <button 
+                    type="button" 
+                    className="btn btn-sm btn-primary"
+                    onClick={addPromotionRule}
+                    disabled={submitting}
+                  >
+                    + Add Rule
+                  </button>
+                </div>
+                
+                {promotionRules.map((rule, index) => (
+                  <div key={index} className="dynamic-item-card">
+                    <div className="dynamic-item-header">
+                      <span>Rule #{index + 1}</span>
+                      <button 
+                        type="button" 
+                        className="btn btn-sm btn-danger"
+                        onClick={() => removePromotionRule(index)}
+                        disabled={submitting}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Rule Type</label>
+                        <select
+                          value={rule.rule_type}
+                          onChange={(e) => updatePromotionRule(index, 'rule_type', e.target.value)}
+                          disabled={submitting}
+                        >
+                          <option value="score">Score</option>
+                          <option value="experience">Experience</option>
+                          <option value="completion">Completion</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Name</label>
+                        <input
+                          type="text"
+                          value={rule.name}
+                          onChange={(e) => updatePromotionRule(index, 'name', e.target.value)}
+                          placeholder="Rule name"
+                          disabled={submitting}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Description</label>
+                      <textarea
+                        value={rule.description}
+                        onChange={(e) => updatePromotionRule(index, 'description', e.target.value)}
+                        placeholder="Describe the rule"
+                        rows="2"
+                        disabled={submitting}
+                      />
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Condition</label>
+                        <input
+                          type="text"
+                          value={rule.condition}
+                          onChange={(e) => updatePromotionRule(index, 'condition', e.target.value)}
+                          placeholder="e.g., >= 77, >= 6 months"
+                          disabled={submitting}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Weight (0.0 - 1.0)</label>
+                        <input
+                          type="number"
+                          value={rule.weight}
+                          onChange={(e) => updatePromotionRule(index, 'weight', parseFloat(e.target.value) || 0)}
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          disabled={submitting}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group checkbox-group">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={rule.mandatory}
+                          onChange={(e) => updatePromotionRule(index, 'mandatory', e.target.checked)}
+                          disabled={submitting}
+                        />
+                        Mandatory
+                      </label>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Authority Limits Section */}
+              <div className="form-section">
+                <div className="section-header">
+                  <h3>Authority Limits</h3>
+                  <button 
+                    type="button" 
+                    className="btn btn-sm btn-primary"
+                    onClick={addAuthorityLimit}
+                    disabled={submitting}
+                  >
+                    + Add Limit
+                  </button>
+                </div>
+                
+                {authorityLimits.map((limit, index) => (
+                  <div key={index} className="dynamic-item-card">
+                    <div className="dynamic-item-header">
+                      <span>Limit #{index + 1}</span>
+                      <button 
+                        type="button" 
+                        className="btn btn-sm btn-danger"
+                        onClick={() => removeAuthorityLimit(index)}
+                        disabled={submitting}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Authority Type</label>
+                        <select
+                          value={limit.authority_type}
+                          onChange={(e) => updateAuthorityLimit(index, 'authority_type', e.target.value)}
+                          disabled={submitting}
+                        >
+                          <option value="approval">Approval</option>
+                          <option value="signing">Signing</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Area</label>
+                        <input
+                          type="text"
+                          value={limit.area}
+                          onChange={(e) => updateAuthorityLimit(index, 'area', e.target.value)}
+                          placeholder="e.g., documents, reports"
+                          disabled={submitting}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label>Description</label>
+                      <textarea
+                        value={limit.description}
+                        onChange={(e) => updateAuthorityLimit(index, 'description', e.target.value)}
+                        placeholder="Describe the authority limit"
+                        rows="2"
+                        disabled={submitting}
+                      />
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Limit</label>
+                        <input
+                          type="text"
+                          value={limit.limit}
+                          onChange={(e) => updateAuthorityLimit(index, 'limit', e.target.value)}
+                          placeholder="e.g., 5000 INR"
+                          disabled={submitting}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Escalation Threshold</label>
+                        <input
+                          type="text"
+                          value={limit.escalation_threshold}
+                          onChange={(e) => updateAuthorityLimit(index, 'escalation_threshold', e.target.value)}
+                          placeholder="e.g., 3000 INR"
+                          disabled={submitting}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group checkbox-group">
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={limit.requires_escalation}
+                          onChange={(e) => updateAuthorityLimit(index, 'requires_escalation', e.target.checked)}
+                          disabled={submitting}
+                        />
+                        Requires Escalation
+                      </label>
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* Validation Checkbox */}

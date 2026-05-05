@@ -5,6 +5,7 @@ import { FaEye, FaEyeSlash, FaUserPlus } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import "./Login.css";
 import { BASE_URL } from "../../../ApiUrl";
+import A2ZLogo from "../../Shared/Images/A2Zlogo.jpeg";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -160,22 +161,20 @@ const handleLogin = async (e) => {
       <div className="training-admin-login d-flex align-items-center justify-content-center min-vh-100 bg-light">
         <div className="training-admin-login-card card p-4 shadow" style={{ width: "100%", maxWidth: "400px" }}>
           <div className="card-body">
-            <div className="training-admin-login-header login-text-center mb-4">
+            <div className="training-admin-login-header login-text-center mb-2">
               <div className="mb-3">
-                <div className="training-admin-logo" style={{ 
-                  width: "50px",
-                  height: "50px",
-                  background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto",
-                  fontSize: "40px",
-                  color: "white"
-                }}>
-                  <FaUserPlus />
-                </div>
+                {/* A2Z Logo for Registration View */}
+                <img 
+                  src={A2ZLogo} 
+                  alt="A2Z Logo" 
+                  style={{ 
+                    width: "100px",
+                    height: "100px",
+                    objectFit: "contain",
+                    margin: "0 auto",
+                    display: "block"
+                  }}
+                />
               </div>
 
               <h3 className="training-admin-login-title" style={{ fontSize: "24px", fontWeight: "600", color: "#333" }}>
@@ -266,20 +265,18 @@ const handleLogin = async (e) => {
 
           <div className="training-admin-login-header login-text-center mb-4">
             <div className="mb-3">
-              <div className="training-admin-logo" style={{ 
-                width: "80px",
-                height: "80px",
-                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto",
-                fontSize: "40px",
-                color: "white"
-              }}>
-                🛡️
-              </div>
+              {/* A2Z Logo for Main Login View */}
+              <img 
+                src={A2ZLogo} 
+                alt="A2Z Logo" 
+                style={{ 
+                  width: "80px",
+                  height: "80px",
+                  objectFit: "contain",
+                  margin: "0 auto",
+                  display: "block"
+                }}
+              />
             </div>
 
             <h3 className="training-admin-login-title" style={{ fontSize: "24px", fontWeight: "600", color: "#333" }}>

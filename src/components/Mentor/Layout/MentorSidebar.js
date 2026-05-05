@@ -19,6 +19,7 @@ import {
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import "./Sidebar.css";
+import A2ZLogo from "../../Shared/Images/A2Zlogo.jpeg"; // Import the logo
 
 const MentorSidebar = () => {
   const location = useLocation();
@@ -114,7 +115,18 @@ const MentorSidebar = () => {
     <aside className="ta-sidebar">
       {/* Logo */}
       <div className="ta-sidebar-header">
-        <div className="ta-logo-icon">IP</div>
+        {/* A2Z Logo added here */}
+        <div className="ta-logo-icon">
+          <img 
+            src={A2ZLogo} 
+            alt="A2Z Logo" 
+            style={{ 
+              width: "50px",
+              height: "50px",
+              objectFit: "contain"
+            }}
+          />
+        </div>
         <div>
           <h6 className="mb-0">InspectPro</h6>
           <small>Mentor Portal</small>
