@@ -1,11 +1,17 @@
 // components/Pages/Login/Login.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaEye, FaEyeSlash, FaUserPlus } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaUserPlus, FaUserShield } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import "./Login.css";
 import { BASE_URL } from "../../../ApiUrl";
 import A2ZLogo from "../../Shared/Images/A2Zlogo.jpeg";
+
+// Super Admin static credentials
+const SUPER_ADMIN_CREDENTIALS = {
+  email: "SuperAdmin@gmail.com",
+  password: "SuperAdmin@123"
+};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -16,124 +22,187 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showRegistrationOptions, setShowRegistrationOptions] = useState(false);
 
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setError("");
-  setLoading(true);
+  // Super Admin login handler
+  const handleSuperAdminLogin = async () => {
+    setLoading(true);
+    
+    try {
+      // Create Super Admin user data object
+      const superAdminData = {
+        id: "SA-001",
+        full_name: "Super Administrator",
+        email: SUPER_ADMIN_CREDENTIALS.email,
+        user_type: "super_admin",
+        role: "super_admin",
+        identifier: SUPER_ADMIN_CREDENTIALS.email,
+        permissions: ["all"],
+        token: "super_admin_static_token_" + Date.now(),
+        created_at: new Date().toISOString()
+      };
 
-  if (!identifier.trim() || !password.trim()) {
-    setError("Please enter both identifier and password");
-    setLoading(false);
-    return;
-  }
+      // Store in localStorage
+      localStorage.setItem("super_admin_user", JSON.stringify(superAdminData));
+      localStorage.setItem("super_admin_token", superAdminData.token);
 
-  try {
-    const response = await fetch(`${BASE_URL}/api/admin/login/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        identifier: identifier.trim(),
-        password: password
-      })
-    });
-
-    const data = await response.json();
-    console.log('📥 Login response:', data);
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Login failed. Please check your credentials.');
-    }
-
-    if (data.status && data.data) {
-
-      const userType = data.data.user_type;
-
-      console.log('✅ Login successful:', data);
-
-      /* -----------------------------------------
-         Store user data based on user_type
-      ------------------------------------------ */
-
-      let storageKey = "user";
-
-      if (userType === "admin") {
-        storageKey = "admin_user";
-      } else if (userType === "mentor") {
-        storageKey = "mentor_user";
-      } else if (userType === "candidate") {
-        storageKey = "candidate_user";
-      }
-
-      localStorage.setItem(storageKey, JSON.stringify(data.data));
-
-      /* -----------------------------------------
-         Store token based on user_type
-      ------------------------------------------ */
-
-      const token = data.data.token || data.token;
-
-      if (token) {
-        localStorage.setItem(`${userType}_token`, token);
-      }
-
-      /* -----------------------------------------
-         Success Message
-      ------------------------------------------ */
-
+      // Show success message
       await Swal.fire({
         icon: 'success',
-        title: 'Login Successful!',
-        text: 'Welcome back!',
-        timer: 1500,
+        title: 'Super Admin Login Successful!',
+        text: 'Welcome to OCEANSTAR MAIN Control Tower',
+        timer: 2000,
         showConfirmButton: false
       });
 
-      /* -----------------------------------------
-         Role Based Navigation
-      ------------------------------------------ */
+      // Navigate to Super Admin dashboard
+      navigate('/super-dashboard');
 
-      switch (userType) {
-        case 'admin':
-          navigate('/dashboard');
-          break;
+    } catch (error) {
+      console.error('Super Admin login error:', error);
+      setError('Super Admin login failed');
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Login Failed',
+        text: 'Super Admin authentication failed',
+        timer: 3000,
+        showConfirmButton: true
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        case 'mentor':
-          navigate('/mentor-dashboard');
-          break;
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-        case 'candidate':
-          navigate('/candidate-dashboard');
-          break;
-
-        default:
-          console.error('Unknown user type:', userType);
-          navigate('/dashboard');
-      }
-
-    } else {
-      throw new Error(data.message || 'Invalid response from server');
+    if (!identifier.trim() || !password.trim()) {
+      setError("Please enter both identifier and password");
+      setLoading(false);
+      return;
     }
 
-  } catch (err) {
+    // Check for Super Admin credentials first
+    if (
+      identifier.trim().toLowerCase() === SUPER_ADMIN_CREDENTIALS.email.toLowerCase() &&
+      password === SUPER_ADMIN_CREDENTIALS.password
+    ) {
+      console.log('🔐 Super Admin credentials detected');
+      await handleSuperAdminLogin();
+      return;
+    }
 
-    console.error('❌ Login error:', err);
+    // If not Super Admin, proceed with normal API login
+    console.log('🔄 Proceeding with normal login flow');
 
-    setError(err.message || 'Login failed. Please try again.');
+    try {
+      const response = await fetch(`${BASE_URL}/api/admin/login/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          identifier: identifier.trim(),
+          password: password
+        })
+      });
 
-    Swal.fire({
-      icon: 'error',
-      title: 'Login Failed',
-      text: err.message || 'Invalid credentials. Please try again.',
-      timer: 3000,
-      showConfirmButton: true
-    });
+      const data = await response.json();
+      console.log('📥 Login response:', data);
 
-  } finally {
-    setLoading(false);
-  }
-};
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed. Please check your credentials.');
+      }
+
+      if (data.status && data.data) {
+
+        const userType = data.data.user_type;
+
+        console.log('✅ Login successful:', data);
+
+        /* -----------------------------------------
+           Store user data based on user_type
+        ------------------------------------------ */
+
+        let storageKey = "user";
+
+        if (userType === "admin") {
+          storageKey = "admin_user";
+        } else if (userType === "mentor") {
+          storageKey = "mentor_user";
+        } else if (userType === "candidate") {
+          storageKey = "candidate_user";
+        }
+
+        localStorage.setItem(storageKey, JSON.stringify(data.data));
+
+        /* -----------------------------------------
+           Store token based on user_type
+        ------------------------------------------ */
+
+        const token = data.data.token || data.token;
+
+        if (token) {
+          localStorage.setItem(`${userType}_token`, token);
+        }
+
+        /* -----------------------------------------
+           Success Message
+        ------------------------------------------ */
+
+        await Swal.fire({
+          icon: 'success',
+          title: 'Login Successful!',
+          text: 'Welcome back!',
+          timer: 1500,
+          showConfirmButton: false
+        });
+
+        /* -----------------------------------------
+           Role Based Navigation
+        ------------------------------------------ */
+
+        switch (userType) {
+          case 'admin':
+            navigate('/dashboard');
+            break;
+
+          case 'mentor':
+            navigate('/mentor-dashboard');
+            break;
+
+          case 'candidate':
+            navigate('/candidate-dashboard');
+            break;
+
+          default:
+            console.error('Unknown user type:', userType);
+            navigate('/dashboard');
+        }
+
+      } else {
+        throw new Error(data.message || 'Invalid response from server');
+      }
+
+    } catch (err) {
+
+      console.error('❌ Login error:', err);
+
+      setError(err.message || 'Login failed. Please try again.');
+
+      Swal.fire({
+        icon: 'error',
+        title: 'Login Failed',
+        text: err.message || 'Invalid credentials. Please try again.',
+        timer: 3000,
+        showConfirmButton: true
+      });
+
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -260,12 +329,11 @@ const handleLogin = async (e) => {
   // Main Login View
   return (
     <div className="training-admin-login d-flex align-items-center justify-content-center min-vh-100 bg-light">
-      <div className="training-admin-login-card card p-4 shadow" style={{ width: "100%", maxWidth: "400px", maxHeight: "600px"  }}>
+      <div className="training-admin-login-card card p-4 shadow" style={{ width: "100%", maxWidth: "400px" }}>
         <div className="card-body">
 
           <div className="training-admin-login-header login-text-center mb-4">
             <div className="mb-3">
-              {/* A2Z Logo for Main Login View */}
               <img 
                 src={A2ZLogo} 
                 alt="A2Z Logo" 
@@ -282,10 +350,9 @@ const handleLogin = async (e) => {
             <h3 className="training-admin-login-title" style={{ fontSize: "24px", fontWeight: "600", color: "#333" }}>
               Training Admin
             </h3>
-
-            {/* <p className="training-admin-login-subtitle text-muted" style={{ fontSize: "14px" }}>
-              Surveyor Management System
-            </p> */}
+            <p className="text-muted" style={{ fontSize: "12px" }}>
+              Admin • Mentor • Candidate • Super Admin
+            </p>
           </div>
 
           {error && (
@@ -321,7 +388,6 @@ const handleLogin = async (e) => {
               </label>
 
               <div className="input-group">
-
                 <input
                   type={showPassword ? "text" : "password"}
                   className="form-control"
@@ -342,7 +408,6 @@ const handleLogin = async (e) => {
                 >
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </button>
-
               </div>
             </div>
 
@@ -384,6 +449,29 @@ const handleLogin = async (e) => {
               >
                 <FaUserPlus className="me-2" />
                 Register New Account
+              </button>
+            </div>
+
+            {/* Super Admin Quick Login Button (Optional - for development) */}
+            <div className="d-grid mb-3">
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => {
+                  setIdentifier(SUPER_ADMIN_CREDENTIALS.email);
+                  setPassword(SUPER_ADMIN_CREDENTIALS.password);
+                }}
+                style={{
+                  padding: "12px",
+                  fontSize: "12px",
+                  fontWeight: "500",
+                  borderRadius: "8px",
+                  borderColor: "#e5e7eb"
+                }}
+                title="Quick fill Super Admin credentials"
+              >
+                <FaUserShield className="me-2" />
+                Super Admin Quick Access
               </button>
             </div>
 

@@ -34,6 +34,26 @@ import Announcements from './components/Admin/AdminAnnouncements/AdminAnnounceme
 import AddAnnouncement from './components/Admin/AdminAnnouncements/AddAnnouncements';
 
 
+
+// Super Admin Components
+import SuperAdminLayout from "./components/SuperAdmin/SuperAdminLayout";
+// import SuperAdminDashboard from "./components/SuperAdmin/SuperAdminDashboard";
+
+import SuperDashboard from './components/SuperAdmin/SuperAdminDashboard/SuperAdminDashboard';
+import ControlTower from './components/SuperAdmin/SuperAdminControlTower/SuperAdminControlTower';
+import UserManagement from './components/SuperAdmin/SuperAdminUser/SuperAdminUser';
+import SuperAdminLevelsManagement from './components/SuperAdmin/SuperAdminLevelManagement/SuperAdminLevel';
+import DepartmentStructure from './components/SuperAdmin/SuperAdminDepartment/SuperAdminDepartment';
+import Compliance from './components/SuperAdmin/SuperAdminCompliance/SuperAdminCompliance';
+import SuperAdminCertifications from './components/SuperAdmin/SuperAdminCertificate/SuperAdminCertificate';
+import LMS from './components/SuperAdmin/SuperAdminLMS/SuperAdminLMS';
+import Reports from './components/SuperAdmin/SuperAdminReports/SuperAdminReports';
+import SuperAdminSystemSettings from './components/SuperAdmin/SuperAdminSettings/SuperAdminSettings';
+import Finance from './components/SuperAdmin/SuperAdminFinance/SuperAdminFinance';
+import HRModule from './components/SuperAdmin/SuperAdminHR/SuperAdminHR';
+import Affiliates from './components/SuperAdmin/SuperAdminAffliates/SuperAdminAfflicaties';
+
+
 import CandidateLayout from "./components/Candidate/Layout/CandidateLayout";
 import MentorLayout from "./components/Mentor/Layout/MentorLayout";
 import MentorDashboard from "./components/Mentor/MentorDashboard/MentorDashboard";
@@ -225,6 +245,26 @@ function App() {
          <Route path="/candidate-announcements" element={<CandidateAnnouncements />} />
         <Route path="/candidate-add-announcement" element={<CandidateAddAnnouncement />} />
         <Route path="/candidate-add-announcement/:id" element={<CandidateAddAnnouncement />} />
+
+
+
+   
+              <Route path="/super-dashboard" element={<SuperDashboard />} />
+              <Route path="/control-tower" element={<ControlTower />} />
+              <Route path="/super-users" element={<UserManagement />} />
+              <Route path="/super-levels" element={<SuperAdminLevelsManagement />} />
+              <Route path="/super-departments" element={<DepartmentStructure />} />
+              <Route path="/super-compliance" element={<Compliance />} />
+              <Route path="/super-certifications" element={<SuperAdminCertifications />} />
+              <Route path="/super-lms" element={<LMS />} />
+              <Route path="/super-reports" element={<Reports />} />
+              <Route path="/system-settings" element={<SuperAdminSystemSettings />} />
+              <Route path="/finance" element={<Finance />} />
+              <Route path="/hr-module" element={<HRModule />} />
+              <Route path="/affiliates" element={<Affiliates />} />
+
+
+
       </Routes>
     </Router>
   );
