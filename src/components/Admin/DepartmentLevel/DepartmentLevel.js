@@ -5,11 +5,19 @@ import Sidebar from "../Layout/Sidebar";
 import Header from "../Layout/Header";
 import "./DepartmentLevel.css";
 import {
-  FaChevronLeft,
+   FaChevronLeft,
   FaChevronRight,
   FaPlus,
   FaEdit,
-  FaTrash
+  FaTrash,
+  FaUserGraduate,
+  FaUser,
+  FaUserTie,
+  FaUserCheck,
+  FaUserAstronaut,
+  FaUserShield,
+  FaChartLine,
+  FaCalendarAlt
 } from "react-icons/fa";
 import { BASE_URL } from '../../../ApiUrl';
 
@@ -231,6 +239,7 @@ const DepartmentLevel = () => {
 };
 
 /* ---------------- Department Section ---------------- */
+/* ---------------- Department Section (Updated) ---------------- */
 const DepartmentSection = ({
   title,
   scrollRefKey,
@@ -247,22 +256,12 @@ const DepartmentSection = ({
 
       {/* Department Heading */}
       <div className="dept-title">
-        {title}
+        {title} ({levels.length} {levels.length === 1 ? 'Level' : 'Levels'})
       </div>
 
-      {/* Cards Always Visible */}
+      {/* Grid Layout - No Scroll */}
       <div className="dept-slider-container">
-
-        {levels.length > 3 && (
-          <button
-            className="dept-arrow left"
-            onClick={() => scrollLeft(scrollRefKey)}
-          >
-            <FaChevronLeft />
-          </button>
-        )}
-
-        <div className="dept-slider" ref={scrollRef}>
+        <div className="dept-slider">
           {levels.map((level) => (
             <LevelCard 
               key={level.id}
@@ -277,16 +276,6 @@ const DepartmentSection = ({
             />
           ))}
         </div>
-
-        {levels.length > 3 && (
-          <button
-            className="dept-arrow right"
-            onClick={() => scrollRight(scrollRefKey)}
-          >
-            <FaChevronRight />
-          </button>
-        )}
-
       </div>
 
     </div>
@@ -324,6 +313,45 @@ const LevelCard = ({
     }
   };
 
+
+    const getLevelIcon = (levelNumber) => {
+    switch(levelNumber) {
+      case 0:
+        return <FaUserGraduate />;  // Trainee - Graduation cap
+      case 1:
+        return <FaUser />;  // Junior - User icon
+      case 2:
+        return <FaUserTie />;  // Associate - Business user
+      case 3:
+        return <FaChartLine />;  // Surveyor - Chart/analytics
+      case 4:
+        return <FaUserAstronaut />;  // Senior - Advanced/specialized
+      case 5:
+        return <FaUserShield />;  // Principal - Shield/authority
+      default:
+        return <FaUserCheck />;  // Default
+    }
+  };
+
+  const getIconBackground = (levelNumber) => {
+    switch(levelNumber) {
+      case 0:
+        return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';  
+      case 1:
+        return 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';  
+      case 2:
+        return 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';  
+      case 3:
+        return 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)';  
+      case 4:
+        return 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';  
+      case 5:
+        return 'linear-gradient(135deg, #10b981 0%, #059669 100%)';  
+      default:
+        return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+    }
+  };
+
   const handleEditClick = () => {
     onEdit(id);
   };
@@ -336,7 +364,7 @@ const LevelCard = ({
     <div className="dept-level-card">
 
       <div className="dept-card-header">
-        <div className="dept-card-icon">🏢</div>
+        <div className="dept-card-icon"    style={{ background: getIconBackground(levelNumber) }} > {getLevelIcon(levelNumber)}</div>
 
         <div className="dept-card-actions">
           <FaEdit className="edit-icon" onClick={handleEditClick} />

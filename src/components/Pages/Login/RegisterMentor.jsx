@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import { BASE_URL } from "../../../ApiUrl";
-import "./Register.css"
+import "./Register.css";
 
 const RegisterMentor = () => {
   const navigate = useNavigate();
@@ -14,22 +14,22 @@ const RegisterMentor = () => {
 
   // State for dropdown options
   const [levels, setLevels] = useState([]);
-  const [filteredLevels, setFilteredLevels] = useState([]); // New state for filtered levels (level > 3)
+  const [filteredLevels, setFilteredLevels] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
+
+  // New states for specializations and certifications
+  const [specializations, setSpecializations] = useState([]);
+  const [certifications, setCertifications] = useState([]);
 
   const [formData, setFormData] = useState({
     full_name: "",
     phone_number: "",
     email: "",
-    mentor_level: "",
-    specializations: [],
+    password: "",
     current_company: "",
     years_of_experience: "",
     max_trainees: "",
-    current_trainees: "",
-    background_verified: true,
-    mentorship_certified: true,
   });
 
   const [errors, setErrors] = useState({});
@@ -54,14 +54,12 @@ const RegisterMentor = () => {
         throw new Error(`Failed to fetch levels: ${levelsResponse.status}`);
       }
       const levelsData = await levelsResponse.json();
-      console.log("✅ Levels fetched:", levelsData);
 
       const deptsResponse = await fetch(`${BASE_URL}/api/admin/departments/`);
       if (!deptsResponse.ok) {
         throw new Error(`Failed to fetch departments: ${deptsResponse.status}`);
       }
       const deptsData = await deptsResponse.json();
-      console.log("✅ Departments fetched:", deptsData);
 
       const activeLevels = levelsData.data?.filter((level) => level.is_active) || [];
       const activeDepartments = deptsData.data?.filter((dept) => dept.is_active) || [];
@@ -71,11 +69,10 @@ const RegisterMentor = () => {
       // Filter levels to only show levels with number greater than 3 (Level 4 and above)
       const filtered = activeLevels.filter(level => level.number > 3);
       setFilteredLevels(filtered);
-      console.log("✅ Filtered levels (number > 3):", filtered);
       
       setDepartments(activeDepartments);
     } catch (err) {
-      console.error("❌ Error fetching options:", err);
+      console.error("Error fetching options:", err);
       setError(err.message);
 
       Swal.fire({
@@ -94,7 +91,6 @@ const RegisterMentor = () => {
     try {
       setFetchLoading(true);
       const response = await fetch(`${BASE_URL}/api/mentor/mentors/${id}/`);
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -103,22 +99,52 @@ const RegisterMentor = () => {
 
       if (result.status && result.data) {
         const mentorData = result.data;
+
         setFormData({
           full_name: mentorData.full_name || "",
           phone_number: mentorData.phone_number || "",
           email: mentorData.email || "",
-          mentor_level: mentorData.mentor_level ? parseInt(mentorData.mentor_level) : "",
-          specializations: Array.isArray(mentorData.specializations) 
-            ? mentorData.specializations.map(id => parseInt(id)) 
-            : [],
+          password: "",
           current_company: mentorData.current_company || "",
           years_of_experience: mentorData.years_of_experience || "",
           max_trainees: mentorData.max_trainees || "",
-          current_trainees: mentorData.current_trainees || "",
-          background_verified: mentorData.background_verified ?? true,
-          mentorship_certified: mentorData.mentorship_certified ?? true,
         });
-        console.log("✅ Mentor data loaded for edit:", mentorData);
+
+        // Handle specializations
+        if (mentorData.specializations && Array.isArray(mentorData.specializations)) {
+          setSpecializations(mentorData.specializations.map(spec => ({
+            department_id: spec.department,
+            level_id: spec.level,
+            years_of_experience_in_specialization: spec.years_of_experience_in_specialization,
+            is_primary_specialization: spec.is_primary_specialization,
+            max_trainees_for_specialization: spec.max_trainees_for_specialization
+          })));
+        } else if (mentorData.specializations && typeof mentorData.specializations[0] === 'number') {
+          // Handle old format (array of IDs)
+          const oldSpecs = mentorData.specializations.map(deptId => ({
+            department_id: deptId,
+            level_id: "",
+            years_of_experience_in_specialization: "",
+            is_primary_specialization: false,
+            max_trainees_for_specialization: ""
+          }));
+          setSpecializations(oldSpecs);
+        }
+
+        // Handle certifications
+        if (mentorData.certifications && Array.isArray(mentorData.certifications)) {
+          setCertifications(mentorData.certifications.map(cert => ({
+            certification_type: cert.certification_type || "",
+            certification_name: cert.certification_name || "",
+            document: null,
+            document_url: cert.document_url || "",
+            issued_date: cert.issued_date || "",
+            expiry_date: cert.expiry_date || "",
+            issuing_organization: cert.issuing_organization || "",
+            keep_existing_document: true,
+            existing_document: cert.document
+          })));
+        }
       } else {
         throw new Error(result.message || "Failed to fetch mentor data");
       }
@@ -139,51 +165,88 @@ const RegisterMentor = () => {
   };
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type } = e.target;
 
-    if (type === "checkbox") {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: checked,
-      }));
-    } else if (name === "specializations") {
-      const selectedOptions = Array.from(
-        e.target.selectedOptions,
-        (option) => parseInt(option.value)
-      );
-      setFormData((prev) => ({
-        ...prev,
-        [name]: selectedOptions,
-      }));
-    } else if (name === "mentor_level") {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value ? parseInt(value) : "",
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: type === "number" ? (value === "" ? "" : Number(value)) : value,
-      }));
-    }
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "number" ? (value === "" ? "" : Number(value)) : value,
+    }));
 
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
-  const removeSpecialization = (deptId) => {
-    setFormData((prev) => ({
-      ...prev,
-      specializations: prev.specializations.filter((id) => id !== deptId),
-    }));
+  // Specialization functions
+  const addSpecialization = () => {
+    setSpecializations([
+      ...specializations,
+      {
+        department_id: "",
+        level_id: "",
+        years_of_experience_in_specialization: "",
+        is_primary_specialization: false,
+        max_trainees_for_specialization: "",
+      },
+    ]);
   };
 
-  const clearMentorLevel = () => {
-    setFormData((prev) => ({
-      ...prev,
-      mentor_level: "",
-    }));
+  const updateSpecialization = (index, field, value) => {
+    const updated = [...specializations];
+    updated[index][field] = value;
+    setSpecializations(updated);
+  };
+
+  const removeSpecialization = (index) => {
+    setSpecializations(specializations.filter((_, i) => i !== index));
+  };
+
+  // Certification functions
+  const addCertification = () => {
+    setCertifications([
+      ...certifications,
+      {
+        certification_type: "",
+        certification_name: "",
+        document: null,
+        document_url: "",
+        issued_date: "",
+        expiry_date: "",
+        issuing_organization: "",
+        keep_existing_document: false,
+        existing_document: null,
+      },
+    ]);
+  };
+
+  const updateCertification = (index, field, value) => {
+    const updated = [...certifications];
+    updated[index][field] = value;
+    setCertifications(updated);
+  };
+
+  const handleCertificationFile = (index, file) => {
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      Swal.fire({ icon: "error", title: "Invalid File Type", text: "Please upload only PDF files", timer: 3000 });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      Swal.fire({ icon: "error", title: "File Too Large", text: "File size should not exceed 5MB", timer: 3000 });
+      return;
+    }
+
+    const updated = [...certifications];
+    updated[index].document = file;
+    updated[index].document_url = "";
+    updated[index].keep_existing_document = false;
+    setCertifications(updated);
+  };
+
+  const removeCertification = (index) => {
+    setCertifications(certifications.filter((_, i) => i !== index));
   };
 
   const validateForm = () => {
@@ -205,12 +268,8 @@ const RegisterMentor = () => {
       newErrors.email = "Please enter a valid email address";
     }
 
-    if (!formData.mentor_level && formData.mentor_level !== 0) {
-      newErrors.mentor_level = "Mentor level is required";
-    }
-
-    if (!formData.specializations || formData.specializations.length === 0) {
-      newErrors.specializations = "At least one specialization is required";
+    if (!isEditMode && !formData.password?.trim()) {
+      newErrors.password = "Password is required for new mentors";
     }
 
     if (!formData.years_of_experience && formData.years_of_experience !== 0) {
@@ -223,6 +282,19 @@ const RegisterMentor = () => {
       newErrors.max_trainees = "Max trainees is required";
     } else if (formData.max_trainees < 1) {
       newErrors.max_trainees = "Max trainees must be at least 1";
+    }
+
+    if (specializations.length === 0) {
+      newErrors.specializations = "At least one specialization is required";
+    } else {
+      let hasPrimary = false;
+      specializations.forEach((spec, index) => {
+        if (!spec.department_id) newErrors[`spec_dept_${index}`] = "Department is required";
+        if (!spec.level_id) newErrors[`spec_level_${index}`] = "Level is required";
+        if (!spec.years_of_experience_in_specialization) newErrors[`spec_years_${index}`] = "Years of experience is required";
+        if (spec.is_primary_specialization) hasPrimary = true;
+      });
+      if (!hasPrimary) newErrors.primary_specialization = "One specialization must be marked as primary";
     }
 
     setErrors(newErrors);
@@ -249,63 +321,85 @@ const RegisterMentor = () => {
     setLoading(true);
     setError("");
 
-    const payload = {
-      full_name: formData.full_name,
-      phone_number: formData.phone_number,
-      email: formData.email,
-      mentor_level: formData.mentor_level ? parseInt(formData.mentor_level) : null,
-      specializations: formData.specializations.map(id => parseInt(id)),
-      current_company: formData.current_company || "",
-      years_of_experience: Number(formData.years_of_experience),
-      max_trainees: Number(formData.max_trainees),
-      current_trainees: Number(formData.current_trainees || 0),
-      mentorship_status: "pending",
-      background_verified: formData.background_verified,
-      mentorship_certified: formData.mentorship_certified,
-    };
-
-    console.log("📦 Sending payload:", payload);
-
-    const url = isEditMode
-      ? `${BASE_URL}/api/mentor/mentors/${id}/`
-      : `${BASE_URL}/api/mentor/mentors/`;
-
     try {
+      // Prepare specializations data
+      const specializationsData = specializations.map((spec) => ({
+        department_id: parseInt(spec.department_id),
+        level_id: parseInt(spec.level_id),
+        years_of_experience_in_specialization: parseFloat(spec.years_of_experience_in_specialization || 0),
+        is_primary_specialization: spec.is_primary_specialization || false,
+        max_trainees_for_specialization: spec.max_trainees_for_specialization ? parseInt(spec.max_trainees_for_specialization) : 5,
+      }));
+
+      // Prepare certifications data
+      const certificationsData = certifications.map((cert) => ({
+        certification_type: cert.certification_type || "",
+        certification_name: cert.certification_name || "",
+        issued_date: cert.issued_date || null,
+        expiry_date: cert.expiry_date || null,
+        issuing_organization: cert.issuing_organization || "",
+        document_url: cert.document_url || null,
+      }));
+
+      const url = isEditMode
+        ? `${BASE_URL}/api/mentor/mentors/${id}/`
+        : `${BASE_URL}/api/mentor/mentors/`;
+
+      // Build JSON payload
+      const jsonPayload = {
+        full_name: formData.full_name,
+        phone_number: formData.phone_number,
+        email: formData.email,
+        password: formData.password || undefined,
+        current_company: formData.current_company || "",
+        years_of_experience: parseFloat(formData.years_of_experience) || 0,
+        max_trainees: parseInt(formData.max_trainees) || 5,
+        mentorship_status: "pending",
+        specializations_data: specializationsData,
+        certifications_data: certificationsData,
+      };
+
+      // Remove undefined password for edit mode
+      if (isEditMode && !jsonPayload.password) {
+        delete jsonPayload.password;
+      }
+
+      console.log("Sending payload:", JSON.stringify(jsonPayload, null, 2));
+
       const response = await fetch(url, {
         method: isEditMode ? "PUT" : "POST",
         headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(jsonPayload),
       });
 
-      const responseData = await response.json().catch(() => null);
-      console.log("📥 Response:", responseData);
+      const responseData = await response.json().catch(() => ({
+        status: false,
+        message: "Failed to parse response"
+      }));
+
+      console.log("Response:", responseData);
 
       if (!response.ok) {
-        let errorMessage = `HTTP ${response.status}`;
-        
-        if (responseData) {
-          if (responseData.message) {
-            errorMessage = responseData.message;
-          } else if (responseData.errors) {
-            const fieldErrors = Object.entries(responseData.errors)
-              .map(([field, errors]) => `${field}: ${Array.isArray(errors) ? errors.join(', ') : errors}`)
-              .join('\n');
-            errorMessage = `Validation failed:\n${fieldErrors}`;
-            
-            const newErrors = {};
-            Object.entries(responseData.errors).forEach(([field, errors]) => {
-              newErrors[field] = Array.isArray(errors) ? errors[0] : errors;
-            });
-            setErrors(newErrors);
-          } else {
-            errorMessage = JSON.stringify(responseData);
-          }
+        if (responseData?.data) {
+          const errorMessages = [];
+          Object.entries(responseData.data).forEach(([field, errors]) => {
+            if (typeof errors === 'object' && !Array.isArray(errors)) {
+              Object.entries(errors).forEach(([subField, subErrors]) => {
+                if (Array.isArray(subErrors)) {
+                  errorMessages.push(`${field} ${subField}: ${subErrors.join(', ')}`);
+                }
+              });
+            } else if (Array.isArray(errors)) {
+              errorMessages.push(`${field}: ${errors.join(', ')}`);
+            } else if (typeof errors === 'string') {
+              errorMessages.push(`${field}: ${errors}`);
+            }
+          });
+          throw new Error(errorMessages.join('\n') || responseData?.message || `HTTP ${response.status}`);
         }
-
-        throw new Error(errorMessage);
+        throw new Error(responseData?.message || `Request failed with status ${response.status}`);
       }
 
       await Swal.fire({
@@ -318,15 +412,13 @@ const RegisterMentor = () => {
 
       navigate("/");
     } catch (err) {
-      console.error("❌ Error saving mentor:", err);
-      setError(err.message);
-
-      Swal.fire({
-        icon: "error",
-        title: "Save Failed",
-        text: err.message,
-        showConfirmButton: true,
+      console.error("Error:", err);
+      Swal.fire({ 
+        icon: "error", 
+        title: "Save Failed", 
+        text: err.message || "An error occurred while saving the mentor" 
       });
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -337,28 +429,11 @@ const RegisterMentor = () => {
   };
 
   const handleCancel = () => {
-    navigate("/mentor");
+    navigate("/");
   };
 
-  const getLevelDisplay = (level) => {
-    return `${level.name} (Level ${level.number})`;
-  };
-
-  const getDepartmentDisplay = (dept) => {
-    return `${dept.name} (${dept.code})`;
-  };
-
-  // Function to get the levels to display in dropdown
-  const getDisplayLevels = () => {
-    if (isEditMode) {
-      // In edit mode, include all filtered levels AND the currently selected level if it's not already included
-      const currentLevel = levels.find(l => l.id === formData.mentor_level);
-      if (currentLevel && currentLevel.number <= 3 && !filteredLevels.some(l => l.id === currentLevel.id)) {
-        return [...filteredLevels, currentLevel];
-      }
-    }
-    return filteredLevels;
-  };
+  const getLevelDisplay = (level) => `${level.name} (Level ${level.number})`;
+  const getDepartmentDisplay = (dept) => `${dept.name} (${dept.code})`;
 
   if (fetchLoading || loadingOptions) {
     return (
@@ -374,8 +449,6 @@ const RegisterMentor = () => {
       </div>
     );
   }
-
-  const displayLevels = getDisplayLevels();
 
   return (
     <div className="register-mentor-page">
@@ -437,7 +510,6 @@ const RegisterMentor = () => {
               Personal Information
             </h3>
             <div className="register-mentor-form__row">
-              {/* Full Name */}
               <div className="register-mentor-form__col-full">
                 <div className="register-mentor-form__field-group">
                   <label className="register-mentor-form__label">
@@ -458,7 +530,6 @@ const RegisterMentor = () => {
                 </div>
               </div>
 
-              {/* Phone Number and Email */}
               <div className="register-mentor-form__col-half">
                 <div className="register-mentor-form__field-group">
                   <label className="register-mentor-form__label">
@@ -499,6 +570,28 @@ const RegisterMentor = () => {
                   )}
                 </div>
               </div>
+
+              {!isEditMode && (
+                <div className="register-mentor-form__col-half">
+                  <div className="register-mentor-form__field-group">
+                    <label className="register-mentor-form__label">
+                      Password <span className="register-mentor-form__required">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      className={`register-mentor-form__input ${errors.password ? "register-mentor-form__input--error" : ""}`}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="Enter password"
+                      disabled={loading}
+                    />
+                    {errors.password && (
+                      <span className="register-mentor-form__error-text">{errors.password}</span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -509,52 +602,11 @@ const RegisterMentor = () => {
               Professional Information
             </h3>
             <div className="register-mentor-form__row">
-              {/* Mentor Level and Current Company */}
               <div className="register-mentor-form__col-half">
                 <div className="register-mentor-form__field-group">
                   <label className="register-mentor-form__label">
-                    Mentor Level <span className="register-mentor-form__required">*</span>
+                    Current Company
                   </label>
-                  <div className="register-mentor-form__select-wrapper">
-                    <select
-                      className={`register-mentor-form__select ${errors.mentor_level ? "register-mentor-form__select--error" : ""} ${formData.mentor_level ? "register-mentor-form__select--has-value" : ""}`}
-                      name="mentor_level"
-                      value={formData.mentor_level || ""}
-                      onChange={handleChange}
-                      disabled={loading || displayLevels.length === 0}
-                    >
-                      <option value="">Select Mentor Level</option>
-                      {displayLevels.map((level) => (
-                        <option key={level.id} value={level.id}>
-                          {getLevelDisplay(level)}
-                        </option>
-                      ))}
-                    </select>
-                    {formData.mentor_level && (
-                      <button
-                        type="button"
-                        className="register-mentor-form__clear-btn"
-                        onClick={clearMentorLevel}
-                        title="Clear selection"
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                  {errors.mentor_level && (
-                    <span className="register-mentor-form__error-text">{errors.mentor_level}</span>
-                  )}
-                  {displayLevels.length === 0 && (
-                    <small className="register-mentor-form__warning-text">
-                      No mentor levels available (Level 4 and above)
-                    </small>
-                  )}
-                </div>
-              </div>
-
-              <div className="register-mentor-form__col-half">
-                <div className="register-mentor-form__field-group">
-                  <label className="register-mentor-form__label">Current Company</label>
                   <input
                     type="text"
                     className="register-mentor-form__input"
@@ -567,8 +619,7 @@ const RegisterMentor = () => {
                 </div>
               </div>
 
-              {/* Experience, Max Trainees, Current Trainees */}
-              <div className="register-mentor-form__col-third">
+              <div className="register-mentor-form__col-half">
                 <div className="register-mentor-form__field-group">
                   <label className="register-mentor-form__label">
                     Years of Experience <span className="register-mentor-form__required">*</span>
@@ -591,7 +642,7 @@ const RegisterMentor = () => {
                 </div>
               </div>
 
-              <div className="register-mentor-form__col-third">
+              <div className="register-mentor-form__col-half">
                 <div className="register-mentor-form__field-group">
                   <label className="register-mentor-form__label">
                     Max Trainees <span className="register-mentor-form__required">*</span>
@@ -611,22 +662,6 @@ const RegisterMentor = () => {
                   )}
                 </div>
               </div>
-
-              <div className="register-mentor-form__col-third">
-                <div className="register-mentor-form__field-group">
-                  <label className="register-mentor-form__label">Current Trainees</label>
-                  <input
-                    type="number"
-                    className="register-mentor-form__input"
-                    name="current_trainees"
-                    value={formData.current_trainees}
-                    onChange={handleChange}
-                    placeholder="Current number of trainees"
-                    min="0"
-                    disabled={loading}
-                  />
-                </div>
-              </div>
             </div>
           </div>
 
@@ -636,112 +671,296 @@ const RegisterMentor = () => {
               <span className="register-mentor-section__title-icon">🔧</span>
               Specializations
             </h3>
-            <div className="register-mentor-form__row">
-              <div className="register-mentor-form__col-full">
-                <div className="register-mentor-form__field-group">
-                  <label className="register-mentor-form__label">
-                    Specializations <span className="register-mentor-form__required">*</span>
-                  </label>
-                  <select
-                    multiple
-                    className={`register-mentor-form__select register-mentor-form__multi-select ${errors.specializations ? "register-mentor-form__select--error" : ""}`}
-                    name="specializations"
-                    value={formData.specializations.map(String)}
-                    onChange={handleChange}
-                    disabled={loading || departments.length === 0}
-                    size="6"
-                  >
-                    {departments.map((dept) => (
-                      <option key={dept.id} value={dept.id}>
-                        {getDepartmentDisplay(dept)}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.specializations && (
-                    <span className="register-mentor-form__error-text">{errors.specializations}</span>
-                  )}
-                  {departments.length === 0 && (
-                    <small className="register-mentor-form__warning-text">
-                      No active departments available
-                    </small>
-                  )}
-                  <small className="register-mentor-form__help-text">
-                    Hold Ctrl/Cmd to select multiple specializations
-                  </small>
-                </div>
+            {errors.specializations && (
+              <div className="register-mentor-alert register-mentor-alert--error" role="alert">
+                <span className="register-mentor-alert__message">{errors.specializations}</span>
               </div>
+            )}
+            {errors.primary_specialization && (
+              <div className="register-mentor-alert register-mentor-alert--error" role="alert">
+                <span className="register-mentor-alert__message">{errors.primary_specialization}</span>
+              </div>
+            )}
 
-              {/* Selected Specializations Tags */}
-              {formData.specializations.length > 0 && (
-                <div className="register-mentor-form__col-full">
-                  <div className="register-mentor-form__field-group">
-                    <label className="register-mentor-form__label">
-                      Selected Specializations:
-                    </label>
-                    <div className="register-mentor-form__tags-container">
-                      {formData.specializations.map((deptId) => {
-                        const dept = departments.find((d) => d.id === deptId);
-                        return dept ? (
-                          <span key={deptId} className="register-mentor-form__tag">
-                            {getDepartmentDisplay(dept)}
-                            <button
-                              type="button"
-                              className="register-mentor-form__tag-remove-btn"
-                              onClick={() => removeSpecialization(deptId)}
-                              title="Remove"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ) : null;
-                      })}
+            {specializations.map((spec, index) => (
+              <div key={index} className="register-mentor-specialization-card">
+                <div className="register-mentor-form__row">
+                  <div className="register-mentor-form__col-third">
+                    <div className="register-mentor-form__field-group">
+                      <label className="register-mentor-form__label">
+                        Department <span className="register-mentor-form__required">*</span>
+                      </label>
+                      <select
+                        className={`register-mentor-form__select ${errors[`spec_dept_${index}`] ? "register-mentor-form__select--error" : ""}`}
+                        value={spec.department_id}
+                        onChange={(e) => updateSpecialization(index, "department_id", e.target.value)}
+                        disabled={loading}
+                      >
+                        <option value="">Select Department</option>
+                        {departments.map((dept) => (
+                          <option key={dept.id} value={dept.id}>{getDepartmentDisplay(dept)}</option>
+                        ))}
+                      </select>
+                      {errors[`spec_dept_${index}`] && (
+                        <span className="register-mentor-form__error-text">{errors[`spec_dept_${index}`]}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="register-mentor-form__col-third">
+                    <div className="register-mentor-form__field-group">
+                      <label className="register-mentor-form__label">
+                        Mentor Level <span className="register-mentor-form__required">*</span>
+                      </label>
+                      <select
+                        className={`register-mentor-form__select ${errors[`spec_level_${index}`] ? "register-mentor-form__select--error" : ""}`}
+                        value={spec.level_id}
+                        onChange={(e) => updateSpecialization(index, "level_id", e.target.value)}
+                        disabled={loading}
+                      >
+                        <option value="">Select Level</option>
+                        {filteredLevels.map((level) => (
+                          <option key={level.id} value={level.id}>{getLevelDisplay(level)}</option>
+                        ))}
+                      </select>
+                      {errors[`spec_level_${index}`] && (
+                        <span className="register-mentor-form__error-text">{errors[`spec_level_${index}`]}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="register-mentor-form__col-third">
+                    <div className="register-mentor-form__field-group">
+                      <label className="register-mentor-form__label">
+                        Years Exp. in Specialization <span className="register-mentor-form__required">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        className={`register-mentor-form__input ${errors[`spec_years_${index}`] ? "register-mentor-form__input--error" : ""}`}
+                        value={spec.years_of_experience_in_specialization}
+                        onChange={(e) => updateSpecialization(index, "years_of_experience_in_specialization", e.target.value)}
+                        placeholder="Years of experience"
+                        min="0"
+                        step="0.5"
+                        disabled={loading}
+                      />
+                      {errors[`spec_years_${index}`] && (
+                        <span className="register-mentor-form__error-text">{errors[`spec_years_${index}`]}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="register-mentor-form__col-fourth">
+                    <div className="register-mentor-form__field-group">
+                      <label className="register-mentor-form__label">
+                        Max Trainees
+                      </label>
+                      <input
+                        type="number"
+                        className="register-mentor-form__input"
+                        value={spec.max_trainees_for_specialization}
+                        onChange={(e) => updateSpecialization(index, "max_trainees_for_specialization", e.target.value)}
+                        placeholder="Optional"
+                        min="1"
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="register-mentor-form__col-fourth">
+                    <div className="register-mentor-form__field-group">
+                      <label className="register-mentor-form__label">Primary</label>
+                      <input
+                        type="checkbox"
+                        className="register-mentor-form__checkbox"
+                        checked={spec.is_primary_specialization}
+                        onChange={(e) => updateSpecialization(index, "is_primary_specialization", e.target.checked)}
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="register-mentor-form__col-fourth">
+                    <div className="register-mentor-form__field-group">
+                      <label className="register-mentor-form__label">&nbsp;</label>
+                      <button
+                        type="button"
+                        className="register-mentor-form__btn register-mentor-form__btn--danger register-mentor-form__btn--small"
+                        onClick={() => removeSpecialization(index)}
+                        disabled={loading}
+                      >
+                        Remove
+                      </button>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
+            ))}
+
+            <div className="register-mentor-form__row">
+              <div className="register-mentor-form__col-full">
+                <button
+                  type="button"
+                  className="register-mentor-form__btn register-mentor-form__btn--secondary"
+                  onClick={addSpecialization}
+                  disabled={loading}
+                >
+                  + Add Specialization
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Verification Status Section */}
-          <div className="register-mentor-form__verification-section">
-            <h5 className="register-mentor-form__section-title">
-              <span className="register-mentor-section__title-icon">✅</span>
-              Verification Status
-            </h5>
-            <div className="register-mentor-form__checkbox-group">
-              <div className="register-mentor-form__checkbox-wrapper">
-                <input
-                  type="checkbox"
-                  className="register-mentor-form__checkbox"
-                  name="background_verified"
-                  checked={formData.background_verified}
-                  onChange={handleChange}
-                  disabled={loading}
-                  id="backgroundVerified"
-                />
-                <label
-                  className="register-mentor-form__checkbox-label"
-                  htmlFor="backgroundVerified"
-                >
-                  Background Verified
-                </label>
+          {/* Certifications Section */}
+          <div className="register-mentor-section">
+            <h3 className="register-mentor-section__title">
+              <span className="register-mentor-section__title-icon">📜</span>
+              Certifications
+            </h3>
+
+            {certifications.map((cert, index) => (
+              <div key={index} className="register-mentor-certification-card">
+                <div className="register-mentor-form__row">
+                  <div className="register-mentor-form__col-half">
+                    <div className="register-mentor-form__field-group">
+                      <label className="register-mentor-form__label">Certification Type</label>
+                      <select
+                        className="register-mentor-form__select"
+                        value={cert.certification_type}
+                        onChange={(e) => updateCertification(index, "certification_type", e.target.value)}
+                        disabled={loading}
+                      >
+                        <option value="">Select Type</option>
+                        <option value="background_check">Background Check</option>
+                        <option value="mentorship_program">Mentorship Program</option>
+                        <option value="technical_certification">Technical Certification</option>
+                        <option value="industry_certification">Industry Certification</option>
+                        <option value="safety_training">Safety Training</option>
+                        <option value="compliance_training">Compliance Training</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="register-mentor-form__col-half">
+                    <div className="register-mentor-form__field-group">
+                      <label className="register-mentor-form__label">Certification Name</label>
+                      <input
+                        type="text"
+                        className="register-mentor-form__input"
+                        value={cert.certification_name}
+                        onChange={(e) => updateCertification(index, "certification_name", e.target.value)}
+                        placeholder="Certification name"
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="register-mentor-form__col-third">
+                    <div className="register-mentor-form__field-group">
+                      <label className="register-mentor-form__label">Issued Date</label>
+                      <input
+                        type="date"
+                        className="register-mentor-form__input"
+                        value={cert.issued_date}
+                        onChange={(e) => updateCertification(index, "issued_date", e.target.value)}
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="register-mentor-form__col-third">
+                    <div className="register-mentor-form__field-group">
+                      <label className="register-mentor-form__label">Expiry Date</label>
+                      <input
+                        type="date"
+                        className="register-mentor-form__input"
+                        value={cert.expiry_date}
+                        onChange={(e) => updateCertification(index, "expiry_date", e.target.value)}
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="register-mentor-form__col-third">
+                    <div className="register-mentor-form__field-group">
+                      <label className="register-mentor-form__label">Issuing Organization</label>
+                      <input
+                        type="text"
+                        className="register-mentor-form__input"
+                        value={cert.issuing_organization}
+                        onChange={(e) => updateCertification(index, "issuing_organization", e.target.value)}
+                        placeholder="Organization"
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="register-mentor-form__col-half">
+                    <div className="register-mentor-form__field-group">
+                      <label className="register-mentor-form__label">Document URL</label>
+                      <input
+                        type="url"
+                        className="register-mentor-form__input"
+                        value={cert.document_url || ""}
+                        onChange={(e) => updateCertification(index, "document_url", e.target.value)}
+                        placeholder="https://example.com/document.pdf"
+                        disabled={loading || !!cert.document}
+                      />
+                      {cert.document_url && !cert.document && (
+                        <small className="register-mentor-form__help-text">✓ Document URL provided</small>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="register-mentor-form__col-half">
+                    <div className="register-mentor-form__field-group">
+                      <label className="register-mentor-form__label">Upload PDF Document</label>
+                      <input
+                        type="file"
+                        className="register-mentor-form__input"
+                        accept=".pdf"
+                        onChange={(e) => handleCertificationFile(index, e.target.files[0])}
+                        disabled={loading}
+                      />
+                      {cert.document && (
+                        <small className="register-mentor-form__help-text register-mentor-form__help-text--success">
+                          ✓ File selected: {cert.document.name}
+                        </small>
+                      )}
+                      {!cert.document && cert.existing_document && (
+                        <small className="register-mentor-form__help-text">
+                          📄 Existing document available
+                        </small>
+                      )}
+                      <small className="register-mentor-form__help-text">Max 5MB, PDF only</small>
+                    </div>
+                  </div>
+
+                  <div className="register-mentor-form__col-full">
+                    <button
+                      type="button"
+                      className="register-mentor-form__btn register-mentor-form__btn--danger register-mentor-form__btn--small"
+                      onClick={() => removeCertification(index)}
+                      disabled={loading}
+                    >
+                      Remove Certification
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="register-mentor-form__checkbox-wrapper">
-                <input
-                  type="checkbox"
-                  className="register-mentor-form__checkbox"
-                  name="mentorship_certified"
-                  checked={formData.mentorship_certified}
-                  onChange={handleChange}
+            ))}
+
+            <div className="register-mentor-form__row">
+              <div className="register-mentor-form__col-full">
+                <button
+                  type="button"
+                  className="register-mentor-form__btn register-mentor-form__btn--secondary"
+                  onClick={addCertification}
                   disabled={loading}
-                  id="mentorshipCertified"
-                />
-                <label
-                  className="register-mentor-form__checkbox-label"
-                  htmlFor="mentorshipCertified"
                 >
-                  Mentorship Certified
-                </label>
+                  + Add Certification
+                </button>
               </div>
             </div>
           </div>
