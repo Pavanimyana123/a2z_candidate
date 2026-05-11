@@ -313,116 +313,107 @@ const RegisterMentor = () => {
     return true;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!validateForm()) return;
+  if (!validateForm()) return;
 
-    setLoading(true);
-    setError("");
+  setLoading(true);
+  setError("");
 
-    try {
-      // Prepare specializations data
-      const specializationsData = specializations.map((spec) => ({
-        department_id: parseInt(spec.department_id),
-        level_id: parseInt(spec.level_id),
-        years_of_experience_in_specialization: parseFloat(spec.years_of_experience_in_specialization || 0),
-        is_primary_specialization: spec.is_primary_specialization || false,
-        max_trainees_for_specialization: spec.max_trainees_for_specialization ? parseInt(spec.max_trainees_for_specialization) : 5,
-      }));
+  try {
+    // ✅ Prepare Specializations
+    const specializationsData = specializations.map((spec) => ({
+      department_id: parseInt(spec.department_id),
+      level_id: parseInt(spec.level_id),
+      years_of_experience_in_specialization: parseFloat(
+        spec.years_of_experience_in_specialization || 0
+      ),
+      is_primary_specialization: spec.is_primary_specialization || false,
+      max_trainees_for_specialization: spec.max_trainees_for_specialization
+        ? parseInt(spec.max_trainees_for_specialization)
+        : 5,
+    }));
 
-      // Prepare certifications data
-      const certificationsData = certifications.map((cert) => ({
-        certification_type: cert.certification_type || "",
-        certification_name: cert.certification_name || "",
-        issued_date: cert.issued_date || null,
-        expiry_date: cert.expiry_date || null,
-        issuing_organization: cert.issuing_organization || "",
-        document_url: cert.document_url || null,
-      }));
+    // ✅ Prepare Certifications
+    const certificationsData = certifications.map((cert) => ({
+      certification_type: cert.certification_type || "",
+      certification_name: cert.certification_name || "",
+      issued_date: cert.issued_date || null,
+      expiry_date: cert.expiry_date || null,
+      issuing_organization: cert.issuing_organization || "",
 
-      const url = isEditMode
-        ? `${BASE_URL}/api/mentor/mentors/${id}/`
-        : `${BASE_URL}/api/mentor/mentors/`;
+      // ⚠️ If backend expects file upload, this must be FormData (not JSON)
+      document: cert.document
+        ? cert.document.name   // (temporary: sending file name)
+        : cert.document_url || null,
 
-      // Build JSON payload
-      const jsonPayload = {
-        full_name: formData.full_name,
-        phone_number: formData.phone_number,
-        email: formData.email,
-        password: formData.password || undefined,
-        current_company: formData.current_company || "",
-        years_of_experience: parseFloat(formData.years_of_experience) || 0,
-        max_trainees: parseInt(formData.max_trainees) || 5,
-        mentorship_status: "pending",
-        specializations_data: specializationsData,
-        certifications_data: certificationsData,
-      };
+      keep_existing_document:
+        cert.keep_existing_document && cert.existing_document ? true : false,
+    }));
 
-      // Remove undefined password for edit mode
-      if (isEditMode && !jsonPayload.password) {
-        delete jsonPayload.password;
-      }
+    // ✅ FINAL PAYLOAD (FIXED KEYS)
+    const payload = {
+      full_name: formData.full_name,
+      phone_number: formData.phone_number,
+      email: formData.email,
+      password: formData.password || undefined,
+      current_company: formData.current_company || "",
+      years_of_experience: parseFloat(formData.years_of_experience) || 0,
+      max_trainees: parseInt(formData.max_trainees) || 5,
+      mentorship_status: "pending",
 
-      console.log("Sending payload:", JSON.stringify(jsonPayload, null, 2));
+      // ✅ FIXED FIELD NAMES
+      specializations_data: specializationsData,
+      certifications_data: certificationsData,
+    };
 
-      const response = await fetch(url, {
-        method: isEditMode ? "PUT" : "POST",
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(jsonPayload),
-      });
+    // ✅ DEBUG
+    console.log("🚀 FINAL PAYLOAD:", JSON.stringify(payload, null, 2));
 
-      const responseData = await response.json().catch(() => ({
-        status: false,
-        message: "Failed to parse response"
-      }));
+    const url = isEditMode
+      ? `${BASE_URL}/api/mentor/mentors/${id}/`
+      : `${BASE_URL}/api/mentor/mentors/`;
 
-      console.log("Response:", responseData);
+    const response = await fetch(url, {
+      method: isEditMode ? "PUT" : "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
-      if (!response.ok) {
-        if (responseData?.data) {
-          const errorMessages = [];
-          Object.entries(responseData.data).forEach(([field, errors]) => {
-            if (typeof errors === 'object' && !Array.isArray(errors)) {
-              Object.entries(errors).forEach(([subField, subErrors]) => {
-                if (Array.isArray(subErrors)) {
-                  errorMessages.push(`${field} ${subField}: ${subErrors.join(', ')}`);
-                }
-              });
-            } else if (Array.isArray(errors)) {
-              errorMessages.push(`${field}: ${errors.join(', ')}`);
-            } else if (typeof errors === 'string') {
-              errorMessages.push(`${field}: ${errors}`);
-            }
-          });
-          throw new Error(errorMessages.join('\n') || responseData?.message || `HTTP ${response.status}`);
-        }
-        throw new Error(responseData?.message || `Request failed with status ${response.status}`);
-      }
+    const responseData = await response.json();
 
-      await Swal.fire({
-        icon: "success",
-        title: isEditMode ? "Updated!" : "Created!",
-        text: "Mentor saved successfully",
-        timer: 2000,
-        showConfirmButton: false,
-      });
+    console.log("📥 RESPONSE:", responseData);
 
-      navigate("/");
-    } catch (err) {
-      console.error("Error:", err);
-      Swal.fire({ 
-        icon: "error", 
-        title: "Save Failed", 
-        text: err.message || "An error occurred while saving the mentor" 
-      });
-      setError(err.message);
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      throw new Error(responseData?.message || "Request failed");
     }
-  };
+
+    await Swal.fire({
+      icon: "success",
+      title: isEditMode ? "Updated!" : "Created!",
+      text: "Mentor saved successfully",
+      timer: 2000,
+      showConfirmButton: false,
+    });
+
+    navigate("/");
+  } catch (err) {
+    console.error("❌ ERROR:", err);
+
+    Swal.fire({
+      icon: "error",
+      title: "Save Failed",
+      text: err.message,
+    });
+
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleBack = () => {
     navigate("/");
