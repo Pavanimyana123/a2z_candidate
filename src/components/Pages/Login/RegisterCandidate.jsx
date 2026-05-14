@@ -13,10 +13,10 @@ const RegisterCandidate = () => {
   const [error, setError] = useState('');
   const [errors, setErrors] = useState({});
   const [isEditMode, setIsEditMode] = useState(false);
-  
+
   // State for certifications dropdown
   const [certificationCategories, setCertificationCategories] = useState([]);
-  
+
   // State for certificates
   const [certificates, setCertificates] = useState([]);
   const [certificateErrors, setCertificateErrors] = useState({});
@@ -29,7 +29,7 @@ const RegisterCandidate = () => {
     { value: 'Training Center', label: 'Training Center' },
     { value: 'Government Body', label: 'Government Body' },
     { value: 'Professional Body', label: 'Professional Body' },
-    { value: 'Other', label: 'Other' }
+    { value: 'Other', label: 'Other' },
   ];
 
   const [formData, setFormData] = useState({
@@ -50,7 +50,8 @@ const RegisterCandidate = () => {
     safety_induction_status: true,
   });
 
-  // Fetch certification categories on component mount
+  // ─── Lifecycle ───────────────────────────────────────────────────────────────
+
   useEffect(() => {
     fetchCertificationCategories();
   }, []);
@@ -60,41 +61,43 @@ const RegisterCandidate = () => {
       setIsEditMode(true);
       fetchCandidateData();
     } else {
-      // Initialize with one empty certificate for new candidate
       initializeCertificates();
     }
   }, [id]);
 
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+  const makeEmptyCert = () => ({
+    id: Date.now() + Math.random(), // unique key
+    // stored as the actual File object (or null)
+    selectedFile: null,
+    // existing remote document URL (edit mode)
+    existing_document: null,
+    document_name: '',
+    // form fields
+    certification: '',
+    issuer_type: '',
+    issuer_name: '',
+    issue_date: '',
+    expiry_date: '',
+    certificate_number: '',
+    issuing_authority: '',
+    errors: {},
+  });
+
   const initializeCertificates = () => {
-    setCertificates([{
-      id: Date.now(),
-      certification: '',
-      issuer_type: '',
-      issuer_name: '',
-      issue_date: '',
-      expiry_date: '',
-      certificate_number: '',
-      issuing_authority: '',
-      document: null,
-      document_name: '',
-      errors: {}
-    }]);
+    setCertificates([makeEmptyCert()]);
   };
 
-  // Fetch certification categories
+  // ─── API Calls ────────────────────────────────────────────────────────────────
+
   const fetchCertificationCategories = async () => {
     try {
       const response = await fetch(`${BASE_URL}/api/admin/certification-categories/`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const result = await response.json();
-      
       if (result.status && result.data) {
         setCertificationCategories(result.data);
-        console.log('✅ Certification categories loaded:', result.data);
       }
     } catch (err) {
       console.error('Error fetching certification categories:', err);
@@ -105,71 +108,62 @@ const RegisterCandidate = () => {
     try {
       setFetchLoading(true);
       const response = await fetch(`${BASE_URL}/api/candidate/candidates/${id}/`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const result = await response.json();
-      
+
       if (result.status && result.data) {
-        const candidateData = result.data;
-        const formattedData = {
-          full_name: candidateData.full_name || '',
-          date_of_birth: candidateData.date_of_birth ? candidateData.date_of_birth.split('T')[0] : '',
-          gender: candidateData.gender || 'M',
-          phone_number: candidateData.phone_number || '',
-          email: candidateData.email || '',
-          address: candidateData.address || '',
-          city: candidateData.city || '',
-          state: candidateData.state || '',
-          country: candidateData.country || '',
-          pincode: candidateData.pincode || '',
-          emergency_contact_name: candidateData.emergency_contact_name || '',
-          emergency_contact_phone: candidateData.emergency_contact_phone || '',
-          blood_group: candidateData.blood_group || '',
-          medical_expiry_date: candidateData.medical_expiry_date ? candidateData.medical_expiry_date.split('T')[0] : '',
-          safety_induction_status: candidateData.safety_induction_status || true,
-        };
-        setFormData(formattedData);
-        
-        // Fetch candidate's existing certifications
+        const d = result.data;
+        setFormData({
+          full_name: d.full_name || '',
+          date_of_birth: d.date_of_birth ? d.date_of_birth.split('T')[0] : '',
+          gender: d.gender || 'M',
+          phone_number: d.phone_number || '',
+          email: d.email || '',
+          address: d.address || '',
+          city: d.city || '',
+          state: d.state || '',
+          country: d.country || '',
+          pincode: d.pincode || '',
+          emergency_contact_name: d.emergency_contact_name || '',
+          emergency_contact_phone: d.emergency_contact_phone || '',
+          blood_group: d.blood_group || '',
+          medical_expiry_date: d.medical_expiry_date
+            ? d.medical_expiry_date.split('T')[0]
+            : '',
+          safety_induction_status: d.safety_induction_status || true,
+        });
+
         await fetchCandidateCertifications(id);
-        
-        console.log('✅ Candidate data loaded for edit:', formattedData);
       } else {
         throw new Error(result.message || 'Failed to fetch candidate data');
       }
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching candidate data:', err);
-      
       Swal.fire({
         icon: 'error',
         title: 'Failed to Load Candidate',
         text: err.message || 'An error occurred while loading candidate data',
-        timer: 3000,
-        showConfirmButton: true
+        showConfirmButton: true,
       });
     } finally {
       setFetchLoading(false);
     }
   };
 
-  // Fetch candidate's existing certifications
   const fetchCandidateCertifications = async (candidateId) => {
     try {
-      const response = await fetch(`${BASE_URL}/api/candidate/certifications/?candidate=${candidateId}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
+      const response = await fetch(
+        `${BASE_URL}/api/candidate/certifications/?candidate=${candidateId}`
+      );
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const result = await response.json();
-      
+
       if (result.status && result.data && result.data.length > 0) {
-        const existingCerts = result.data.map(cert => ({
+        const existingCerts = result.data.map((cert) => ({
           id: cert.id,
+          selectedFile: null, // no new file yet
+          existing_document: cert.document || null,
+          document_name: cert.document ? cert.document.split('/').pop() : '',
           certification: cert.certification ? cert.certification.toString() : '',
           issuer_type: cert.issuer_type || '',
           issuer_name: cert.issuer_name || '',
@@ -177,10 +171,7 @@ const RegisterCandidate = () => {
           expiry_date: cert.expiry_date || '',
           certificate_number: cert.certificate_number || '',
           issuing_authority: cert.issuing_authority || '',
-          document: null,
-          document_name: cert.document ? cert.document.split('/').pop() : '',
-          existing_document: cert.document,
-          errors: {}
+          errors: {},
         }));
         setCertificates(existingCerts);
       } else {
@@ -192,34 +183,23 @@ const RegisterCandidate = () => {
     }
   };
 
+  // ─── Form Handlers ────────────────────────────────────────────────────────────
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : value,
     }));
-    
     if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
 
-  // Certificate handlers
+  // ─── Certificate Handlers ─────────────────────────────────────────────────────
+
   const addCertificate = () => {
-    setCertificates(prev => [...prev, {
-      id: Date.now(),
-      certification: '',
-      issuer_type: '',
-      issuer_name: '',
-      issue_date: '',
-      expiry_date: '',
-      certificate_number: '',
-      issuing_authority: '',
-      document: null,
-      document_name: '',
-      errors: {}
-    }]);
+    setCertificates((prev) => [...prev, makeEmptyCert()]);
   };
 
   const removeCertificate = (index) => {
@@ -228,11 +208,11 @@ const RegisterCandidate = () => {
         icon: 'warning',
         title: 'Cannot Remove',
         text: 'You must have at least one certificate entry',
-        confirmButtonText: 'OK'
+        confirmButtonText: 'OK',
       });
       return;
     }
-    
+
     Swal.fire({
       title: 'Remove Certificate?',
       text: 'Are you sure you want to remove this certificate?',
@@ -240,10 +220,10 @@ const RegisterCandidate = () => {
       showCancelButton: true,
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, remove it!'
+      confirmButtonText: 'Yes, remove it!',
     }).then((result) => {
       if (result.isConfirmed) {
-        setCertificates(prev => prev.filter((_, i) => i !== index));
+        setCertificates((prev) => prev.filter((_, i) => i !== index));
         const newCertErrors = { ...certificateErrors };
         delete newCertErrors[index];
         setCertificateErrors(newCertErrors);
@@ -252,312 +232,353 @@ const RegisterCandidate = () => {
   };
 
   const handleCertificateChange = (index, field, value) => {
-    setCertificates(prev => prev.map((cert, i) => {
-      if (i === index) {
+    setCertificates((prev) =>
+      prev.map((cert, i) => {
+        if (i !== index) return cert;
         return {
           ...cert,
           [field]: value,
-          errors: {
-            ...cert.errors,
-            [field]: ''
-          }
+          errors: { ...cert.errors, [field]: '' },
         };
-      }
-      return cert;
-    }));
+      })
+    );
   };
 
+  /**
+   * Store the raw File object — no base64 conversion.
+   * The file will be appended directly to FormData on submit.
+   */
   const handleCertificateFileChange = (index, file) => {
-    if (file) {
-      // Convert file to base64 for JSON payload
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        setCertificates(prev => prev.map((cert, i) => {
-          if (i === index) {
-            return {
-              ...cert,
-              document: reader.result, // Store base64 string
-              document_name: file.name,
-              errors: {
-                ...cert.errors,
-                document: ''
-              }
-            };
-          }
-          return cert;
-        }));
-      };
-    }
+    if (!file) return;
+    setCertificates((prev) =>
+      prev.map((cert, i) => {
+        if (i !== index) return cert;
+        return {
+          ...cert,
+          selectedFile: file,       // ← raw File, not base64
+          document_name: file.name,
+          errors: { ...cert.errors, document: '' },
+        };
+      })
+    );
   };
+
+  // ─── Validation ───────────────────────────────────────────────────────────────
 
   const validateCertificates = () => {
     let isValid = true;
     const newCertErrors = {};
-    
+
     certificates.forEach((cert, index) => {
-      const errors = {};
-      
+      const errs = {};
+
       if (!cert.certification) {
-        errors.certification = "Certification is required";
+        errs.certification = 'Certification is required';
         isValid = false;
       }
       if (!cert.issuer_type) {
-        errors.issuer_type = "Issuer type is required";
+        errs.issuer_type = 'Issuer type is required';
         isValid = false;
       }
       if (!cert.issuer_name?.trim()) {
-        errors.issuer_name = "Issuer name is required";
+        errs.issuer_name = 'Issuer name is required';
         isValid = false;
       }
       if (!cert.issue_date) {
-        errors.issue_date = "Issue date is required";
+        errs.issue_date = 'Issue date is required';
         isValid = false;
       }
       if (!cert.expiry_date) {
-        errors.expiry_date = "Expiry date is required";
+        errs.expiry_date = 'Expiry date is required';
         isValid = false;
       }
       if (cert.issue_date && cert.expiry_date) {
-        const issueDate = new Date(cert.issue_date);
-        const expiryDate = new Date(cert.expiry_date);
-        if (expiryDate <= issueDate) {
-          errors.expiry_date = "Expiry date must be after issue date";
+        if (new Date(cert.expiry_date) <= new Date(cert.issue_date)) {
+          errs.expiry_date = 'Expiry date must be after issue date';
           isValid = false;
         }
       }
       if (!cert.certificate_number?.trim()) {
-        errors.certificate_number = "Certificate number is required";
+        errs.certificate_number = 'Certificate number is required';
         isValid = false;
       }
       if (!cert.issuing_authority?.trim()) {
-        errors.issuing_authority = "Issuing authority is required";
+        errs.issuing_authority = 'Issuing authority is required';
         isValid = false;
       }
-      if (!isEditMode && !cert.document && !cert.existing_document) {
-        errors.document = "Certificate document is required";
+      // Require a document only when creating a brand-new cert (no existing doc, no new file)
+      if (!isEditMode && !cert.selectedFile && !cert.existing_document) {
+        errs.document = 'Certificate document is required';
         isValid = false;
       }
-      
-      if (Object.keys(errors).length > 0) {
-        newCertErrors[index] = errors;
+
+      if (Object.keys(errs).length > 0) {
+        newCertErrors[index] = errs;
       }
     });
-    
+
     setCertificateErrors(newCertErrors);
+
+    // Bubble errors into each cert's own error map for inline display
+    setCertificates((prev) =>
+      prev.map((cert, i) => ({
+        ...cert,
+        errors: newCertErrors[i] || {},
+      }))
+    );
+
     return isValid;
   };
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.full_name?.trim()) {
-      newErrors.full_name = "Full name is required";
-    }
-
-    if (!formData.date_of_birth) {
-      newErrors.date_of_birth = "Date of birth is required";
-    }
-
+    if (!formData.full_name?.trim()) newErrors.full_name = 'Full name is required';
+    if (!formData.date_of_birth) newErrors.date_of_birth = 'Date of birth is required';
     if (!formData.phone_number?.trim()) {
-      newErrors.phone_number = "Phone number is required";
+      newErrors.phone_number = 'Phone number is required';
     } else if (!/^\d{10}$/.test(formData.phone_number.replace(/\D/g, ''))) {
-      newErrors.phone_number = "Please enter a valid 10-digit phone number";
+      newErrors.phone_number = 'Please enter a valid 10-digit phone number';
     }
-
     if (!formData.email?.trim()) {
-      newErrors.email = "Email is required";
+      newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = "Please enter a valid email address";
+      newErrors.email = 'Please enter a valid email address';
     }
-
-    if (!formData.address?.trim()) {
-      newErrors.address = "Address is required";
-    }
-
-    if (!formData.city?.trim()) {
-      newErrors.city = "City is required";
-    }
-
-    if (!formData.state?.trim()) {
-      newErrors.state = "State is required";
-    }
-
-    if (!formData.country?.trim()) {
-      newErrors.country = "Country is required";
-    }
-
+    if (!formData.address?.trim()) newErrors.address = 'Address is required';
+    if (!formData.city?.trim()) newErrors.city = 'City is required';
+    if (!formData.state?.trim()) newErrors.state = 'State is required';
+    if (!formData.country?.trim()) newErrors.country = 'Country is required';
     if (!formData.pincode?.trim()) {
-      newErrors.pincode = "Pincode is required";
+      newErrors.pincode = 'Pincode is required';
     } else if (!/^\d{6}$/.test(formData.pincode)) {
-      newErrors.pincode = "Please enter a valid 6-digit pincode";
+      newErrors.pincode = 'Please enter a valid 6-digit pincode';
     }
-
-    if (!formData.emergency_contact_name?.trim()) {
-      newErrors.emergency_contact_name = "Emergency contact name is required";
-    }
-
+    if (!formData.emergency_contact_name?.trim())
+      newErrors.emergency_contact_name = 'Emergency contact name is required';
     if (!formData.emergency_contact_phone?.trim()) {
-      newErrors.emergency_contact_phone = "Emergency contact phone is required";
-    } else if (!/^\d{10}$/.test(formData.emergency_contact_phone.replace(/\D/g, ''))) {
-      newErrors.emergency_contact_phone = "Please enter a valid 10-digit phone number";
+      newErrors.emergency_contact_phone = 'Emergency contact phone is required';
+    } else if (
+      !/^\d{10}$/.test(formData.emergency_contact_phone.replace(/\D/g, ''))
+    ) {
+      newErrors.emergency_contact_phone =
+        'Please enter a valid 10-digit phone number';
     }
 
-    const isValid = Object.keys(newErrors).length === 0;
     setErrors(newErrors);
-    return isValid;
+    return Object.keys(newErrors).length === 0;
   };
+
+  // ─── Submit ───────────────────────────────────────────────────────────────────
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Validation Failed',
-        text: 'Please check all required fields and try again.',
-        timer: 3000,
-        showConfirmButton: true
-      });
-      return;
-    }
-    
-    if (!validateCertificates()) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Certificate Validation Failed',
-        text: 'Please check all certificate fields and fix the errors.',
-        timer: 3000,
-        showConfirmButton: true
-      });
-      return;
-    }
+  e.preventDefault();
 
-    setLoading(true);
-    setError('');
+  if (!validateForm() | !validateCertificates()) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Validation Failed',
+      text: 'Please check all required fields and try again.',
+      showConfirmButton: true,
+    });
+    return;
+  }
 
-    // Prepare the exact JSON payload as required (without competency)
+  setLoading(true);
+  setError('');
+
+  try {
+    // ─── STEP 1: Build candidate JSON payload (no files) ───────────────────
     const candidatePayload = {
-      full_name: formData.full_name,
-      date_of_birth: formData.date_of_birth,
-      gender: formData.gender,
-      phone_number: formData.phone_number,
-      email: formData.email,
-      address: formData.address,
-      city: formData.city,
-      state: formData.state,
-      country: formData.country,
-      pincode: formData.pincode,
-      emergency_contact_name: formData.emergency_contact_name,
-      emergency_contact_phone: formData.emergency_contact_phone,
-      blood_group: formData.blood_group || '',
-      medical_expiry_date: formData.medical_expiry_date || '',
-      safety_induction_status: formData.safety_induction_status,
-      certifications: certificates.map(cert => ({
-        certification: parseInt(cert.certification),
-        issuer_type: cert.issuer_type,
-        issuer_name: cert.issuer_name,
-        issue_date: cert.issue_date,
-        expiry_date: cert.expiry_date,
-        certificate_number: cert.certificate_number,
-        issuing_authority: cert.issuing_authority,
-        ...(cert.document && { document: cert.document }) // Include document if present
-      }))
+      full_name:                formData.full_name,
+      date_of_birth:            formData.date_of_birth,
+      gender:                   formData.gender,
+      phone_number:             formData.phone_number,
+      email:                    formData.email,
+      address:                  formData.address,
+      city:                     formData.city,
+      state:                    formData.state,
+      country:                  formData.country,
+      pincode:                  formData.pincode,
+      emergency_contact_name:   formData.emergency_contact_name,
+      emergency_contact_phone:  formData.emergency_contact_phone,
+      blood_group:              formData.blood_group   || '',
+      medical_expiry_date:      formData.medical_expiry_date || '',
+      safety_induction_status:  formData.safety_induction_status,
     };
 
-    // Remove empty values for optional fields
-    Object.keys(candidatePayload).forEach(key => {
-      if (candidatePayload[key] === undefined || candidatePayload[key] === null || candidatePayload[key] === '') {
-        delete candidatePayload[key];
-      }
-    });
+    // ── Console log: candidate payload ──────────────────────────────────────
+    console.log('📦 Candidate Payload (JSON):', JSON.stringify(candidatePayload, null, 2));
 
-    console.log('📦 Sending Payload:', JSON.stringify(candidatePayload, null, 2));
-    
-    const method = isEditMode ? 'PUT' : 'POST';
-    const url = isEditMode 
-      ? `${BASE_URL}/api/candidate/candidates/${id}/` 
+    // ─── STEP 2: Build certificate preview objects for the console ──────────
+    const certPayloadPreview = certificates.map((cert, index) => ({
+      [`certificate_${index + 1}`]: {
+        candidate:          '<<will be filled after candidate creation>>',
+        certification:      parseInt(cert.certification),
+        issuer_type:        cert.issuer_type,
+        issuer_name:        cert.issuer_name,
+        issue_date:         cert.issue_date,
+        expiry_date:        cert.expiry_date,
+        certificate_number: cert.certificate_number,
+        issuing_authority:  cert.issuing_authority,
+        document:           cert.selectedFile
+          ? { name: cert.selectedFile.name, size: cert.selectedFile.size, type: cert.selectedFile.type }
+          : cert.existing_document || null,
+      },
+    }));
+
+    console.log('📜 Certificates Payload (multipart — file info shown as object):',
+      JSON.stringify(certPayloadPreview, null, 2)
+    );
+
+    // ─── STEP 3: POST candidate (JSON) ─────────────────────────────────────
+    const method  = isEditMode ? 'PUT'  : 'POST';
+    const candUrl = isEditMode
+      ? `${BASE_URL}/api/candidate/candidates/${id}/`
       : `${BASE_URL}/api/candidate/candidates/`;
 
-    try {
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(candidatePayload)
-      });
+    const candidateRes = await fetch(candUrl, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(candidatePayload),
+    });
 
-      const responseData = await response.json().catch(() => null);
+    const candidateData = await candidateRes.json().catch(() => null);
 
-      if (!response.ok) {
-        if (responseData && responseData.errors) {
-          const serverErrors = {};
-          Object.keys(responseData.errors).forEach(key => {
-            serverErrors[key] = Array.isArray(responseData.errors[key]) 
-              ? responseData.errors[key][0] 
-              : responseData.errors[key];
-          });
-          setErrors(serverErrors);
-          throw new Error('Please check the form for errors');
-        }
-        throw new Error(responseData?.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate`);
+    if (!candidateRes.ok) {
+      if (candidateData?.errors) {
+        const serverErrors = {};
+        Object.keys(candidateData.errors).forEach((key) => {
+          serverErrors[key] = Array.isArray(candidateData.errors[key])
+            ? candidateData.errors[key][0]
+            : candidateData.errors[key];
+        });
+        setErrors(serverErrors);
+        throw new Error('Please check the form for errors');
+      }
+      throw new Error(
+        candidateData?.message ||
+          `Failed to ${isEditMode ? 'update' : 'create'} candidate`
+      );
+    }
+
+    // Grab the real candidate ID from the response
+    const candidateId = candidateData?.data?.id || id;
+    console.log('✅ Candidate saved. ID:', candidateId);
+
+    // ─── STEP 4: POST each certificate as multipart/form-data ──────────────
+    const certUrl = `${BASE_URL}/api/candidate/certifications/`;
+    const failures = [];
+
+    for (let index = 0; index < certificates.length; index++) {
+      const cert = certificates[index];
+
+      // Skip certs that already exist and have no changes (edit mode)
+      // If you only want to create new ones, add: if (isEditMode && !cert.selectedFile) continue;
+
+      const formDataCert = new FormData();
+      formDataCert.append('candidate',          candidateId);
+      formDataCert.append('certification',      parseInt(cert.certification));
+      formDataCert.append('issuer_type',        cert.issuer_type);
+      formDataCert.append('issuer_name',        cert.issuer_name);
+      formDataCert.append('issue_date',         cert.issue_date);
+      formDataCert.append('expiry_date',        cert.expiry_date);
+      formDataCert.append('certificate_number', cert.certificate_number);
+      formDataCert.append('issuing_authority',  cert.issuing_authority);
+      formDataCert.append('status',             'pending');
+      formDataCert.append('is_approved',        false);
+
+      if (cert.selectedFile) {
+        formDataCert.append('document', cert.selectedFile); // raw File object
       }
 
-      await Swal.fire({
-        icon: 'success',
-        title: isEditMode ? 'Updated!' : 'Created!',
-        html: `Candidate has been ${isEditMode ? 'updated' : 'created'} successfully.<br/>${certificates.length} certificate(s) included.`,
-        timer: 2000,
-        showConfirmButton: false
+      // ── Console log each cert FormData as readable object ────────────────
+      const certLog = {};
+      formDataCert.forEach((val, key) => {
+        certLog[key] = val instanceof File
+          ? { name: val.name, size: val.size, type: val.type }
+          : val;
       });
-      
-      navigate('/');
-    } catch (err) {
-      console.error(`❌ Error:`, err);
-      setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`);
-      
-      Swal.fire({
-        icon: 'error',
-        title: isEditMode ? 'Update Failed' : 'Creation Failed',
-        text: err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`,
-        timer: 3000,
-        showConfirmButton: true
-      });
-    } finally {
-      setLoading(false);
+      console.log(`📤 Certificate #${index + 1} FormData:`, JSON.stringify(certLog, null, 2));
+
+      try {
+        const certRes = await fetch(certUrl, {
+          method: 'POST',
+          body: formDataCert, // No Content-Type header — browser sets boundary
+        });
+
+        const certData = await certRes.json().catch(() => null);
+        console.log(`✅ Certificate #${index + 1} response:`, certData);
+
+        if (!certRes.ok) {
+          failures.push({
+            index: index + 1,
+            error: certData?.message || certData?.detail || 'Unknown error',
+          });
+        }
+      } catch (certErr) {
+        failures.push({ index: index + 1, error: certErr.message });
+      }
     }
-  };
 
-  const handleBack = () => {
+    if (failures.length > 0) {
+      const msg = failures.map((f) => `• Certificate ${f.index}: ${f.error}`).join('\n');
+      throw new Error(`Candidate saved but some certificates failed:\n${msg}`);
+    }
+
+    await Swal.fire({
+      icon: 'success',
+      title: isEditMode ? 'Updated!' : 'Created!',
+      html: `Candidate ${isEditMode ? 'updated' : 'created'} successfully.<br/>${certificates.length} certificate(s) included.`,
+      timer: 2000,
+      showConfirmButton: false,
+    });
+
     navigate('/');
-  };
 
-  const handleCancel = () => {
-    navigate('/candidate');
-  };
+  } catch (err) {
+    console.error('❌ Error:', err);
+    setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`);
+    Swal.fire({
+      icon: 'error',
+      title: isEditMode ? 'Update Failed' : 'Creation Failed',
+      text: err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`,
+      showConfirmButton: true,
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
+  // ─── Navigation ───────────────────────────────────────────────────────────────
+
+  const handleBack   = () => navigate('/');
+  const handleCancel = () => navigate('/candidate');
+
+  // ─── Loading State ────────────────────────────────────────────────────────────
 
   if (fetchLoading) {
     return (
       <div className="register-candidate-page">
         <div className="register-candidate-loading">
           <div className="register-candidate-loading__spinner"></div>
-          <p className="register-candidate-loading__text">
-            Loading candidate data...
-          </p>
+          <p className="register-candidate-loading__text">Loading candidate data...</p>
         </div>
       </div>
     );
   }
 
+  // ─── Render ───────────────────────────────────────────────────────────────────
+
   return (
     <div className="register-candidate-page">
       <div className="register-candidate-wrapper">
-        {/* Header with Back Button */}
+
+        {/* ── Header ── */}
         <div className="register-candidate-header">
-          <button 
-            type="button" 
-            className="register-candidate-header__back-btn" 
+          <button
+            type="button"
+            className="register-candidate-header__back-btn"
             onClick={handleBack}
             title="Go back to home"
           >
@@ -568,14 +589,19 @@ const RegisterCandidate = () => {
               {isEditMode ? 'Edit Candidate' : 'Add New Candidate'}
             </h2>
             <p className="register-candidate-header__subtitle">
-              {isEditMode ? 'Update the candidate details below' : 'Fill in the candidate details and add certifications below'}
+              {isEditMode
+                ? 'Update the candidate details below'
+                : 'Fill in the candidate details and add certifications below'}
             </p>
           </div>
         </div>
 
-        {/* Error Message */}
+        {/* ── Global Error ── */}
         {error && (
-          <div className="register-candidate-alert register-candidate-alert--error" role="alert">
+          <div
+            className="register-candidate-alert register-candidate-alert--error"
+            role="alert"
+          >
             <span className="register-candidate-alert__message">
               <strong>Error:</strong> {error}
             </span>
@@ -590,15 +616,17 @@ const RegisterCandidate = () => {
           </div>
         )}
 
-        {/* Form */}
+        {/* ── Form ── */}
         <form className="register-candidate-form" onSubmit={handleSubmit}>
-          {/* Personal Information Section */}
+
+          {/* Personal Information */}
           <div className="register-candidate-section">
             <h3 className="register-candidate-section__title">
               <span className="register-candidate-section__title-icon">👤</span>
               Personal Information
             </h3>
             <div className="register-candidate-form__row">
+
               <div className="register-candidate-form__col-full">
                 <div className="register-candidate-form__field-group">
                   <label className="register-candidate-form__label">
@@ -608,7 +636,7 @@ const RegisterCandidate = () => {
                     type="text"
                     className={`register-candidate-form__input ${errors.full_name ? 'register-candidate-form__input--error' : ''}`}
                     name="full_name"
-                    value={formData.full_name || ''}
+                    value={formData.full_name}
                     onChange={handleChange}
                     placeholder="Enter full name"
                     disabled={loading}
@@ -628,7 +656,7 @@ const RegisterCandidate = () => {
                     type="date"
                     className={`register-candidate-form__input ${errors.date_of_birth ? 'register-candidate-form__input--error' : ''}`}
                     name="date_of_birth"
-                    value={formData.date_of_birth || ''}
+                    value={formData.date_of_birth}
                     onChange={handleChange}
                     disabled={loading}
                   />
@@ -646,7 +674,7 @@ const RegisterCandidate = () => {
                   <select
                     className={`register-candidate-form__select ${errors.gender ? 'register-candidate-form__select--error' : ''}`}
                     name="gender"
-                    value={formData.gender || 'M'}
+                    value={formData.gender}
                     onChange={handleChange}
                     disabled={loading}
                   >
@@ -666,32 +694,29 @@ const RegisterCandidate = () => {
                   <select
                     className="register-candidate-form__select"
                     name="blood_group"
-                    value={formData.blood_group || ''}
+                    value={formData.blood_group}
                     onChange={handleChange}
                     disabled={loading}
                   >
                     <option value="">Select Blood Group</option>
-                    <option value="A+">A+</option>
-                    <option value="A-">A-</option>
-                    <option value="B+">B+</option>
-                    <option value="B-">B-</option>
-                    <option value="AB+">AB+</option>
-                    <option value="AB-">AB-</option>
-                    <option value="O+">O+</option>
-                    <option value="O-">O-</option>
+                    {['A+','A-','B+','B-','AB+','AB-','O+','O-'].map((bg) => (
+                      <option key={bg} value={bg}>{bg}</option>
+                    ))}
                   </select>
                 </div>
               </div>
+
             </div>
           </div>
 
-          {/* Contact Information Section */}
+          {/* Contact Information */}
           <div className="register-candidate-section">
             <h3 className="register-candidate-section__title">
               <span className="register-candidate-section__title-icon">📞</span>
               Contact Information
             </h3>
             <div className="register-candidate-form__row">
+
               <div className="register-candidate-form__col-half">
                 <div className="register-candidate-form__field-group">
                   <label className="register-candidate-form__label">
@@ -701,7 +726,7 @@ const RegisterCandidate = () => {
                     type="tel"
                     className={`register-candidate-form__input ${errors.phone_number ? 'register-candidate-form__input--error' : ''}`}
                     name="phone_number"
-                    value={formData.phone_number || ''}
+                    value={formData.phone_number}
                     onChange={handleChange}
                     placeholder="Enter 10-digit phone number"
                     maxLength="10"
@@ -722,7 +747,7 @@ const RegisterCandidate = () => {
                     type="email"
                     className={`register-candidate-form__input ${errors.email ? 'register-candidate-form__input--error' : ''}`}
                     name="email"
-                    value={formData.email || ''}
+                    value={formData.email}
                     onChange={handleChange}
                     placeholder="Enter email address"
                     disabled={loading}
@@ -742,7 +767,7 @@ const RegisterCandidate = () => {
                     type="text"
                     className={`register-candidate-form__input ${errors.address ? 'register-candidate-form__input--error' : ''}`}
                     name="address"
-                    value={formData.address || ''}
+                    value={formData.address}
                     onChange={handleChange}
                     placeholder="Enter full address"
                     disabled={loading}
@@ -762,7 +787,7 @@ const RegisterCandidate = () => {
                     type="text"
                     className={`register-candidate-form__input ${errors.city ? 'register-candidate-form__input--error' : ''}`}
                     name="city"
-                    value={formData.city || ''}
+                    value={formData.city}
                     onChange={handleChange}
                     placeholder="Enter city"
                     disabled={loading}
@@ -782,7 +807,7 @@ const RegisterCandidate = () => {
                     type="text"
                     className={`register-candidate-form__input ${errors.state ? 'register-candidate-form__input--error' : ''}`}
                     name="state"
-                    value={formData.state || ''}
+                    value={formData.state}
                     onChange={handleChange}
                     placeholder="Enter state"
                     disabled={loading}
@@ -802,7 +827,7 @@ const RegisterCandidate = () => {
                     type="text"
                     className={`register-candidate-form__input ${errors.country ? 'register-candidate-form__input--error' : ''}`}
                     name="country"
-                    value={formData.country || ''}
+                    value={formData.country}
                     onChange={handleChange}
                     placeholder="Enter country"
                     disabled={loading}
@@ -822,7 +847,7 @@ const RegisterCandidate = () => {
                     type="text"
                     className={`register-candidate-form__input ${errors.pincode ? 'register-candidate-form__input--error' : ''}`}
                     name="pincode"
-                    value={formData.pincode || ''}
+                    value={formData.pincode}
                     onChange={handleChange}
                     placeholder="Enter 6-digit pincode"
                     maxLength="6"
@@ -841,38 +866,43 @@ const RegisterCandidate = () => {
                     type="date"
                     className="register-candidate-form__input"
                     name="medical_expiry_date"
-                    value={formData.medical_expiry_date || ''}
+                    value={formData.medical_expiry_date}
                     onChange={handleChange}
                     disabled={loading}
                   />
                 </div>
               </div>
+
             </div>
           </div>
 
-          {/* Emergency Contact Section */}
+          {/* Emergency Contact */}
           <div className="register-candidate-section">
             <h3 className="register-candidate-section__title">
               <span className="register-candidate-section__title-icon">🆘</span>
               Emergency Contact
             </h3>
             <div className="register-candidate-form__row">
+
               <div className="register-candidate-form__col-half">
                 <div className="register-candidate-form__field-group">
                   <label className="register-candidate-form__label">
-                    Emergency Contact Name <span className="register-candidate-form__required">*</span>
+                    Emergency Contact Name{' '}
+                    <span className="register-candidate-form__required">*</span>
                   </label>
                   <input
                     type="text"
                     className={`register-candidate-form__input ${errors.emergency_contact_name ? 'register-candidate-form__input--error' : ''}`}
                     name="emergency_contact_name"
-                    value={formData.emergency_contact_name || ''}
+                    value={formData.emergency_contact_name}
                     onChange={handleChange}
                     placeholder="Enter emergency contact name"
                     disabled={loading}
                   />
                   {errors.emergency_contact_name && (
-                    <span className="register-candidate-form__error-text">{errors.emergency_contact_name}</span>
+                    <span className="register-candidate-form__error-text">
+                      {errors.emergency_contact_name}
+                    </span>
                   )}
                 </div>
               </div>
@@ -880,27 +910,31 @@ const RegisterCandidate = () => {
               <div className="register-candidate-form__col-half">
                 <div className="register-candidate-form__field-group">
                   <label className="register-candidate-form__label">
-                    Emergency Contact Phone <span className="register-candidate-form__required">*</span>
+                    Emergency Contact Phone{' '}
+                    <span className="register-candidate-form__required">*</span>
                   </label>
                   <input
                     type="tel"
                     className={`register-candidate-form__input ${errors.emergency_contact_phone ? 'register-candidate-form__input--error' : ''}`}
                     name="emergency_contact_phone"
-                    value={formData.emergency_contact_phone || ''}
+                    value={formData.emergency_contact_phone}
                     onChange={handleChange}
                     placeholder="Enter emergency contact phone"
                     maxLength="10"
                     disabled={loading}
                   />
                   {errors.emergency_contact_phone && (
-                    <span className="register-candidate-form__error-text">{errors.emergency_contact_phone}</span>
+                    <span className="register-candidate-form__error-text">
+                      {errors.emergency_contact_phone}
+                    </span>
                   )}
                 </div>
               </div>
+
             </div>
           </div>
 
-          {/* Certifications Section */}
+          {/* Certifications */}
           <div className="register-candidate-section">
             <h3 className="register-candidate-section__title">
               <span className="register-candidate-section__title-icon">📜</span>
@@ -909,16 +943,21 @@ const RegisterCandidate = () => {
             <p className="register-candidate-section__subtitle">
               Add professional certifications for this candidate
             </p>
-            
+
             {certificates.map((cert, index) => (
-              <div key={cert.id} className="certificate-entry" style={{
-                border: '1px solid #e0e0e0',
-                borderRadius: '8px',
-                padding: '20px',
-                marginBottom: '20px',
-                position: 'relative',
-                backgroundColor: '#f9f9f9'
-              }}>
+              <div
+                key={cert.id}
+                className="certificate-entry"
+                style={{
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  padding: '20px',
+                  marginBottom: '20px',
+                  position: 'relative',
+                  backgroundColor: '#f9f9f9',
+                }}
+              >
+                {/* Remove button */}
                 {certificates.length > 1 && (
                   <button
                     type="button"
@@ -933,187 +972,260 @@ const RegisterCandidate = () => {
                       borderRadius: '5px',
                       padding: '5px 10px',
                       cursor: 'pointer',
-                      fontSize: '12px'
+                      fontSize: '12px',
                     }}
                   >
                     <FaTrash /> Remove
                   </button>
                 )}
-                
-                <h4 style={{ marginBottom: '15px', color: '#333' }}>Certificate #{index + 1}</h4>
-                
+
+                <h4 style={{ marginBottom: '15px', color: '#333' }}>
+                  Certificate #{index + 1}
+                </h4>
+
                 <div className="register-candidate-form__row">
+
+                  {/* Certification dropdown */}
                   <div className="register-candidate-form__col-half">
                     <div className="register-candidate-form__field-group">
                       <label className="register-candidate-form__label">
-                        Certification <span className="register-candidate-form__required">*</span>
+                        Certification{' '}
+                        <span className="register-candidate-form__required">*</span>
                       </label>
                       <select
-                        className={`register-candidate-form__select ${certificateErrors[index]?.certification ? 'register-candidate-form__select--error' : ''}`}
+                        className={`register-candidate-form__select ${cert.errors.certification ? 'register-candidate-form__select--error' : ''}`}
                         value={cert.certification}
-                        onChange={(e) => handleCertificateChange(index, 'certification', e.target.value)}
+                        onChange={(e) =>
+                          handleCertificateChange(index, 'certification', e.target.value)
+                        }
                         disabled={loading}
                       >
                         <option value="">Select Certification</option>
-                        {certificationCategories.map(cat => (
-                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        {certificationCategories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
                         ))}
                       </select>
-                      {certificateErrors[index]?.certification && (
-                        <span className="register-candidate-form__error-text">{certificateErrors[index].certification}</span>
+                      {cert.errors.certification && (
+                        <span className="register-candidate-form__error-text">
+                          {cert.errors.certification}
+                        </span>
                       )}
                     </div>
                   </div>
-                  
+
+                  {/* Issuer Type */}
                   <div className="register-candidate-form__col-half">
                     <div className="register-candidate-form__field-group">
                       <label className="register-candidate-form__label">
-                        Issuer Type <span className="register-candidate-form__required">*</span>
+                        Issuer Type{' '}
+                        <span className="register-candidate-form__required">*</span>
                       </label>
                       <select
-                        className={`register-candidate-form__select ${certificateErrors[index]?.issuer_type ? 'register-candidate-form__select--error' : ''}`}
+                        className={`register-candidate-form__select ${cert.errors.issuer_type ? 'register-candidate-form__select--error' : ''}`}
                         value={cert.issuer_type}
-                        onChange={(e) => handleCertificateChange(index, 'issuer_type', e.target.value)}
+                        onChange={(e) =>
+                          handleCertificateChange(index, 'issuer_type', e.target.value)
+                        }
                         disabled={loading}
                       >
                         <option value="">Select Issuer Type</option>
-                        {issuerTypeOptions.map(option => (
-                          <option key={option.value} value={option.value}>{option.label}</option>
+                        {issuerTypeOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
                         ))}
                       </select>
-                      {certificateErrors[index]?.issuer_type && (
-                        <span className="register-candidate-form__error-text">{certificateErrors[index].issuer_type}</span>
+                      {cert.errors.issuer_type && (
+                        <span className="register-candidate-form__error-text">
+                          {cert.errors.issuer_type}
+                        </span>
                       )}
                     </div>
                   </div>
-                  
+
+                  {/* Issuer Name */}
                   <div className="register-candidate-form__col-half">
                     <div className="register-candidate-form__field-group">
                       <label className="register-candidate-form__label">
-                        Issuer Name <span className="register-candidate-form__required">*</span>
+                        Issuer Name{' '}
+                        <span className="register-candidate-form__required">*</span>
                       </label>
                       <input
                         type="text"
-                        className={`register-candidate-form__input ${certificateErrors[index]?.issuer_name ? 'register-candidate-form__input--error' : ''}`}
+                        className={`register-candidate-form__input ${cert.errors.issuer_name ? 'register-candidate-form__input--error' : ''}`}
                         value={cert.issuer_name}
-                        onChange={(e) => handleCertificateChange(index, 'issuer_name', e.target.value)}
+                        onChange={(e) =>
+                          handleCertificateChange(index, 'issuer_name', e.target.value)
+                        }
                         placeholder="Enter issuer name"
                         disabled={loading}
                       />
-                      {certificateErrors[index]?.issuer_name && (
-                        <span className="register-candidate-form__error-text">{certificateErrors[index].issuer_name}</span>
+                      {cert.errors.issuer_name && (
+                        <span className="register-candidate-form__error-text">
+                          {cert.errors.issuer_name}
+                        </span>
                       )}
                     </div>
                   </div>
-                  
+
+                  {/* Issue Date */}
                   <div className="register-candidate-form__col-half">
                     <div className="register-candidate-form__field-group">
                       <label className="register-candidate-form__label">
-                        Issue Date <span className="register-candidate-form__required">*</span>
+                        Issue Date{' '}
+                        <span className="register-candidate-form__required">*</span>
                       </label>
                       <input
                         type="date"
-                        className={`register-candidate-form__input ${certificateErrors[index]?.issue_date ? 'register-candidate-form__input--error' : ''}`}
+                        className={`register-candidate-form__input ${cert.errors.issue_date ? 'register-candidate-form__input--error' : ''}`}
                         value={cert.issue_date}
-                        onChange={(e) => handleCertificateChange(index, 'issue_date', e.target.value)}
+                        onChange={(e) =>
+                          handleCertificateChange(index, 'issue_date', e.target.value)
+                        }
                         disabled={loading}
                       />
-                      {certificateErrors[index]?.issue_date && (
-                        <span className="register-candidate-form__error-text">{certificateErrors[index].issue_date}</span>
+                      {cert.errors.issue_date && (
+                        <span className="register-candidate-form__error-text">
+                          {cert.errors.issue_date}
+                        </span>
                       )}
                     </div>
                   </div>
-                  
+
+                  {/* Expiry Date */}
                   <div className="register-candidate-form__col-half">
                     <div className="register-candidate-form__field-group">
                       <label className="register-candidate-form__label">
-                        Expiry Date <span className="register-candidate-form__required">*</span>
+                        Expiry Date{' '}
+                        <span className="register-candidate-form__required">*</span>
                       </label>
                       <input
                         type="date"
-                        className={`register-candidate-form__input ${certificateErrors[index]?.expiry_date ? 'register-candidate-form__input--error' : ''}`}
+                        className={`register-candidate-form__input ${cert.errors.expiry_date ? 'register-candidate-form__input--error' : ''}`}
                         value={cert.expiry_date}
-                        onChange={(e) => handleCertificateChange(index, 'expiry_date', e.target.value)}
+                        onChange={(e) =>
+                          handleCertificateChange(index, 'expiry_date', e.target.value)
+                        }
                         disabled={loading}
                       />
-                      {certificateErrors[index]?.expiry_date && (
-                        <span className="register-candidate-form__error-text">{certificateErrors[index].expiry_date}</span>
+                      {cert.errors.expiry_date && (
+                        <span className="register-candidate-form__error-text">
+                          {cert.errors.expiry_date}
+                        </span>
                       )}
                     </div>
                   </div>
-                  
+
+                  {/* Certificate Number */}
                   <div className="register-candidate-form__col-half">
                     <div className="register-candidate-form__field-group">
                       <label className="register-candidate-form__label">
-                        Certificate Number <span className="register-candidate-form__required">*</span>
+                        Certificate Number{' '}
+                        <span className="register-candidate-form__required">*</span>
                       </label>
                       <input
                         type="text"
-                        className={`register-candidate-form__input ${certificateErrors[index]?.certificate_number ? 'register-candidate-form__input--error' : ''}`}
+                        className={`register-candidate-form__input ${cert.errors.certificate_number ? 'register-candidate-form__input--error' : ''}`}
                         value={cert.certificate_number}
-                        onChange={(e) => handleCertificateChange(index, 'certificate_number', e.target.value)}
+                        onChange={(e) =>
+                          handleCertificateChange(index, 'certificate_number', e.target.value)
+                        }
                         placeholder="Enter certificate number"
                         disabled={loading}
                       />
-                      {certificateErrors[index]?.certificate_number && (
-                        <span className="register-candidate-form__error-text">{certificateErrors[index].certificate_number}</span>
+                      {cert.errors.certificate_number && (
+                        <span className="register-candidate-form__error-text">
+                          {cert.errors.certificate_number}
+                        </span>
                       )}
                     </div>
                   </div>
-                  
+
+                  {/* Issuing Authority */}
                   <div className="register-candidate-form__col-half">
                     <div className="register-candidate-form__field-group">
                       <label className="register-candidate-form__label">
-                        Issuing Authority <span className="register-candidate-form__required">*</span>
+                        Issuing Authority{' '}
+                        <span className="register-candidate-form__required">*</span>
                       </label>
                       <input
                         type="text"
-                        className={`register-candidate-form__input ${certificateErrors[index]?.issuing_authority ? 'register-candidate-form__input--error' : ''}`}
+                        className={`register-candidate-form__input ${cert.errors.issuing_authority ? 'register-candidate-form__input--error' : ''}`}
                         value={cert.issuing_authority}
-                        onChange={(e) => handleCertificateChange(index, 'issuing_authority', e.target.value)}
+                        onChange={(e) =>
+                          handleCertificateChange(index, 'issuing_authority', e.target.value)
+                        }
                         placeholder="Enter issuing authority"
                         disabled={loading}
                       />
-                      {certificateErrors[index]?.issuing_authority && (
-                        <span className="register-candidate-form__error-text">{certificateErrors[index].issuing_authority}</span>
+                      {cert.errors.issuing_authority && (
+                        <span className="register-candidate-form__error-text">
+                          {cert.errors.issuing_authority}
+                        </span>
                       )}
                     </div>
                   </div>
-                  
+
+                  {/* Document Upload */}
                   <div className="register-candidate-form__col-full">
                     <div className="register-candidate-form__field-group">
                       <label className="register-candidate-form__label">
-                        Certificate Document {!isEditMode && !cert.existing_document && <span className="register-candidate-form__required">*</span>}
+                        Certificate Document{' '}
+                        {!isEditMode && !cert.existing_document && (
+                          <span className="register-candidate-form__required">*</span>
+                        )}
+                        {isEditMode && (
+                          <span style={{ color: '#6c757d', fontSize: '13px' }}>
+                            {' '}(optional — leave blank to keep existing)
+                          </span>
+                        )}
                       </label>
                       <input
                         type="file"
-                        className={`register-candidate-form__input ${certificateErrors[index]?.document ? 'register-candidate-form__input--error' : ''}`}
-                        onChange={(e) => handleCertificateFileChange(index, e.target.files[0])}
+                        className={`register-candidate-form__input ${cert.errors.document ? 'register-candidate-form__input--error' : ''}`}
+                        onChange={(e) =>
+                          handleCertificateFileChange(index, e.target.files[0])
+                        }
                         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                         disabled={loading}
                       />
-                      {certificateErrors[index]?.document && (
-                        <span className="register-candidate-form__error-text">{certificateErrors[index].document}</span>
+                      {cert.errors.document && (
+                        <span className="register-candidate-form__error-text">
+                          {cert.errors.document}
+                        </span>
                       )}
-                      {cert.existing_document && (
+                      {/* Show existing document link */}
+                      {cert.existing_document && !cert.selectedFile && (
                         <small style={{ color: '#28a745', display: 'block', marginTop: '5px' }}>
-                          Current document: {cert.document_name}
+                          ✓ Current document:{' '}
+                          <a
+                            href={cert.existing_document}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {cert.document_name || 'View file'}
+                          </a>
                         </small>
                       )}
-                      {cert.document && (
+                      {/* Show newly selected file name */}
+                      {cert.selectedFile && (
                         <small style={{ color: '#007bff', display: 'block', marginTop: '5px' }}>
-                          New document selected: {cert.document_name}
+                          New file selected: {cert.selectedFile.name}
                         </small>
                       )}
                       <small style={{ color: '#6c757d', display: 'block', marginTop: '5px' }}>
-                        Supported formats: PDF, JPG, JPEG, PNG, DOC, DOCX (max 5MB)
+                        Supported formats: PDF, JPG, JPEG, PNG, DOC, DOCX (max 10 MB)
                       </small>
                     </div>
                   </div>
+
                 </div>
               </div>
             ))}
-            
+
+            {/* Add Another Certificate — only in create mode */}
             {!isEditMode && (
               <div style={{ textAlign: 'center', marginTop: '15px' }}>
                 <button
@@ -1128,7 +1240,7 @@ const RegisterCandidate = () => {
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '8px'
+                    gap: '8px',
                   }}
                   disabled={loading}
                 >
@@ -1158,9 +1270,14 @@ const RegisterCandidate = () => {
                   <span className="register-candidate-form__btn-spinner"></span>
                   {isEditMode ? 'Updating...' : 'Creating...'}
                 </>
-              ) : (isEditMode ? 'Update Candidate' : `Create Candidate with ${certificates.length} Certificate(s)`)}
+              ) : isEditMode ? (
+                'Update Candidate'
+              ) : (
+                `Create Candidate with ${certificates.length} Certificate(s)`
+              )}
             </button>
           </div>
+
         </form>
       </div>
     </div>
