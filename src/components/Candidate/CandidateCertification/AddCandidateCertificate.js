@@ -6,7 +6,7 @@ import Header from '../Layout/CandidateHeader';
 import "./AddCandidateCertificate.css";
 import Swal from 'sweetalert2';
 import { BASE_URL } from "../../../ApiUrl";
-import { FaSpinner, FaArrowLeft } from 'react-icons/fa';
+import { FaSpinner, FaArrowLeft, FaPlus, FaTrash } from 'react-icons/fa';
 
 const AddCertificate = () => {
   const navigate = useNavigate();
@@ -17,19 +17,53 @@ const AddCertificate = () => {
   const [fetchLoading, setFetchLoading] = useState(false);
   const [error, setError] = useState('');
   const [errors, setErrors] = useState({});
+  const [globalErrors, setGlobalErrors] = useState([]);
   
   // State for dropdown data
   const [certificationCategories, setCertificationCategories] = useState([]);
   const [competencies, setCompetencies] = useState([]);
-  const [selectedCertification, setSelectedCertification] = useState('');
-  const [selectedCompetency, setSelectedCompetency] = useState('');
   
-  // State for selected file
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [existingDocument, setExistingDocument] = useState(null);
-  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+  // State for multiple certificates
+  const [certificates, setCertificates] = useState([
+    {
+      id: Date.now(), // temporary ID for React keys
+      formData: {
+        // Issuer fields
+        issuer_type: '',
+        issuer_name: '',
+        issuer_email: '',
+        issuer_phone: '',
+        issuer_website: '',
+        issuer_address: '',
+        issuer_city: '',
+        issuer_state: '',
+        issuer_country: '',
+        issuer_postal_code: '',
+        issuer_description: '',
+        issuer_accreditation_number: '',
+        
+        // Certificate fields
+        issue_date: '',
+        expiry_date: '',
+        certificate_number: '',
+        issuing_authority: '',
+        document: null,
+        is_approved: true,
+        approved_at: new Date().toISOString(),
+        approval_remarks: '',
+        status: 'pending',
+        candidate: null,
+        certification: '',
+        competency: '',
+        approved_by_mentor: null
+      },
+      selectedFile: null,
+      existingDocument: null,
+      errors: {}
+    }
+  ]);
   
-  // Issuer type options - Exact values as shown in the image
+  // Issuer type options
   const issuerTypeOptions = [
     { value: 'Educational Institution', label: 'Educational Institution' },
     { value: 'Client Company', label: 'Client Company' },
@@ -57,49 +91,24 @@ const AddCertificate = () => {
   const candidateData = getCandidateData();
   const candidateId = candidateData?.user_id || null;
 
-  const [formData, setFormData] = useState({
-    // Issuer fields
-    issuer_type: '',
-    issuer_name: '',
-    issuer_email: '',
-    issuer_phone: '',
-    issuer_website: '',
-    issuer_address: '',
-    issuer_city: '',
-    issuer_state: '',
-    issuer_country: '',
-    issuer_postal_code: '',
-    issuer_description: '',
-    issuer_accreditation_number: '',
-    
-    // Certificate fields
-    issue_date: '',
-    expiry_date: '',
-    certificate_number: '',
-    issuing_authority: '',
-    document: null,
-    is_approved: true,
-    approved_at: new Date().toISOString(),
-    approval_remarks: '',
-    status: 'pending',
-    candidate: candidateId,
-    certification: '',
-    competency: '',
-    approved_by_mentor: null
-  });
+  // Update candidate ID in all certificates
+  useEffect(() => {
+    if (candidateId) {
+      setCertificates(prev => prev.map(cert => ({
+        ...cert,
+        formData: {
+          ...cert.formData,
+          candidate: candidateId
+        }
+      })));
+    }
+  }, [candidateId]);
 
   // Fetch certification categories and competencies on component mount
   useEffect(() => {
     fetchCertificationCategories();
     fetchCompetencies();
   }, []);
-
-  // After certificationCategories and competencies are loaded, fetch edit data if in edit mode
-  useEffect(() => {
-    if (isEditMode && id && certificationCategories.length > 0 && competencies.length > 0 && !initialDataLoaded) {
-      fetchCertificationData(id);
-    }
-  }, [isEditMode, id, certificationCategories, competencies, initialDataLoaded]);
 
   // Fetch certification data for edit mode
   const fetchCertificationData = async (certificateId) => {
@@ -116,62 +125,48 @@ const AddCertificate = () => {
       if (result.status && result.data) {
         const certificateData = result.data;
         
-        console.log('Certificate data loaded:', certificateData);
-        
-        // Set selected certification
-        if (certificateData.certification) {
-          setSelectedCertification(certificateData.certification.toString());
-        }
-        
-        // Set selected competency
-        if (certificateData.competency) {
-          setSelectedCompetency(certificateData.competency.toString());
-        }
-        
-        // Format dates for input fields (YYYY-MM-DD)
+        // Format date for input fields
         const formatDateForInput = (dateString) => {
           if (!dateString) return '';
           const date = new Date(dateString);
           return date.toISOString().split('T')[0];
         };
         
-        setFormData({
-          // Issuer fields
-          issuer_type: certificateData.issuer_type || '',
-          issuer_name: certificateData.issuer_name || '',
-          issuer_email: certificateData.issuer_email || '',
-          issuer_phone: certificateData.issuer_phone || '',
-          issuer_website: certificateData.issuer_website || '',
-          issuer_address: certificateData.issuer_address || '',
-          issuer_city: certificateData.issuer_city || '',
-          issuer_state: certificateData.issuer_state || '',
-          issuer_country: certificateData.issuer_country || '',
-          issuer_postal_code: certificateData.issuer_postal_code || '',
-          issuer_description: certificateData.issuer_description || '',
-          issuer_accreditation_number: certificateData.issuer_accreditation_number || '',
-          
-          // Certificate fields
-          issue_date: formatDateForInput(certificateData.issue_date),
-          expiry_date: formatDateForInput(certificateData.expiry_date),
-          certificate_number: certificateData.certificate_number || '',
-          issuing_authority: certificateData.issuing_authority || '',
-          document: null,
-          is_approved: certificateData.is_approved !== undefined ? certificateData.is_approved : true,
-          approved_at: certificateData.approved_at || new Date().toISOString(),
-          approval_remarks: certificateData.approval_remarks || '',
-          status: certificateData.status || 'pending',
-          candidate: candidateId,
-          certification: certificateData.certification || '',
-          competency: certificateData.competency || '',
-          approved_by_mentor: certificateData.approved_by_mentor || null
-        });
+        console.log('Fetched certificate data:', certificateData); // Debug log
         
-        // Store existing document info
-        if (certificateData.document) {
-          setExistingDocument(certificateData.document);
-        }
-        
-        setInitialDataLoaded(true);
+        setCertificates([{
+          id: Date.now(),
+          formData: {
+            issuer_type: certificateData.issuer_type || '',
+            issuer_name: certificateData.issuer_name || '',
+            issuer_email: certificateData.issuer_email || '',
+            issuer_phone: certificateData.issuer_phone || '',
+            issuer_website: certificateData.issuer_website || '',
+            issuer_address: certificateData.issuer_address || '',
+            issuer_city: certificateData.issuer_city || '',
+            issuer_state: certificateData.issuer_state || '',
+            issuer_country: certificateData.issuer_country || '',
+            issuer_postal_code: certificateData.issuer_postal_code || '',
+            issuer_description: certificateData.issuer_description || '',
+            issuer_accreditation_number: certificateData.issuer_accreditation_number || '',
+            issue_date: formatDateForInput(certificateData.issue_date),
+            expiry_date: formatDateForInput(certificateData.expiry_date),
+            certificate_number: certificateData.certificate_number || '',
+            issuing_authority: certificateData.issuing_authority || '',
+            document: certificateData.document || null, // Store document URL
+            is_approved: certificateData.is_approved !== undefined ? certificateData.is_approved : true,
+            approved_at: certificateData.approved_at || new Date().toISOString(),
+            approval_remarks: certificateData.approval_remarks || '',
+            status: certificateData.status || 'pending',
+            candidate: candidateId,
+            certification: certificateData.certification || '',
+            competency: certificateData.competency || '',
+            approved_by_mentor: certificateData.approved_by_mentor || null
+          },
+          selectedFile: null,
+          existingDocument: certificateData.document, // Store existing document URL
+          errors: {}
+        }]);
       }
     } catch (err) {
       console.error('Error fetching certification data:', err);
@@ -187,6 +182,13 @@ const AddCertificate = () => {
       setFetchLoading(false);
     }
   };
+
+  // After dropdown data is loaded, fetch edit data if in edit mode
+  useEffect(() => {
+    if (isEditMode && id && certificationCategories.length > 0 && competencies.length > 0) {
+      fetchCertificationData(id);
+    }
+  }, [isEditMode, id, certificationCategories, competencies]);
 
   // Fetch certification categories
   const fetchCertificationCategories = async () => {
@@ -240,45 +242,140 @@ const AddCertificate = () => {
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+  // Add new certificate entry
+  const addCertificateEntry = () => {
+    setCertificates(prev => [...prev, {
+      id: Date.now(),
+      formData: {
+        issuer_type: '',
+        issuer_name: '',
+        issuer_email: '',
+        issuer_phone: '',
+        issuer_website: '',
+        issuer_address: '',
+        issuer_city: '',
+        issuer_state: '',
+        issuer_country: '',
+        issuer_postal_code: '',
+        issuer_description: '',
+        issuer_accreditation_number: '',
+        issue_date: '',
+        expiry_date: '',
+        certificate_number: '',
+        issuing_authority: '',
+        document: null,
+        is_approved: true,
+        approved_at: new Date().toISOString(),
+        approval_remarks: '',
+        status: 'pending',
+        candidate: candidateId,
+        certification: '',
+        competency: '',
+        approved_by_mentor: null
+      },
+      selectedFile: null,
+      existingDocument: null,
+      errors: {}
+    }]);
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      // Clear document error if any
-      if (errors.document) {
-        setErrors(prev => ({ ...prev, document: '' }));
+  // Remove certificate entry
+  const removeCertificateEntry = (index) => {
+    if (certificates.length === 1) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cannot Remove',
+        text: 'You must have at least one certificate entry',
+        confirmButtonText: 'OK'
+      });
+      return;
+    }
+    
+    Swal.fire({
+      title: 'Remove Certificate?',
+      text: 'Are you sure you want to remove this certificate entry?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, remove it!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setCertificates(prev => prev.filter((_, i) => i !== index));
       }
+    });
+  };
+
+  const handleChange = (index, field, value) => {
+    setCertificates(prev => prev.map((cert, i) => {
+      if (i === index) {
+        return {
+          ...cert,
+          formData: {
+            ...cert.formData,
+            [field]: value
+          },
+          errors: {
+            ...cert.errors,
+            [field]: ''
+          }
+        };
+      }
+      return cert;
+    }));
+  };
+
+  const handleFileChange = (index, file) => {
+    if (file) {
+      setCertificates(prev => prev.map((cert, i) => {
+        if (i === index) {
+          return {
+            ...cert,
+            selectedFile: file,
+            errors: {
+              ...cert.errors,
+              document: ''
+            }
+          };
+        }
+        return cert;
+      }));
     }
   };
 
-  const handleCertificationChange = (e) => {
-    const certificationId = e.target.value;
-    setSelectedCertification(certificationId);
-    setFormData(prev => ({ ...prev, certification: parseInt(certificationId) }));
+  const handleCertificationChange = (index, certificationId) => {
+    setCertificates(prev => prev.map((cert, i) => {
+      if (i === index) {
+        return {
+          ...cert,
+          formData: {
+            ...cert.formData,
+            certification: parseInt(certificationId)
+          }
+        };
+      }
+      return cert;
+    }));
   };
 
-  const handleCompetencyChange = (e) => {
-    const competencyId = e.target.value;
-    setSelectedCompetency(competencyId);
-    setFormData(prev => ({ ...prev, competency: parseInt(competencyId) }));
+  const handleCompetencyChange = (index, competencyId) => {
+    setCertificates(prev => prev.map((cert, i) => {
+      if (i === index) {
+        return {
+          ...cert,
+          formData: {
+            ...cert.formData,
+            competency: parseInt(competencyId)
+          }
+        };
+      }
+      return cert;
+    }));
   };
 
-  const validateForm = () => {
+  const validateSingleCertificate = (cert, index) => {
     const newErrors = {};
+    const formData = cert.formData;
 
     // Issuer validation
     if (!formData.issuer_type) {
@@ -303,7 +400,6 @@ const AddCertificate = () => {
       newErrors.expiry_date = "Expiry date is required";
     }
 
-    // Validate that expiry date is after issue date
     if (formData.issue_date && formData.expiry_date) {
       const issueDate = new Date(formData.issue_date);
       const expiryDate = new Date(formData.expiry_date);
@@ -321,197 +417,241 @@ const AddCertificate = () => {
       newErrors.issuing_authority = "Issuing authority is required";
     }
 
-    if (!selectedCertification) {
+    if (!formData.certification) {
       newErrors.certification = "Please select a certification";
     }
 
-    if (!selectedCompetency) {
+    if (!formData.competency) {
       newErrors.competency = "Please select a competency";
     }
 
-    // Only require document for new entries, not for edits
-    if (!isEditMode && !selectedFile) {
+    // Only require document for new certificates, not for edit mode
+    if (!isEditMode && !cert.selectedFile && !cert.existingDocument) {
       newErrors.document = "Please select a document to upload";
     }
 
-    if (!candidateId) {
+    if (!formData.candidate) {
       newErrors.candidate = "Candidate information not found";
     }
 
-    const isValid = Object.keys(newErrors).length === 0;
-    setErrors(newErrors);
-    return isValid;
+    return newErrors;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Validation Failed',
-        text: 'Please check all required fields and try again.',
-        timer: 3000,
-        showConfirmButton: true
-      });
-      return;
-    }
+  const validateAllCertificates = () => {
+    let hasErrors = false;
+    const updatedCertificates = [...certificates];
+    const globalErrList = [];
 
-    setLoading(true);
-    setError('');
+    updatedCertificates.forEach((cert, index) => {
+      const certErrors = validateSingleCertificate(cert, index);
+      updatedCertificates[index].errors = certErrors;
+      if (Object.keys(certErrors).length > 0) {
+        hasErrors = true;
+        globalErrList.push(`Certificate ${index + 1}: ${Object.values(certErrors).join(', ')}`);
+      }
+    });
 
-    try {
+    setCertificates(updatedCertificates);
+    setGlobalErrors(globalErrList);
+    return !hasErrors;
+  };
+
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!validateAllCertificates()) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Validation Failed',
+      html: 'Please check all required fields and fix the errors below:<br/><br/>' + 
+            globalErrors.map(err => `• ${err}`).join('<br/>'),
+      confirmButtonText: 'OK'
+    });
+    return;
+  }
+
+  setLoading(true);
+  setError('');
+
+  try {
+    const url = `${BASE_URL}/api/candidate/certifications/`;
+
+    if (isEditMode) {
+      // EDIT MODE — PUT with multipart if file changed, else JSON
+      const certificate = certificates[0];
+
       let response;
-      let url;
-      let method;
-      let requestBody;
-
-      if (isEditMode) {
-        // EDIT MODE - Use PUT request with JSON
-        url = `${BASE_URL}/api/candidate/certifications/${id}/`;
-        method = 'PUT';
-        
-        requestBody = {
-          // Issuer fields
-          issuer_type: formData.issuer_type,
-          issuer_name: formData.issuer_name,
-          issuer_email: formData.issuer_email,
-          issuer_phone: formData.issuer_phone,
-          issuer_website: formData.issuer_website,
-          issuer_address: formData.issuer_address,
-          issuer_city: formData.issuer_city,
-          issuer_state: formData.issuer_state,
-          issuer_country: formData.issuer_country,
-          issuer_postal_code: formData.issuer_postal_code,
-          issuer_description: formData.issuer_description,
-          issuer_accreditation_number: formData.issuer_accreditation_number,
-          
-          // Certificate fields
-          issue_date: formData.issue_date,
-          expiry_date: formData.expiry_date,
-          certificate_number: formData.certificate_number,
-          issuing_authority: formData.issuing_authority,
-          is_approved: formData.is_approved,
-          approved_at: formData.approved_at,
-          approval_remarks: formData.approval_remarks,
-          status: formData.status,
-          candidate: parseInt(candidateId),
-          certification: parseInt(formData.certification),
-          competency: parseInt(formData.competency),
+      if (certificate.selectedFile) {
+        // Send as multipart/form-data so the file is included
+        const formData = new FormData();
+        const fields = {
+          issuer_type: certificate.formData.issuer_type,
+          issuer_name: certificate.formData.issuer_name,
+          issuer_email: certificate.formData.issuer_email || '',
+          issuer_phone: certificate.formData.issuer_phone || '',
+          issuer_website: certificate.formData.issuer_website || '',
+          issuer_address: certificate.formData.issuer_address || '',
+          issuer_city: certificate.formData.issuer_city || '',
+          issuer_state: certificate.formData.issuer_state || '',
+          issuer_country: certificate.formData.issuer_country || '',
+          issuer_postal_code: certificate.formData.issuer_postal_code || '',
+          issuer_description: certificate.formData.issuer_description || '',
+          issuer_accreditation_number: certificate.formData.issuer_accreditation_number || '',
+          issue_date: certificate.formData.issue_date,
+          expiry_date: certificate.formData.expiry_date,
+          certificate_number: certificate.formData.certificate_number,
+          issuing_authority: certificate.formData.issuing_authority,
+          is_approved: certificate.formData.is_approved,
+          approved_at: certificate.formData.approved_at,
+          approval_remarks: certificate.formData.approval_remarks || '',
+          status: certificate.formData.status,
+          candidate: parseInt(certificate.formData.candidate),
+          certification: parseInt(certificate.formData.certification),
+          competency: parseInt(certificate.formData.competency),
         };
 
-        if (formData.approved_by_mentor !== null && formData.approved_by_mentor !== '') {
-          requestBody.approved_by_mentor = formData.approved_by_mentor;
+        Object.entries(fields).forEach(([key, value]) => {
+          formData.append(key, value);
+        });
+
+        if (certificate.formData.approved_by_mentor) {
+          formData.append('approved_by_mentor', certificate.formData.approved_by_mentor);
         }
 
-        console.log('Updating with data:', requestBody);
+        formData.append('document', certificate.selectedFile);
 
-        response = await fetch(url, {
-          method: method,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody),
+        response = await fetch(`${BASE_URL}/api/candidate/certifications/${id}/`, {
+          method: 'PUT',
+          body: formData, // No Content-Type header — browser sets multipart boundary
         });
       } else {
-        // ADD MODE - Use POST request with FormData
-        url = `${BASE_URL}/api/candidate/certifications/`;
-        method = 'POST';
-        
-        const formDataToSend = new FormData();
-        
-        // Issuer fields
-        formDataToSend.append('issuer_type', formData.issuer_type);
-        formDataToSend.append('issuer_name', formData.issuer_name);
-        formDataToSend.append('issuer_email', formData.issuer_email);
-        formDataToSend.append('issuer_phone', formData.issuer_phone);
-        formDataToSend.append('issuer_website', formData.issuer_website);
-        formDataToSend.append('issuer_address', formData.issuer_address);
-        formDataToSend.append('issuer_city', formData.issuer_city);
-        formDataToSend.append('issuer_state', formData.issuer_state);
-        formDataToSend.append('issuer_country', formData.issuer_country);
-        formDataToSend.append('issuer_postal_code', formData.issuer_postal_code);
-        formDataToSend.append('issuer_description', formData.issuer_description || '');
-        formDataToSend.append('issuer_accreditation_number', formData.issuer_accreditation_number || '');
-        
-        // Certificate fields
-        formDataToSend.append('issue_date', formData.issue_date);
-        formDataToSend.append('expiry_date', formData.expiry_date);
-        formDataToSend.append('certificate_number', formData.certificate_number);
-        formDataToSend.append('issuing_authority', formData.issuing_authority);
-        formDataToSend.append('is_approved', formData.is_approved);
-        formDataToSend.append('approved_at', formData.approved_at);
-        formDataToSend.append('approval_remarks', formData.approval_remarks || '');
-        formDataToSend.append('status', formData.status);
-        formDataToSend.append('candidate', parseInt(candidateId));
-        formDataToSend.append('certification', parseInt(formData.certification));
-        formDataToSend.append('competency', parseInt(formData.competency));
-        
-        if (formData.approved_by_mentor !== null && formData.approved_by_mentor !== '') {
-          formDataToSend.append('approved_by_mentor', formData.approved_by_mentor);
-        }
-        
-        if (selectedFile) {
-          formDataToSend.append('document', selectedFile);
-        }
+        // No new file — plain JSON PUT
+        const requestBody = {
+          issuer_type: certificate.formData.issuer_type,
+          issuer_name: certificate.formData.issuer_name,
+          issuer_email: certificate.formData.issuer_email || '',
+          issuer_phone: certificate.formData.issuer_phone || '',
+          issuer_website: certificate.formData.issuer_website || '',
+          issuer_address: certificate.formData.issuer_address || '',
+          issuer_city: certificate.formData.issuer_city || '',
+          issuer_state: certificate.formData.issuer_state || '',
+          issuer_country: certificate.formData.issuer_country || '',
+          issuer_postal_code: certificate.formData.issuer_postal_code || '',
+          issuer_description: certificate.formData.issuer_description || '',
+          issuer_accreditation_number: certificate.formData.issuer_accreditation_number || '',
+          issue_date: certificate.formData.issue_date,
+          expiry_date: certificate.formData.expiry_date,
+          certificate_number: certificate.formData.certificate_number,
+          issuing_authority: certificate.formData.issuing_authority,
+          is_approved: certificate.formData.is_approved,
+          approved_at: certificate.formData.approved_at,
+          approval_remarks: certificate.formData.approval_remarks || '',
+          status: certificate.formData.status,
+          candidate: parseInt(certificate.formData.candidate),
+          certification: parseInt(certificate.formData.certification),
+          competency: parseInt(certificate.formData.competency),
+          approved_by_mentor: certificate.formData.approved_by_mentor || null,
+        };
 
-        console.log('Submitting FormData:');
-        for (let pair of formDataToSend.entries()) {
-          console.log(pair[0] + ': ' + (pair[0] === 'document' ? pair[1].name : pair[1]));
-        }
-        
-        requestBody = formDataToSend;
-        
-        response = await fetch(url, {
-          method: method,
-          body: requestBody,
+        response = await fetch(`${BASE_URL}/api/candidate/certifications/${id}/`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
         });
       }
 
       const responseData = await response.json();
-
       if (!response.ok) {
-        // Handle validation errors from backend
-        if (responseData.data) {
-          const backendErrors = responseData.data;
-          const newErrors = {};
-          
-          // Map backend errors to form fields
-          Object.keys(backendErrors).forEach(key => {
-            if (backendErrors[key] && backendErrors[key].length > 0) {
-              newErrors[key] = backendErrors[key][0];
-            }
-          });
-          
-          setErrors(newErrors);
-          throw new Error(responseData.message || 'Please fix the validation errors');
-        }
-        throw new Error(responseData.message || `Failed to ${isEditMode ? 'update' : 'add'} certification`);
+        throw new Error(responseData.message || 'Failed to update certification');
       }
 
-      await Swal.fire({
-        icon: 'success',
-        title: 'Success!',
-        text: `Certification has been ${isEditMode ? 'updated' : 'added'} successfully.`,
-        timer: 2000,
-        showConfirmButton: false
-      });
-      
-      navigate('/candidate-certificate');
-    } catch (err) {
-      setError(err.message || `Failed to ${isEditMode ? 'update' : 'add'} certification. Please try again.`);
-      
-      Swal.fire({
-        icon: 'error',
-        title: `${isEditMode ? 'Update' : 'Submission'} Failed`,
-        text: err.message || `Failed to ${isEditMode ? 'update' : 'add'} certification. Please try again.`,
-        timer: 3000,
-        showConfirmButton: true
-      });
-    } finally {
-      setLoading(false);
+    } else {
+      // ADD MODE — one request per certificate as flat multipart/form-data
+      const results = [];
+      const failures = [];
+
+      for (let index = 0; index < certificates.length; index++) {
+        const cert = certificates[index];
+        const formData = new FormData();
+
+        // Append all flat fields directly — Django sees them as request.data fields
+        formData.append('candidate', parseInt(cert.formData.candidate));
+        formData.append('certification', parseInt(cert.formData.certification));
+        formData.append('competency', parseInt(cert.formData.competency));
+        formData.append('issuer_type', cert.formData.issuer_type);
+        formData.append('issuer_name', cert.formData.issuer_name);
+        formData.append('issuer_email', cert.formData.issuer_email || '');
+        formData.append('issuer_phone', cert.formData.issuer_phone || '');
+        formData.append('issuer_website', cert.formData.issuer_website || '');
+        formData.append('issuer_address', cert.formData.issuer_address || '');
+        formData.append('issuer_city', cert.formData.issuer_city || '');
+        formData.append('issuer_state', cert.formData.issuer_state || '');
+        formData.append('issuer_country', cert.formData.issuer_country || '');
+        formData.append('issuer_postal_code', cert.formData.issuer_postal_code || '');
+        formData.append('issuer_description', cert.formData.issuer_description || '');
+        formData.append('issuer_accreditation_number', cert.formData.issuer_accreditation_number || '');
+        formData.append('issue_date', cert.formData.issue_date);
+        formData.append('expiry_date', cert.formData.expiry_date);
+        formData.append('certificate_number', cert.formData.certificate_number);
+        formData.append('issuing_authority', cert.formData.issuing_authority);
+        formData.append('is_approved', cert.formData.is_approved);
+        formData.append('approved_at', cert.formData.approved_at);
+        formData.append('approval_remarks', cert.formData.approval_remarks || '');
+        formData.append('status', cert.formData.status);
+
+        // ✅ This is the key fix — document goes in the same FormData as the other fields
+        if (cert.selectedFile) {
+          formData.append('document', cert.selectedFile);
+        }
+
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            body: formData, // No Content-Type header!
+          });
+
+          const responseData = await response.json();
+
+          if (!response.ok) {
+            failures.push({ index: index + 1, error: responseData.message || 'Failed' });
+          } else {
+            results.push(responseData);
+          }
+        } catch (err) {
+          failures.push({ index: index + 1, error: err.message });
+        }
+      }
+
+      if (failures.length > 0) {
+        const errorMessages = failures.map(f => `Certificate ${f.index}: ${f.error}`).join('\n');
+        throw new Error(`Some certificates failed:\n${errorMessages}`);
+      }
     }
-  };
+
+    await Swal.fire({
+      icon: 'success',
+      title: 'Success!',
+      text: `${certificates.length} certification(s) ${isEditMode ? 'updated' : 'added'} successfully.`,
+      timer: 2000,
+      showConfirmButton: false,
+    });
+
+    navigate('/candidate-certificate');
+
+  } catch (err) {
+    setError(err.message || 'Failed. Please try again.');
+    Swal.fire({
+      icon: 'error',
+      title: `${isEditMode ? 'Update' : 'Submission'} Failed`,
+      text: err.message || 'Please try again.',
+      confirmButtonText: 'OK',
+    });
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   const handleCancel = () => {
     navigate('/candidate-certificate');
@@ -546,406 +686,410 @@ const AddCertificate = () => {
         <div className="ccert-content-area">
           <div className="cert-add-wrapper">
             {/* Header */}
-            {/* Header */}
-<div className="cert-add-header">
-  <div>
-    <div className="d-flex align-items-center gap-3">
-      <button 
-        type="button" 
-        className="btn btn-outline-secondary back-btn"
-        onClick={handleCancel}
-        aria-label="Go back"
-      >
-        <FaArrowLeft /> Back
-      </button>
-      <div>
-        <h2>{isEditMode ? 'Edit Certification' : 'Add Certification'}</h2>
-        <p>
-          {isEditMode 
-            ? 'Update your professional certification details' 
-            : 'Upload your professional certification and fill in the details below'}
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
+            <div className="cert-add-header">
+              <div>
+                <div className="d-flex align-items-center gap-3">
+                  <button 
+                    type="button" 
+                    className="btn btn-outline-secondary back-btn"
+                    onClick={handleCancel}
+                    aria-label="Go back"
+                  >
+                    <FaArrowLeft /> Back
+                  </button>
+                  <div>
+                    <h2>{isEditMode ? 'Edit Certification' : 'Add Certifications'}</h2>
+                    <p>
+                      {isEditMode 
+                        ? 'Update your professional certification details' 
+                        : 'Upload your professional certifications and fill in the details below'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Error Message */}
             {error && <div className="cert-add-error alert alert-danger">{error}</div>}
 
             {/* Form */}
             <div className="cert-add-form-container">
-              <form onSubmit={handleSubmit} encType={isEditMode ? '' : 'multipart/form-data'}>
-                
-                {/* Issuer Information Section */}
-                <div className="form-section">
-                  <h4 className="section-title">Issuer Information</h4>
-                  <p className="section-subtitle">Details about the organization that issued this certification</p>
-                  
-                  <div className="row">
-                    {/* Issuer Type */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Issuer Type *</label>
-                      <select
-                        className={`form-control ${errors.issuer_type ? 'is-invalid' : ''}`}
-                        name="issuer_type"
-                        value={formData.issuer_type || ''}
-                        onChange={handleChange}
-                        disabled={loading}
+              <form onSubmit={handleSubmit}>
+                {certificates.map((cert, index) => (
+                  <div key={cert.id} className="certificate-entry mb-5 p-4 border rounded position-relative">
+                    {certificates.length > 1 && (
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm position-absolute top-0 end-0 m-2"
+                        onClick={() => removeCertificateEntry(index)}
+                        style={{ zIndex: 10 }}
                       >
-                        <option value="">Select Issuer Type</option>
-                        {issuerTypeOptions.map(option => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.issuer_type && (
-                        <div className="invalid-feedback">{errors.issuer_type}</div>
-                      )}
+                        <FaTrash /> Remove
+                      </button>
+                    )}
+                    
+                    <h5 className="mb-3">Certificate #{index + 1}</h5>
+                    
+                    {/* Issuer Information Section */}
+                    <div className="form-section">
+                      <h4 className="section-title">Issuer Information</h4>
+                      <p className="section-subtitle">Details about the organization that issued this certification</p>
+                      
+                      <div className="row">
+                        {/* Issuer Type */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">Issuer Type *</label>
+                          <select
+                            className={`form-control ${cert.errors.issuer_type ? 'is-invalid' : ''}`}
+                            value={cert.formData.issuer_type || ''}
+                            onChange={(e) => handleChange(index, 'issuer_type', e.target.value)}
+                            disabled={loading}
+                          >
+                            <option value="">Select Issuer Type</option>
+                            {issuerTypeOptions.map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          {cert.errors.issuer_type && (
+                            <div className="invalid-feedback">{cert.errors.issuer_type}</div>
+                          )}
+                        </div>
+
+                        {/* Issuer Name */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">Issuer Name *</label>
+                          <input
+                            type="text"
+                            className={`form-control ${cert.errors.issuer_name ? 'is-invalid' : ''}`}
+                            value={cert.formData.issuer_name || ''}
+                            onChange={(e) => handleChange(index, 'issuer_name', e.target.value)}
+                            placeholder="Enter organization name"
+                            disabled={loading}
+                          />
+                          {cert.errors.issuer_name && (
+                            <div className="invalid-feedback">{cert.errors.issuer_name}</div>
+                          )}
+                        </div>
+
+                        {/* Issuer Email */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">Issuer Email</label>
+                          <input
+                            type="email"
+                            className={`form-control ${cert.errors.issuer_email ? 'is-invalid' : ''}`}
+                            value={cert.formData.issuer_email || ''}
+                            onChange={(e) => handleChange(index, 'issuer_email', e.target.value)}
+                            placeholder="contact@organization.com"
+                            disabled={loading}
+                          />
+                          {cert.errors.issuer_email && (
+                            <div className="invalid-feedback">{cert.errors.issuer_email}</div>
+                          )}
+                        </div>
+
+                        {/* Issuer Phone */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">Issuer Phone</label>
+                          <input
+                            type="tel"
+                            className={`form-control ${cert.errors.issuer_phone ? 'is-invalid' : ''}`}
+                            value={cert.formData.issuer_phone || ''}
+                            onChange={(e) => handleChange(index, 'issuer_phone', e.target.value)}
+                            placeholder="+1 (234) 567-8900"
+                            disabled={loading}
+                          />
+                          {cert.errors.issuer_phone && (
+                            <div className="invalid-feedback">{cert.errors.issuer_phone}</div>
+                          )}
+                        </div>
+
+                        {/* Issuer Website */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">Issuer Website</label>
+                          <input
+                            type="url"
+                            className={`form-control ${cert.errors.issuer_website ? 'is-invalid' : ''}`}
+                            value={cert.formData.issuer_website || ''}
+                            onChange={(e) => handleChange(index, 'issuer_website', e.target.value)}
+                            placeholder="https://www.organization.com"
+                            disabled={loading}
+                          />
+                          {cert.errors.issuer_website && (
+                            <div className="invalid-feedback">{cert.errors.issuer_website}</div>
+                          )}
+                        </div>
+
+                        {/* Issuer Accreditation Number */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">Accreditation Number</label>
+                          <input
+                            type="text"
+                            className={`form-control ${cert.errors.issuer_accreditation_number ? 'is-invalid' : ''}`}
+                            value={cert.formData.issuer_accreditation_number || ''}
+                            onChange={(e) => handleChange(index, 'issuer_accreditation_number', e.target.value)}
+                            placeholder="Enter accreditation number (if applicable)"
+                            disabled={loading}
+                          />
+                          {cert.errors.issuer_accreditation_number && (
+                            <div className="invalid-feedback">{cert.errors.issuer_accreditation_number}</div>
+                          )}
+                        </div>
+
+                        {/* Issuer Address */}
+                        <div className="col-12 mb-3">
+                          <label className="form-label">Street Address</label>
+                          <input
+                            type="text"
+                            className={`form-control ${cert.errors.issuer_address ? 'is-invalid' : ''}`}
+                            value={cert.formData.issuer_address || ''}
+                            onChange={(e) => handleChange(index, 'issuer_address', e.target.value)}
+                            placeholder="Street address"
+                            disabled={loading}
+                          />
+                          {cert.errors.issuer_address && (
+                            <div className="invalid-feedback">{cert.errors.issuer_address}</div>
+                          )}
+                        </div>
+
+                        {/* Issuer City */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">City</label>
+                          <input
+                            type="text"
+                            className={`form-control ${cert.errors.issuer_city ? 'is-invalid' : ''}`}
+                            value={cert.formData.issuer_city || ''}
+                            onChange={(e) => handleChange(index, 'issuer_city', e.target.value)}
+                            placeholder="City"
+                            disabled={loading}
+                          />
+                          {cert.errors.issuer_city && (
+                            <div className="invalid-feedback">{cert.errors.issuer_city}</div>
+                          )}
+                        </div>
+
+                        {/* Issuer State */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">State/Province</label>
+                          <input
+                            type="text"
+                            className={`form-control ${cert.errors.issuer_state ? 'is-invalid' : ''}`}
+                            value={cert.formData.issuer_state || ''}
+                            onChange={(e) => handleChange(index, 'issuer_state', e.target.value)}
+                            placeholder="State/Province"
+                            disabled={loading}
+                          />
+                          {cert.errors.issuer_state && (
+                            <div className="invalid-feedback">{cert.errors.issuer_state}</div>
+                          )}
+                        </div>
+
+                        {/* Issuer Country */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">Country</label>
+                          <input
+                            type="text"
+                            className={`form-control ${cert.errors.issuer_country ? 'is-invalid' : ''}`}
+                            value={cert.formData.issuer_country || ''}
+                            onChange={(e) => handleChange(index, 'issuer_country', e.target.value)}
+                            placeholder="Country"
+                            disabled={loading}
+                          />
+                          {cert.errors.issuer_country && (
+                            <div className="invalid-feedback">{cert.errors.issuer_country}</div>
+                          )}
+                        </div>
+
+                        {/* Issuer Postal Code */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">Postal Code</label>
+                          <input
+                            type="text"
+                            className={`form-control ${cert.errors.issuer_postal_code ? 'is-invalid' : ''}`}
+                            value={cert.formData.issuer_postal_code || ''}
+                            onChange={(e) => handleChange(index, 'issuer_postal_code', e.target.value)}
+                            placeholder="Postal/ZIP code"
+                            disabled={loading}
+                          />
+                          {cert.errors.issuer_postal_code && (
+                            <div className="invalid-feedback">{cert.errors.issuer_postal_code}</div>
+                          )}
+                        </div>
+
+                        {/* Issuer Description */}
+                        <div className="col-12 mb-3">
+                          <label className="form-label">Issuer Description</label>
+                          <textarea
+                            className={`form-control ${cert.errors.issuer_description ? 'is-invalid' : ''}`}
+                            value={cert.formData.issuer_description || ''}
+                            onChange={(e) => handleChange(index, 'issuer_description', e.target.value)}
+                            rows="3"
+                            placeholder="Brief description of the issuing organization"
+                            disabled={loading}
+                          />
+                          {cert.errors.issuer_description && (
+                            <div className="invalid-feedback">{cert.errors.issuer_description}</div>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Issuer Name */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Issuer Name *</label>
-                      <input
-                        type="text"
-                        className={`form-control ${errors.issuer_name ? 'is-invalid' : ''}`}
-                        name="issuer_name"
-                        value={formData.issuer_name || ''}
-                        onChange={handleChange}
-                        placeholder="Enter organization name"
-                        disabled={loading}
-                      />
-                      {errors.issuer_name && (
-                        <div className="invalid-feedback">{errors.issuer_name}</div>
-                      )}
-                    </div>
+                    {/* Certificate Information Section */}
+                    <div className="form-section mt-4">
+                      <h4 className="section-title">Certificate Information</h4>
+                      <p className="section-subtitle">Details about the certification being submitted</p>
+                      
+                      <div className="row">
+                        {/* Certification Dropdown */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">Certification *</label>
+                          <select
+                            className={`form-control ${cert.errors.certification ? 'is-invalid' : ''}`}
+                            value={cert.formData.certification || ''}
+                            onChange={(e) => handleCertificationChange(index, e.target.value)}
+                            disabled={loading || fetchLoading}
+                          >
+                            <option value="">Select Certification</option>
+                            {certificationCategories.map(certCat => (
+                              <option key={certCat.id} value={certCat.id}>
+                                {certCat.name}
+                              </option>
+                            ))}
+                          </select>
+                          {cert.errors.certification && (
+                            <div className="invalid-feedback">{cert.errors.certification}</div>
+                          )}
+                        </div>
 
-                    {/* Issuer Email */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Issuer Email</label>
-                      <input
-                        type="email"
-                        className={`form-control ${errors.issuer_email ? 'is-invalid' : ''}`}
-                        name="issuer_email"
-                        value={formData.issuer_email || ''}
-                        onChange={handleChange}
-                        placeholder="contact@organization.com"
-                        disabled={loading}
-                      />
-                      {errors.issuer_email && (
-                        <div className="invalid-feedback">{errors.issuer_email}</div>
-                      )}
-                    </div>
+                        {/* Competency Dropdown */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">Competency *</label>
+                          <select
+                            className={`form-control ${cert.errors.competency ? 'is-invalid' : ''}`}
+                            value={cert.formData.competency || ''}
+                            onChange={(e) => handleCompetencyChange(index, e.target.value)}
+                            disabled={loading || fetchLoading}
+                          >
+                            <option value="">Select Competency</option>
+                            {competencies.map(comp => (
+                              <option key={comp.id} value={comp.id}>
+                                {comp.competency_name}
+                              </option>
+                            ))}
+                          </select>
+                          {cert.errors.competency && (
+                            <div className="invalid-feedback">{cert.errors.competency}</div>
+                          )}
+                        </div>
 
-                    {/* Issuer Phone */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Issuer Phone</label>
-                      <input
-                        type="tel"
-                        className={`form-control ${errors.issuer_phone ? 'is-invalid' : ''}`}
-                        name="issuer_phone"
-                        value={formData.issuer_phone || ''}
-                        onChange={handleChange}
-                        placeholder="+1 (234) 567-8900"
-                        disabled={loading}
-                      />
-                      {errors.issuer_phone && (
-                        <div className="invalid-feedback">{errors.issuer_phone}</div>
-                      )}
-                    </div>
+                        {/* Certificate Number */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">Certificate Number *</label>
+                          <input
+                            type="text"
+                            className={`form-control ${cert.errors.certificate_number ? 'is-invalid' : ''}`}
+                            value={cert.formData.certificate_number || ''}
+                            onChange={(e) => handleChange(index, 'certificate_number', e.target.value)}
+                            placeholder="Enter certificate number"
+                            disabled={loading}
+                          />
+                          {cert.errors.certificate_number && (
+                            <div className="invalid-feedback">{cert.errors.certificate_number}</div>
+                          )}
+                        </div>
 
-                    {/* Issuer Website */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Issuer Website</label>
-                      <input
-                        type="url"
-                        className={`form-control ${errors.issuer_website ? 'is-invalid' : ''}`}
-                        name="issuer_website"
-                        value={formData.issuer_website || ''}
-                        onChange={handleChange}
-                        placeholder="https://www.organization.com"
-                        disabled={loading}
-                      />
-                      {errors.issuer_website && (
-                        <div className="invalid-feedback">{errors.issuer_website}</div>
-                      )}
-                    </div>
+                        {/* Issuing Authority */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">Issuing Authority *</label>
+                          <input
+                            type="text"
+                            className={`form-control ${cert.errors.issuing_authority ? 'is-invalid' : ''}`}
+                            value={cert.formData.issuing_authority || ''}
+                            onChange={(e) => handleChange(index, 'issuing_authority', e.target.value)}
+                            placeholder="Enter issuing authority (e.g., API, NACE, TWI, etc.)"
+                            disabled={loading}
+                          />
+                          {cert.errors.issuing_authority && (
+                            <div className="invalid-feedback">{cert.errors.issuing_authority}</div>
+                          )}
+                        </div>
 
-                    {/* Issuer Accreditation Number */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Accreditation Number</label>
-                      <input
-                        type="text"
-                        className={`form-control ${errors.issuer_accreditation_number ? 'is-invalid' : ''}`}
-                        name="issuer_accreditation_number"
-                        value={formData.issuer_accreditation_number || ''}
-                        onChange={handleChange}
-                        placeholder="Enter accreditation number (if applicable)"
-                        disabled={loading}
-                      />
-                      {errors.issuer_accreditation_number && (
-                        <div className="invalid-feedback">{errors.issuer_accreditation_number}</div>
-                      )}
-                    </div>
+                        {/* Issue Date */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">Issue Date *</label>
+                          <input
+                            type="date"
+                            className={`form-control ${cert.errors.issue_date ? 'is-invalid' : ''}`}
+                            value={cert.formData.issue_date || ''}
+                            onChange={(e) => handleChange(index, 'issue_date', e.target.value)}
+                            disabled={loading}
+                          />
+                          {cert.errors.issue_date && (
+                            <div className="invalid-feedback">{cert.errors.issue_date}</div>
+                          )}
+                        </div>
 
-                    {/* Issuer Address */}
-                    <div className="col-12 mb-3">
-                      <label className="form-label">Street Address</label>
-                      <input
-                        type="text"
-                        className={`form-control ${errors.issuer_address ? 'is-invalid' : ''}`}
-                        name="issuer_address"
-                        value={formData.issuer_address || ''}
-                        onChange={handleChange}
-                        placeholder="Street address"
-                        disabled={loading}
-                      />
-                      {errors.issuer_address && (
-                        <div className="invalid-feedback">{errors.issuer_address}</div>
-                      )}
-                    </div>
+                        {/* Expiry Date */}
+                        <div className="col-md-6 mb-3">
+                          <label className="form-label">Expiry Date *</label>
+                          <input
+                            type="date"
+                            className={`form-control ${cert.errors.expiry_date ? 'is-invalid' : ''}`}
+                            value={cert.formData.expiry_date || ''}
+                            onChange={(e) => handleChange(index, 'expiry_date', e.target.value)}
+                            disabled={loading}
+                          />
+                          {cert.errors.expiry_date && (
+                            <div className="invalid-feedback">{cert.errors.expiry_date}</div>
+                          )}
+                        </div>
 
-                    {/* Issuer City */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">City</label>
-                      <input
-                        type="text"
-                        className={`form-control ${errors.issuer_city ? 'is-invalid' : ''}`}
-                        name="issuer_city"
-                        value={formData.issuer_city || ''}
-                        onChange={handleChange}
-                        placeholder="City"
-                        disabled={loading}
-                      />
-                      {errors.issuer_city && (
-                        <div className="invalid-feedback">{errors.issuer_city}</div>
-                      )}
-                    </div>
-
-                    {/* Issuer State */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">State/Province</label>
-                      <input
-                        type="text"
-                        className={`form-control ${errors.issuer_state ? 'is-invalid' : ''}`}
-                        name="issuer_state"
-                        value={formData.issuer_state || ''}
-                        onChange={handleChange}
-                        placeholder="State/Province"
-                        disabled={loading}
-                      />
-                      {errors.issuer_state && (
-                        <div className="invalid-feedback">{errors.issuer_state}</div>
-                      )}
-                    </div>
-
-                    {/* Issuer Country */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Country</label>
-                      <input
-                        type="text"
-                        className={`form-control ${errors.issuer_country ? 'is-invalid' : ''}`}
-                        name="issuer_country"
-                        value={formData.issuer_country || ''}
-                        onChange={handleChange}
-                        placeholder="Country"
-                        disabled={loading}
-                      />
-                      {errors.issuer_country && (
-                        <div className="invalid-feedback">{errors.issuer_country}</div>
-                      )}
-                    </div>
-
-                    {/* Issuer Postal Code */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Postal Code</label>
-                      <input
-                        type="text"
-                        className={`form-control ${errors.issuer_postal_code ? 'is-invalid' : ''}`}
-                        name="issuer_postal_code"
-                        value={formData.issuer_postal_code || ''}
-                        onChange={handleChange}
-                        placeholder="Postal/ZIP code"
-                        disabled={loading}
-                      />
-                      {errors.issuer_postal_code && (
-                        <div className="invalid-feedback">{errors.issuer_postal_code}</div>
-                      )}
-                    </div>
-
-                    {/* Issuer Description */}
-                    <div className="col-12 mb-3">
-                      <label className="form-label">Issuer Description</label>
-                      <textarea
-                        className={`form-control ${errors.issuer_description ? 'is-invalid' : ''}`}
-                        name="issuer_description"
-                        value={formData.issuer_description || ''}
-                        onChange={handleChange}
-                        rows="3"
-                        placeholder="Brief description of the issuing organization"
-                        disabled={loading}
-                      />
-                      {errors.issuer_description && (
-                        <div className="invalid-feedback">{errors.issuer_description}</div>
-                      )}
+                        {/* Document Upload */}
+                        <div className="col-12 mb-3">
+                          <label className="form-label">{isEditMode ? 'Update Document (Optional)' : 'Certificate Document *'}</label>
+                          <input
+                            type="file"
+                            className={`form-control ${cert.errors.document ? 'is-invalid' : ''}`}
+                            onChange={(e) => handleFileChange(index, e.target.files[0])}
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                            disabled={loading}
+                          />
+                          <small className="text-muted d-block mt-1">
+                            Accepted formats: PDF, JPG, JPEG, PNG, DOC, DOCX (Max 10MB)
+                          </small>
+                          {cert.errors.document && (
+                            <div className="invalid-feedback">{cert.errors.document}</div>
+                          )}
+                          {cert.existingDocument && !cert.selectedFile && (
+                            <div className="text-success mt-1">
+                              <small>✓ Current document: <a href={cert.existingDocument} target="_blank" rel="noopener noreferrer">View uploaded file</a></small>
+                            </div>
+                          )}
+                          {cert.selectedFile && (
+                            <div className="text-info mt-1">
+                              <small>New file selected: {cert.selectedFile.name}</small>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
 
-                {/* Certificate Information Section */}
-                <div className="form-section mt-4">
-                  <h4 className="section-title">Certificate Information</h4>
-                  <p className="section-subtitle">Details about the certification being submitted</p>
-                  
-                  <div className="row">
-                    {/* Certification Dropdown */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Certification *</label>
-                      <select
-                        className={`form-control ${errors.certification ? 'is-invalid' : ''}`}
-                        value={selectedCertification}
-                        onChange={handleCertificationChange}
-                        disabled={loading || fetchLoading}
-                      >
-                        <option value="">Select Certification</option>
-                        {certificationCategories.map(cert => (
-                          <option key={cert.id} value={cert.id}>
-                            {cert.name}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.certification && (
-                        <div className="invalid-feedback">{errors.certification}</div>
-                      )}
-                      {certificationCategories.length === 0 && !fetchLoading && (
-                        <small className="text-muted">No certifications available</small>
-                      )}
-                    </div>
-
-                    {/* Competency Dropdown */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Competency *</label>
-                      <select
-                        className={`form-control ${errors.competency ? 'is-invalid' : ''}`}
-                        value={selectedCompetency}
-                        onChange={handleCompetencyChange}
-                        disabled={loading || fetchLoading}
-                      >
-                        <option value="">Select Competency</option>
-                        {competencies.map(comp => (
-                          <option key={comp.id} value={comp.id}>
-                            {comp.competency_name}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.competency && (
-                        <div className="invalid-feedback">{errors.competency}</div>
-                      )}
-                      {competencies.length === 0 && !fetchLoading && (
-                        <small className="text-muted">No competencies available</small>
-                      )}
-                    </div>
-
-                    {/* Certificate Number */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Certificate Number *</label>
-                      <input
-                        type="text"
-                        className={`form-control ${errors.certificate_number ? 'is-invalid' : ''}`}
-                        name="certificate_number"
-                        value={formData.certificate_number || ''}
-                        onChange={handleChange}
-                        placeholder="Enter certificate number"
-                        disabled={loading}
-                      />
-                      {errors.certificate_number && (
-                        <div className="invalid-feedback">{errors.certificate_number}</div>
-                      )}
-                    </div>
-
-                    {/* Issuing Authority */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Issuing Authority *</label>
-                      <input
-                        type="text"
-                        className={`form-control ${errors.issuing_authority ? 'is-invalid' : ''}`}
-                        name="issuing_authority"
-                        value={formData.issuing_authority || ''}
-                        onChange={handleChange}
-                        placeholder="Enter issuing authority (e.g., API, NACE, TWI, etc.)"
-                        disabled={loading}
-                      />
-                      {errors.issuing_authority && (
-                        <div className="invalid-feedback">{errors.issuing_authority}</div>
-                      )}
-                    </div>
-
-                    {/* Issue Date */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Issue Date *</label>
-                      <input
-                        type="date"
-                        className={`form-control ${errors.issue_date ? 'is-invalid' : ''}`}
-                        name="issue_date"
-                        value={formData.issue_date || ''}
-                        onChange={handleChange}
-                        disabled={loading}
-                      />
-                      {errors.issue_date && (
-                        <div className="invalid-feedback">{errors.issue_date}</div>
-                      )}
-                    </div>
-
-                    {/* Expiry Date */}
-                    <div className="col-md-6 mb-3">
-                      <label className="form-label">Expiry Date *</label>
-                      <input
-                        type="date"
-                        className={`form-control ${errors.expiry_date ? 'is-invalid' : ''}`}
-                        name="expiry_date"
-                        value={formData.expiry_date || ''}
-                        onChange={handleChange}
-                        disabled={loading}
-                      />
-                      {errors.expiry_date && (
-                        <div className="invalid-feedback">{errors.expiry_date}</div>
-                      )}
-                    </div>
-
-                    {/* Document Upload */}
-                    <div className="col-12 mb-3">
-                      <label className="form-label">{isEditMode ? 'Update Document (Optional)' : 'Certificate Document *'}</label>
-                      <input
-                        type="file"
-                        className={`form-control ${errors.document ? 'is-invalid' : ''}`}
-                        onChange={handleFileChange}
-                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                        disabled={loading}
-                      />
-                      {errors.document && (
-                        <div className="invalid-feedback">{errors.document}</div>
-                      )}
-                      {/* <small className="text-muted">
-                        Supported formats: PDF, JPG, JPEG, PNG, DOC, DOCX (Max size: 5MB)
-                        {isEditMode && existingDocument && (
-                          <span className="d-block mt-1 text-success">
-                            Current document: {existingDocument.split('/').pop()}
-                          </span>
-                        )}
-                      </small> */}
-                    </div>
+                {/* Add More Button - Only show in add mode */}
+                {!isEditMode && (
+                  <div className="text-center mb-4">
+                    <button
+                      type="button"
+                      className="btn btn-success"
+                      onClick={addCertificateEntry}
+                      disabled={loading}
+                    >
+                      <FaPlus /> Add Another Certificate
+                    </button>
                   </div>
-                </div>
-
-                {/* Note */}
-                {/* <div className="cert-add-note mb-4">
-                  <small className="text-muted">
-                    Note: Fields marked with * are required. Please ensure all information is accurate.
-                    The certificate will be reviewed by the mentor for approval.
-                  </small>
-                </div> */}
+                )}
 
                 {/* Form Actions */}
                 <div className="cert-add-actions">
@@ -962,7 +1106,7 @@ const AddCertificate = () => {
                     className="btn btn-primary"
                     disabled={loading}
                   >
-                    {loading ? (isEditMode ? 'Updating...' : 'Submitting...') : (isEditMode ? 'Update Certification' : 'Submit Certification')}
+                    {loading ? (isEditMode ? 'Updating...' : 'Submitting...') : (isEditMode ? 'Update Certification' : `Submit ${certificates.length} Certificate(s)`)}
                   </button>
                 </div>
               </form>
