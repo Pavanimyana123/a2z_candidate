@@ -30,6 +30,7 @@ const AddCertificate = () => {
       formData: {
         // Issuer fields
         issuer_type: '',
+        issuer_type_other: '', // Added field for custom issuer type
         issuer_name: '',
         issuer_email: '',
         issuer_phone: '',
@@ -138,6 +139,7 @@ const AddCertificate = () => {
           id: Date.now(),
           formData: {
             issuer_type: certificateData.issuer_type || '',
+            issuer_type_other: certificateData.issuer_type_other || '', // Load other issuer type
             issuer_name: certificateData.issuer_name || '',
             issuer_email: certificateData.issuer_email || '',
             issuer_phone: certificateData.issuer_phone || '',
@@ -153,7 +155,7 @@ const AddCertificate = () => {
             expiry_date: formatDateForInput(certificateData.expiry_date),
             certificate_number: certificateData.certificate_number || '',
             issuing_authority: certificateData.issuing_authority || '',
-            document: certificateData.document || null, // Store document URL
+            document: certificateData.document || null,
             is_approved: certificateData.is_approved !== undefined ? certificateData.is_approved : true,
             approved_at: certificateData.approved_at || new Date().toISOString(),
             approval_remarks: certificateData.approval_remarks || '',
@@ -164,7 +166,7 @@ const AddCertificate = () => {
             approved_by_mentor: certificateData.approved_by_mentor || null
           },
           selectedFile: null,
-          existingDocument: certificateData.document, // Store existing document URL
+          existingDocument: certificateData.document,
           errors: {}
         }]);
       }
@@ -248,6 +250,7 @@ const AddCertificate = () => {
       id: Date.now(),
       formData: {
         issuer_type: '',
+        issuer_type_other: '',
         issuer_name: '',
         issuer_email: '',
         issuer_phone: '',
@@ -381,6 +384,12 @@ const AddCertificate = () => {
     if (!formData.issuer_type) {
       newErrors.issuer_type = "Issuer type is required";
     }
+    
+    // Validate issuer_type_other if issuer_type is "Other"
+    if (formData.issuer_type === 'Other' && !formData.issuer_type_other?.trim()) {
+      newErrors.issuer_type_other = "Please specify the issuer type";
+    }
+    
     if (!formData.issuer_name?.trim()) {
       newErrors.issuer_name = "Issuer name is required";
     }
@@ -456,202 +465,204 @@ const AddCertificate = () => {
     return !hasErrors;
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (!validateAllCertificates()) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Validation Failed',
-      html: 'Please check all required fields and fix the errors below:<br/><br/>' + 
-            globalErrors.map(err => `• ${err}`).join('<br/>'),
-      confirmButtonText: 'OK'
-    });
-    return;
-  }
-
-  setLoading(true);
-  setError('');
-
-  try {
-    const url = `${BASE_URL}/api/candidate/certifications/`;
-
-    if (isEditMode) {
-      // EDIT MODE — PUT with multipart if file changed, else JSON
-      const certificate = certificates[0];
-
-      let response;
-      if (certificate.selectedFile) {
-        // Send as multipart/form-data so the file is included
-        const formData = new FormData();
-        const fields = {
-          issuer_type: certificate.formData.issuer_type,
-          issuer_name: certificate.formData.issuer_name,
-          issuer_email: certificate.formData.issuer_email || '',
-          issuer_phone: certificate.formData.issuer_phone || '',
-          issuer_website: certificate.formData.issuer_website || '',
-          issuer_address: certificate.formData.issuer_address || '',
-          issuer_city: certificate.formData.issuer_city || '',
-          issuer_state: certificate.formData.issuer_state || '',
-          issuer_country: certificate.formData.issuer_country || '',
-          issuer_postal_code: certificate.formData.issuer_postal_code || '',
-          issuer_description: certificate.formData.issuer_description || '',
-          issuer_accreditation_number: certificate.formData.issuer_accreditation_number || '',
-          issue_date: certificate.formData.issue_date,
-          expiry_date: certificate.formData.expiry_date,
-          certificate_number: certificate.formData.certificate_number,
-          issuing_authority: certificate.formData.issuing_authority,
-          is_approved: certificate.formData.is_approved,
-          approved_at: certificate.formData.approved_at,
-          approval_remarks: certificate.formData.approval_remarks || '',
-          status: certificate.formData.status,
-          candidate: parseInt(certificate.formData.candidate),
-          certification: parseInt(certificate.formData.certification),
-          competency: parseInt(certificate.formData.competency),
-        };
-
-        Object.entries(fields).forEach(([key, value]) => {
-          formData.append(key, value);
-        });
-
-        if (certificate.formData.approved_by_mentor) {
-          formData.append('approved_by_mentor', certificate.formData.approved_by_mentor);
-        }
-
-        formData.append('document', certificate.selectedFile);
-
-        response = await fetch(`${BASE_URL}/api/candidate/certifications/${id}/`, {
-          method: 'PUT',
-          body: formData, // No Content-Type header — browser sets multipart boundary
-        });
-      } else {
-        // No new file — plain JSON PUT
-        const requestBody = {
-          issuer_type: certificate.formData.issuer_type,
-          issuer_name: certificate.formData.issuer_name,
-          issuer_email: certificate.formData.issuer_email || '',
-          issuer_phone: certificate.formData.issuer_phone || '',
-          issuer_website: certificate.formData.issuer_website || '',
-          issuer_address: certificate.formData.issuer_address || '',
-          issuer_city: certificate.formData.issuer_city || '',
-          issuer_state: certificate.formData.issuer_state || '',
-          issuer_country: certificate.formData.issuer_country || '',
-          issuer_postal_code: certificate.formData.issuer_postal_code || '',
-          issuer_description: certificate.formData.issuer_description || '',
-          issuer_accreditation_number: certificate.formData.issuer_accreditation_number || '',
-          issue_date: certificate.formData.issue_date,
-          expiry_date: certificate.formData.expiry_date,
-          certificate_number: certificate.formData.certificate_number,
-          issuing_authority: certificate.formData.issuing_authority,
-          is_approved: certificate.formData.is_approved,
-          approved_at: certificate.formData.approved_at,
-          approval_remarks: certificate.formData.approval_remarks || '',
-          status: certificate.formData.status,
-          candidate: parseInt(certificate.formData.candidate),
-          certification: parseInt(certificate.formData.certification),
-          competency: parseInt(certificate.formData.competency),
-          approved_by_mentor: certificate.formData.approved_by_mentor || null,
-        };
-
-        response = await fetch(`${BASE_URL}/api/candidate/certifications/${id}/`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
-        });
-      }
-
-      const responseData = await response.json();
-      if (!response.ok) {
-        throw new Error(responseData.message || 'Failed to update certification');
-      }
-
-    } else {
-      // ADD MODE — one request per certificate as flat multipart/form-data
-      const results = [];
-      const failures = [];
-
-      for (let index = 0; index < certificates.length; index++) {
-        const cert = certificates[index];
-        const formData = new FormData();
-
-        // Append all flat fields directly — Django sees them as request.data fields
-        formData.append('candidate', parseInt(cert.formData.candidate));
-        formData.append('certification', parseInt(cert.formData.certification));
-        formData.append('competency', parseInt(cert.formData.competency));
-        formData.append('issuer_type', cert.formData.issuer_type);
-        formData.append('issuer_name', cert.formData.issuer_name);
-        formData.append('issuer_email', cert.formData.issuer_email || '');
-        formData.append('issuer_phone', cert.formData.issuer_phone || '');
-        formData.append('issuer_website', cert.formData.issuer_website || '');
-        formData.append('issuer_address', cert.formData.issuer_address || '');
-        formData.append('issuer_city', cert.formData.issuer_city || '');
-        formData.append('issuer_state', cert.formData.issuer_state || '');
-        formData.append('issuer_country', cert.formData.issuer_country || '');
-        formData.append('issuer_postal_code', cert.formData.issuer_postal_code || '');
-        formData.append('issuer_description', cert.formData.issuer_description || '');
-        formData.append('issuer_accreditation_number', cert.formData.issuer_accreditation_number || '');
-        formData.append('issue_date', cert.formData.issue_date);
-        formData.append('expiry_date', cert.formData.expiry_date);
-        formData.append('certificate_number', cert.formData.certificate_number);
-        formData.append('issuing_authority', cert.formData.issuing_authority);
-        formData.append('is_approved', cert.formData.is_approved);
-        formData.append('approved_at', cert.formData.approved_at);
-        formData.append('approval_remarks', cert.formData.approval_remarks || '');
-        formData.append('status', cert.formData.status);
-
-        // ✅ This is the key fix — document goes in the same FormData as the other fields
-        if (cert.selectedFile) {
-          formData.append('document', cert.selectedFile);
-        }
-
-        try {
-          const response = await fetch(url, {
-            method: 'POST',
-            body: formData, // No Content-Type header!
-          });
-
-          const responseData = await response.json();
-
-          if (!response.ok) {
-            failures.push({ index: index + 1, error: responseData.message || 'Failed' });
-          } else {
-            results.push(responseData);
-          }
-        } catch (err) {
-          failures.push({ index: index + 1, error: err.message });
-        }
-      }
-
-      if (failures.length > 0) {
-        const errorMessages = failures.map(f => `Certificate ${f.index}: ${f.error}`).join('\n');
-        throw new Error(`Some certificates failed:\n${errorMessages}`);
-      }
+    if (!validateAllCertificates()) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Validation Failed',
+        html: 'Please check all required fields and fix the errors below:<br/><br/>' + 
+              globalErrors.map(err => `• ${err}`).join('<br/>'),
+        confirmButtonText: 'OK'
+      });
+      return;
     }
 
-    await Swal.fire({
-      icon: 'success',
-      title: 'Success!',
-      text: `${certificates.length} certification(s) ${isEditMode ? 'updated' : 'added'} successfully.`,
-      timer: 2000,
-      showConfirmButton: false,
-    });
+    setLoading(true);
+    setError('');
 
-    navigate('/candidate-certificate');
+    try {
+      const url = `${BASE_URL}/api/candidate/certifications/`;
 
-  } catch (err) {
-    setError(err.message || 'Failed. Please try again.');
-    Swal.fire({
-      icon: 'error',
-      title: `${isEditMode ? 'Update' : 'Submission'} Failed`,
-      text: err.message || 'Please try again.',
-      confirmButtonText: 'OK',
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+      if (isEditMode) {
+        // EDIT MODE — PUT with multipart if file changed, else JSON
+        const certificate = certificates[0];
 
+        let response;
+        if (certificate.selectedFile) {
+          // Send as multipart/form-data so the file is included
+          const formData = new FormData();
+          const fields = {
+            issuer_type: certificate.formData.issuer_type,
+            issuer_type_other: certificate.formData.issuer_type === 'Other' ? certificate.formData.issuer_type_other : '',
+            issuer_name: certificate.formData.issuer_name,
+            issuer_email: certificate.formData.issuer_email || '',
+            issuer_phone: certificate.formData.issuer_phone || '',
+            issuer_website: certificate.formData.issuer_website || '',
+            issuer_address: certificate.formData.issuer_address || '',
+            issuer_city: certificate.formData.issuer_city || '',
+            issuer_state: certificate.formData.issuer_state || '',
+            issuer_country: certificate.formData.issuer_country || '',
+            issuer_postal_code: certificate.formData.issuer_postal_code || '',
+            issuer_description: certificate.formData.issuer_description || '',
+            issuer_accreditation_number: certificate.formData.issuer_accreditation_number || '',
+            issue_date: certificate.formData.issue_date,
+            expiry_date: certificate.formData.expiry_date,
+            certificate_number: certificate.formData.certificate_number,
+            issuing_authority: certificate.formData.issuing_authority,
+            is_approved: certificate.formData.is_approved,
+            approved_at: certificate.formData.approved_at,
+            approval_remarks: certificate.formData.approval_remarks || '',
+            status: certificate.formData.status,
+            candidate: parseInt(certificate.formData.candidate),
+            certification: parseInt(certificate.formData.certification),
+            competency: parseInt(certificate.formData.competency),
+          };
 
+          Object.entries(fields).forEach(([key, value]) => {
+            formData.append(key, value);
+          });
+
+          if (certificate.formData.approved_by_mentor) {
+            formData.append('approved_by_mentor', certificate.formData.approved_by_mentor);
+          }
+
+          formData.append('document', certificate.selectedFile);
+
+          response = await fetch(`${BASE_URL}/api/candidate/certifications/${id}/`, {
+            method: 'PUT',
+            body: formData,
+          });
+        } else {
+          // No new file — plain JSON PUT
+          const requestBody = {
+            issuer_type: certificate.formData.issuer_type,
+            issuer_type_other: certificate.formData.issuer_type === 'Other' ? certificate.formData.issuer_type_other : '',
+            issuer_name: certificate.formData.issuer_name,
+            issuer_email: certificate.formData.issuer_email || '',
+            issuer_phone: certificate.formData.issuer_phone || '',
+            issuer_website: certificate.formData.issuer_website || '',
+            issuer_address: certificate.formData.issuer_address || '',
+            issuer_city: certificate.formData.issuer_city || '',
+            issuer_state: certificate.formData.issuer_state || '',
+            issuer_country: certificate.formData.issuer_country || '',
+            issuer_postal_code: certificate.formData.issuer_postal_code || '',
+            issuer_description: certificate.formData.issuer_description || '',
+            issuer_accreditation_number: certificate.formData.issuer_accreditation_number || '',
+            issue_date: certificate.formData.issue_date,
+            expiry_date: certificate.formData.expiry_date,
+            certificate_number: certificate.formData.certificate_number,
+            issuing_authority: certificate.formData.issuing_authority,
+            is_approved: certificate.formData.is_approved,
+            approved_at: certificate.formData.approved_at,
+            approval_remarks: certificate.formData.approval_remarks || '',
+            status: certificate.formData.status,
+            candidate: parseInt(certificate.formData.candidate),
+            certification: parseInt(certificate.formData.certification),
+            competency: parseInt(certificate.formData.competency),
+            approved_by_mentor: certificate.formData.approved_by_mentor || null,
+          };
+
+          response = await fetch(`${BASE_URL}/api/candidate/certifications/${id}/`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody),
+          });
+        }
+
+        const responseData = await response.json();
+        if (!response.ok) {
+          throw new Error(responseData.message || 'Failed to update certification');
+        }
+
+      } else {
+        // ADD MODE — one request per certificate as flat multipart/form-data
+        const results = [];
+        const failures = [];
+
+        for (let index = 0; index < certificates.length; index++) {
+          const cert = certificates[index];
+          const formData = new FormData();
+
+          // Append all flat fields directly
+          formData.append('candidate', parseInt(cert.formData.candidate));
+          formData.append('certification', parseInt(cert.formData.certification));
+          formData.append('competency', parseInt(cert.formData.competency));
+          formData.append('issuer_type', cert.formData.issuer_type);
+          if (cert.formData.issuer_type === 'Other') {
+            formData.append('issuer_type_other', cert.formData.issuer_type_other || '');
+          }
+          formData.append('issuer_name', cert.formData.issuer_name);
+          formData.append('issuer_email', cert.formData.issuer_email || '');
+          formData.append('issuer_phone', cert.formData.issuer_phone || '');
+          formData.append('issuer_website', cert.formData.issuer_website || '');
+          formData.append('issuer_address', cert.formData.issuer_address || '');
+          formData.append('issuer_city', cert.formData.issuer_city || '');
+          formData.append('issuer_state', cert.formData.issuer_state || '');
+          formData.append('issuer_country', cert.formData.issuer_country || '');
+          formData.append('issuer_postal_code', cert.formData.issuer_postal_code || '');
+          formData.append('issuer_description', cert.formData.issuer_description || '');
+          formData.append('issuer_accreditation_number', cert.formData.issuer_accreditation_number || '');
+          formData.append('issue_date', cert.formData.issue_date);
+          formData.append('expiry_date', cert.formData.expiry_date);
+          formData.append('certificate_number', cert.formData.certificate_number);
+          formData.append('issuing_authority', cert.formData.issuing_authority);
+          formData.append('is_approved', cert.formData.is_approved);
+          formData.append('approved_at', cert.formData.approved_at);
+          formData.append('approval_remarks', cert.formData.approval_remarks || '');
+          formData.append('status', cert.formData.status);
+
+          if (cert.selectedFile) {
+            formData.append('document', cert.selectedFile);
+          }
+
+          try {
+            const response = await fetch(url, {
+              method: 'POST',
+              body: formData,
+            });
+
+            const responseData = await response.json();
+
+            if (!response.ok) {
+              failures.push({ index: index + 1, error: responseData.message || 'Failed' });
+            } else {
+              results.push(responseData);
+            }
+          } catch (err) {
+            failures.push({ index: index + 1, error: err.message });
+          }
+        }
+
+        if (failures.length > 0) {
+          const errorMessages = failures.map(f => `Certificate ${f.index}: ${f.error}`).join('\n');
+          throw new Error(`Some certificates failed:\n${errorMessages}`);
+        }
+      }
+
+      await Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: `${certificates.length} certification(s) ${isEditMode ? 'updated' : 'added'} successfully.`,
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      navigate('/candidate-certificate');
+
+    } catch (err) {
+      setError(err.message || 'Failed. Please try again.');
+      Swal.fire({
+        icon: 'error',
+        title: `${isEditMode ? 'Update' : 'Submission'} Failed`,
+        text: err.message || 'Please try again.',
+        confirmButtonText: 'OK',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCancel = () => {
     navigate('/candidate-certificate');
@@ -756,6 +767,25 @@ const AddCertificate = () => {
                             <div className="invalid-feedback">{cert.errors.issuer_type}</div>
                           )}
                         </div>
+
+                        {/* Conditional Other Issuer Type Input */}
+                        {cert.formData.issuer_type === 'Other' && (
+                          <div className="col-md-6 mb-3">
+                            <label className="form-label">Please Specify Issuer Type *</label>
+                            <input
+                              type="text"
+                              className={`form-control ${cert.errors.issuer_type_other ? 'is-invalid' : ''}`}
+                              value={cert.formData.issuer_type_other || ''}
+                              onChange={(e) => handleChange(index, 'issuer_type_other', e.target.value)}
+                              placeholder="Enter custom issuer type (e.g., Non-profit Organization)"
+                              disabled={loading}
+                            />
+                            {cert.errors.issuer_type_other && (
+                              <div className="invalid-feedback">{cert.errors.issuer_type_other}</div>
+                            )}
+                            <small className="text-muted">Please specify the type of issuing organization</small>
+                          </div>
+                        )}
 
                         {/* Issuer Name */}
                         <div className="col-md-6 mb-3">

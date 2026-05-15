@@ -14,9 +14,6 @@ const RegisterCandidate = () => {
   const [errors, setErrors] = useState({});
   const [isEditMode, setIsEditMode] = useState(false);
 
-  // State for certifications dropdown
-  const [certificationCategories, setCertificationCategories] = useState([]);
-
   // State for certificates
   const [certificates, setCertificates] = useState([]);
   const [certificateErrors, setCertificateErrors] = useState({});
@@ -29,6 +26,14 @@ const RegisterCandidate = () => {
     { value: 'Training Center', label: 'Training Center' },
     { value: 'Government Body', label: 'Government Body' },
     { value: 'Professional Body', label: 'Professional Body' },
+    { value: 'Other', label: 'Other' },
+  ];
+
+  // Certification Type options (from backend Certification_Types)
+  const certificationTypeOptions = [
+    { value: 'Educational', label: 'Educational' },
+    { value: 'Training', label: 'Training' },
+    { value: 'Experience', label: 'Experience' },
     { value: 'Other', label: 'Other' },
   ];
 
@@ -53,10 +58,6 @@ const RegisterCandidate = () => {
   // ─── Lifecycle ───────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    fetchCertificationCategories();
-  }, []);
-
-  useEffect(() => {
     if (id) {
       setIsEditMode(true);
       fetchCandidateData();
@@ -75,8 +76,10 @@ const RegisterCandidate = () => {
     existing_document: null,
     document_name: '',
     // form fields
-    certification: '',
+    certification_type: '',
+    certification_type_other: '',
     issuer_type: '',
+    issuer_type_other: '',
     issuer_name: '',
     issue_date: '',
     expiry_date: '',
@@ -90,19 +93,6 @@ const RegisterCandidate = () => {
   };
 
   // ─── API Calls ────────────────────────────────────────────────────────────────
-
-  const fetchCertificationCategories = async () => {
-    try {
-      const response = await fetch(`${BASE_URL}/api/admin/certification-categories/`);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const result = await response.json();
-      if (result.status && result.data) {
-        setCertificationCategories(result.data);
-      }
-    } catch (err) {
-      console.error('Error fetching certification categories:', err);
-    }
-  };
 
   const fetchCandidateData = async () => {
     try {
@@ -161,11 +151,13 @@ const RegisterCandidate = () => {
       if (result.status && result.data && result.data.length > 0) {
         const existingCerts = result.data.map((cert) => ({
           id: cert.id,
-          selectedFile: null, // no new file yet
+          selectedFile: null,
           existing_document: cert.document || null,
           document_name: cert.document ? cert.document.split('/').pop() : '',
-          certification: cert.certification ? cert.certification.toString() : '',
+          certification_type: cert.certification_type || '',
+          certification_type_other: cert.certification_type_other || '',
           issuer_type: cert.issuer_type || '',
+          issuer_type_other: cert.issuer_type_other || '',
           issuer_name: cert.issuer_name || '',
           issue_date: cert.issue_date || '',
           expiry_date: cert.expiry_date || '',
@@ -255,7 +247,7 @@ const RegisterCandidate = () => {
         if (i !== index) return cert;
         return {
           ...cert,
-          selectedFile: file,       // ← raw File, not base64
+          selectedFile: file,
           document_name: file.name,
           errors: { ...cert.errors, document: '' },
         };
@@ -271,15 +263,27 @@ const RegisterCandidate = () => {
 
     certificates.forEach((cert, index) => {
       const errs = {};
-
-      if (!cert.certification) {
-        errs.certification = 'Certification is required';
+      
+      // Validate certification_type_other if certification_type is "Other"
+      if (!cert.certification_type) {
+        errs.certification_type = 'Certification type is required';
+        isValid = false;
+      } else if (cert.certification_type === 'Other' && !cert.certification_type_other?.trim()) {
+        errs.certification_type_other = 'Please specify the certification type';
         isValid = false;
       }
+      
       if (!cert.issuer_type) {
         errs.issuer_type = 'Issuer type is required';
         isValid = false;
       }
+      
+      // Validate issuer_type_other if issuer_type is "Other"
+      if (cert.issuer_type === 'Other' && !cert.issuer_type_other?.trim()) {
+        errs.issuer_type_other = 'Please specify the issuer type';
+        isValid = false;
+      }
+      
       if (!cert.issuer_name?.trim()) {
         errs.issuer_name = 'Issuer name is required';
         isValid = false;
@@ -372,187 +376,197 @@ const RegisterCandidate = () => {
   // ─── Submit ───────────────────────────────────────────────────────────────────
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!validateForm() | !validateCertificates()) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Validation Failed',
-      text: 'Please check all required fields and try again.',
-      showConfirmButton: true,
-    });
-    return;
-  }
-
-  setLoading(true);
-  setError('');
-
-  try {
-    // ─── STEP 1: Build candidate JSON payload (no files) ───────────────────
-    const candidatePayload = {
-      full_name:                formData.full_name,
-      date_of_birth:            formData.date_of_birth,
-      gender:                   formData.gender,
-      phone_number:             formData.phone_number,
-      email:                    formData.email,
-      address:                  formData.address,
-      city:                     formData.city,
-      state:                    formData.state,
-      country:                  formData.country,
-      pincode:                  formData.pincode,
-      emergency_contact_name:   formData.emergency_contact_name,
-      emergency_contact_phone:  formData.emergency_contact_phone,
-      blood_group:              formData.blood_group   || '',
-      medical_expiry_date:      formData.medical_expiry_date || '',
-      safety_induction_status:  formData.safety_induction_status,
-    };
-
-    // ── Console log: candidate payload ──────────────────────────────────────
-    console.log('📦 Candidate Payload (JSON):', JSON.stringify(candidatePayload, null, 2));
-
-    // ─── STEP 2: Build certificate preview objects for the console ──────────
-    const certPayloadPreview = certificates.map((cert, index) => ({
-      [`certificate_${index + 1}`]: {
-        candidate:          '<<will be filled after candidate creation>>',
-        certification:      parseInt(cert.certification),
-        issuer_type:        cert.issuer_type,
-        issuer_name:        cert.issuer_name,
-        issue_date:         cert.issue_date,
-        expiry_date:        cert.expiry_date,
-        certificate_number: cert.certificate_number,
-        issuing_authority:  cert.issuing_authority,
-        document:           cert.selectedFile
-          ? { name: cert.selectedFile.name, size: cert.selectedFile.size, type: cert.selectedFile.type }
-          : cert.existing_document || null,
-      },
-    }));
-
-    console.log('📜 Certificates Payload (multipart — file info shown as object):',
-      JSON.stringify(certPayloadPreview, null, 2)
-    );
-
-    // ─── STEP 3: POST candidate (JSON) ─────────────────────────────────────
-    const method  = isEditMode ? 'PUT'  : 'POST';
-    const candUrl = isEditMode
-      ? `${BASE_URL}/api/candidate/candidates/${id}/`
-      : `${BASE_URL}/api/candidate/candidates/`;
-
-    const candidateRes = await fetch(candUrl, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(candidatePayload),
-    });
-
-    const candidateData = await candidateRes.json().catch(() => null);
-
-    if (!candidateRes.ok) {
-      if (candidateData?.errors) {
-        const serverErrors = {};
-        Object.keys(candidateData.errors).forEach((key) => {
-          serverErrors[key] = Array.isArray(candidateData.errors[key])
-            ? candidateData.errors[key][0]
-            : candidateData.errors[key];
-        });
-        setErrors(serverErrors);
-        throw new Error('Please check the form for errors');
-      }
-      throw new Error(
-        candidateData?.message ||
-          `Failed to ${isEditMode ? 'update' : 'create'} candidate`
-      );
-    }
-
-    // Grab the real candidate ID from the response
-    const candidateId = candidateData?.data?.id || id;
-    console.log('✅ Candidate saved. ID:', candidateId);
-
-    // ─── STEP 4: POST each certificate as multipart/form-data ──────────────
-    const certUrl = `${BASE_URL}/api/candidate/certifications/`;
-    const failures = [];
-
-    for (let index = 0; index < certificates.length; index++) {
-      const cert = certificates[index];
-
-      // Skip certs that already exist and have no changes (edit mode)
-      // If you only want to create new ones, add: if (isEditMode && !cert.selectedFile) continue;
-
-      const formDataCert = new FormData();
-      formDataCert.append('candidate',          candidateId);
-      formDataCert.append('certification',      parseInt(cert.certification));
-      formDataCert.append('issuer_type',        cert.issuer_type);
-      formDataCert.append('issuer_name',        cert.issuer_name);
-      formDataCert.append('issue_date',         cert.issue_date);
-      formDataCert.append('expiry_date',        cert.expiry_date);
-      formDataCert.append('certificate_number', cert.certificate_number);
-      formDataCert.append('issuing_authority',  cert.issuing_authority);
-      formDataCert.append('status',             'pending');
-      formDataCert.append('is_approved',        false);
-
-      if (cert.selectedFile) {
-        formDataCert.append('document', cert.selectedFile); // raw File object
-      }
-
-      // ── Console log each cert FormData as readable object ────────────────
-      const certLog = {};
-      formDataCert.forEach((val, key) => {
-        certLog[key] = val instanceof File
-          ? { name: val.name, size: val.size, type: val.type }
-          : val;
+    if (!validateForm() || !validateCertificates()) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Validation Failed',
+        text: 'Please check all required fields and try again.',
+        showConfirmButton: true,
       });
-      console.log(`📤 Certificate #${index + 1} FormData:`, JSON.stringify(certLog, null, 2));
+      return;
+    }
 
-      try {
-        const certRes = await fetch(certUrl, {
-          method: 'POST',
-          body: formDataCert, // No Content-Type header — browser sets boundary
-        });
+    setLoading(true);
+    setError('');
 
-        const certData = await certRes.json().catch(() => null);
-        console.log(`✅ Certificate #${index + 1} response:`, certData);
+    try {
+      // ─── STEP 1: Build candidate JSON payload (no files) ───────────────────
+      const candidatePayload = {
+        full_name: formData.full_name,
+        date_of_birth: formData.date_of_birth,
+        gender: formData.gender,
+        phone_number: formData.phone_number,
+        email: formData.email,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        country: formData.country,
+        pincode: formData.pincode,
+        emergency_contact_name: formData.emergency_contact_name,
+        emergency_contact_phone: formData.emergency_contact_phone,
+        blood_group: formData.blood_group || '',
+        medical_expiry_date: formData.medical_expiry_date || '',
+        safety_induction_status: formData.safety_induction_status,
+      };
 
-        if (!certRes.ok) {
-          failures.push({
-            index: index + 1,
-            error: certData?.message || certData?.detail || 'Unknown error',
+      console.log('📦 Candidate Payload (JSON):', JSON.stringify(candidatePayload, null, 2));
+
+      // ─── STEP 2: Build certificate preview objects for the console ──────────
+      const certPayloadPreview = certificates.map((cert, index) => ({
+        [`certificate_${index + 1}`]: {
+          candidate: '<<will be filled after candidate creation>>',
+          certification_type: cert.certification_type,
+          certification_type_other: cert.certification_type === 'Other' ? cert.certification_type_other : '',
+          issuer_type: cert.issuer_type,
+          issuer_type_other: cert.issuer_type === 'Other' ? cert.issuer_type_other : '',
+          issuer_name: cert.issuer_name,
+          issue_date: cert.issue_date,
+          expiry_date: cert.expiry_date,
+          certificate_number: cert.certificate_number,
+          issuing_authority: cert.issuing_authority,
+          document: cert.selectedFile
+            ? { name: cert.selectedFile.name, size: cert.selectedFile.size, type: cert.selectedFile.type }
+            : cert.existing_document || null,
+        },
+      }));
+
+      console.log('📜 Certificates Payload (multipart — file info shown as object):',
+        JSON.stringify(certPayloadPreview, null, 2)
+      );
+
+      // ─── STEP 3: POST candidate (JSON) ─────────────────────────────────────
+      const method = isEditMode ? 'PUT' : 'POST';
+      const candUrl = isEditMode
+        ? `${BASE_URL}/api/candidate/candidates/${id}/`
+        : `${BASE_URL}/api/candidate/candidates/`;
+
+      const candidateRes = await fetch(candUrl, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(candidatePayload),
+      });
+
+      const candidateData = await candidateRes.json().catch(() => null);
+
+      if (!candidateRes.ok) {
+        if (candidateData?.errors) {
+          const serverErrors = {};
+          Object.keys(candidateData.errors).forEach((key) => {
+            serverErrors[key] = Array.isArray(candidateData.errors[key])
+              ? candidateData.errors[key][0]
+              : candidateData.errors[key];
           });
+          setErrors(serverErrors);
+          throw new Error('Please check the form for errors');
         }
-      } catch (certErr) {
-        failures.push({ index: index + 1, error: certErr.message });
+        throw new Error(
+          candidateData?.message ||
+            `Failed to ${isEditMode ? 'update' : 'create'} candidate`
+        );
       }
+
+      // Grab the real candidate ID from the response
+      const candidateId = candidateData?.data?.id || id;
+      console.log('✅ Candidate saved. ID:', candidateId);
+
+      // ─── STEP 4: POST each certificate as multipart/form-data ──────────────
+      const certUrl = `${BASE_URL}/api/candidate/certifications/`;
+      const failures = [];
+
+      for (let index = 0; index < certificates.length; index++) {
+        const cert = certificates[index];
+
+        const formDataCert = new FormData();
+        formDataCert.append('candidate', candidateId);
+        formDataCert.append('certification_type', cert.certification_type);
+        
+        // Only append certification_type_other if "Other" is selected
+        if (cert.certification_type === 'Other' && cert.certification_type_other) {
+          formDataCert.append('certification_type_other', cert.certification_type_other);
+        }
+        
+        formDataCert.append('issuer_type', cert.issuer_type);
+        
+        // Only append issuer_type_other if "Other" is selected
+        if (cert.issuer_type === 'Other' && cert.issuer_type_other) {
+          formDataCert.append('issuer_type_other', cert.issuer_type_other);
+        }
+        
+        formDataCert.append('issuer_name', cert.issuer_name);
+        formDataCert.append('issue_date', cert.issue_date);
+        formDataCert.append('expiry_date', cert.expiry_date);
+        formDataCert.append('certificate_number', cert.certificate_number);
+        formDataCert.append('issuing_authority', cert.issuing_authority);
+        formDataCert.append('status', 'pending');
+        formDataCert.append('is_approved', false);
+
+        if (cert.selectedFile) {
+          formDataCert.append('document', cert.selectedFile);
+        }
+
+        // ── Console log each cert FormData as readable object ────────────────
+        const certLog = {};
+        formDataCert.forEach((val, key) => {
+          certLog[key] = val instanceof File
+            ? { name: val.name, size: val.size, type: val.type }
+            : val;
+        });
+        console.log(`📤 Certificate #${index + 1} FormData:`, JSON.stringify(certLog, null, 2));
+
+        try {
+          const certRes = await fetch(certUrl, {
+            method: 'POST',
+            body: formDataCert,
+          });
+
+          const certData = await certRes.json().catch(() => null);
+          console.log(`✅ Certificate #${index + 1} response:`, certData);
+
+          if (!certRes.ok) {
+            failures.push({
+              index: index + 1,
+              error: certData?.message || certData?.detail || 'Unknown error',
+            });
+          }
+        } catch (certErr) {
+          failures.push({ index: index + 1, error: certErr.message });
+        }
+      }
+
+      if (failures.length > 0) {
+        const msg = failures.map((f) => `• Certificate ${f.index}: ${f.error}`).join('\n');
+        throw new Error(`Candidate saved but some certificates failed:\n${msg}`);
+      }
+
+      await Swal.fire({
+        icon: 'success',
+        title: isEditMode ? 'Updated!' : 'Created!',
+        html: `Candidate ${isEditMode ? 'updated' : 'created'} successfully.<br/>${certificates.length} certificate(s) included.`,
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      navigate('/');
+
+    } catch (err) {
+      console.error('❌ Error:', err);
+      setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`);
+      Swal.fire({
+        icon: 'error',
+        title: isEditMode ? 'Update Failed' : 'Creation Failed',
+        text: err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`,
+        showConfirmButton: true,
+      });
+    } finally {
+      setLoading(false);
     }
-
-    if (failures.length > 0) {
-      const msg = failures.map((f) => `• Certificate ${f.index}: ${f.error}`).join('\n');
-      throw new Error(`Candidate saved but some certificates failed:\n${msg}`);
-    }
-
-    await Swal.fire({
-      icon: 'success',
-      title: isEditMode ? 'Updated!' : 'Created!',
-      html: `Candidate ${isEditMode ? 'updated' : 'created'} successfully.<br/>${certificates.length} certificate(s) included.`,
-      timer: 2000,
-      showConfirmButton: false,
-    });
-
-    navigate('/');
-
-  } catch (err) {
-    console.error('❌ Error:', err);
-    setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`);
-    Swal.fire({
-      icon: 'error',
-      title: isEditMode ? 'Update Failed' : 'Creation Failed',
-      text: err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`,
-      showConfirmButton: true,
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // ─── Navigation ───────────────────────────────────────────────────────────────
 
-  const handleBack   = () => navigate('/');
+  const handleBack = () => navigate('/');
   const handleCancel = () => navigate('/candidate');
 
   // ─── Loading State ────────────────────────────────────────────────────────────
@@ -985,35 +999,65 @@ const RegisterCandidate = () => {
 
                 <div className="register-candidate-form__row">
 
-                  {/* Certification dropdown */}
+                  {/* Certification Type */}
                   <div className="register-candidate-form__col-half">
                     <div className="register-candidate-form__field-group">
                       <label className="register-candidate-form__label">
-                        Certification{' '}
+                        Certification Type{' '}
                         <span className="register-candidate-form__required">*</span>
                       </label>
                       <select
-                        className={`register-candidate-form__select ${cert.errors.certification ? 'register-candidate-form__select--error' : ''}`}
-                        value={cert.certification}
+                        className={`register-candidate-form__select ${cert.errors.certification_type ? 'register-candidate-form__select--error' : ''}`}
+                        value={cert.certification_type}
                         onChange={(e) =>
-                          handleCertificateChange(index, 'certification', e.target.value)
+                          handleCertificateChange(index, 'certification_type', e.target.value)
                         }
                         disabled={loading}
                       >
-                        <option value="">Select Certification</option>
-                        {certificationCategories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>
-                            {cat.name}
+                        <option value="">Select Certification Type</option>
+                        {certificationTypeOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
                           </option>
                         ))}
                       </select>
-                      {cert.errors.certification && (
+                      {cert.errors.certification_type && (
                         <span className="register-candidate-form__error-text">
-                          {cert.errors.certification}
+                          {cert.errors.certification_type}
                         </span>
                       )}
                     </div>
                   </div>
+
+                  {/* Conditional Other Certification Type Input */}
+                  {cert.certification_type === 'Other' && (
+                    <div className="register-candidate-form__col-half">
+                      <div className="register-candidate-form__field-group">
+                        <label className="register-candidate-form__label">
+                          Please Specify Certification Type{' '}
+                          <span className="register-candidate-form__required">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          className={`register-candidate-form__input ${cert.errors.certification_type_other ? 'register-candidate-form__input--error' : ''}`}
+                          value={cert.certification_type_other || ''}
+                          onChange={(e) =>
+                            handleCertificateChange(index, 'certification_type_other', e.target.value)
+                          }
+                          placeholder="Enter custom certification type (e.g., Professional, Academic)"
+                          disabled={loading}
+                        />
+                        {cert.errors.certification_type_other && (
+                          <span className="register-candidate-form__error-text">
+                            {cert.errors.certification_type_other}
+                          </span>
+                        )}
+                        <small style={{ color: '#6c757d', display: 'block', marginTop: '5px' }}>
+                          Please specify the type of certification
+                        </small>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Issuer Type */}
                   <div className="register-candidate-form__col-half">
@@ -1044,6 +1088,36 @@ const RegisterCandidate = () => {
                       )}
                     </div>
                   </div>
+
+                  {/* Conditional Other Issuer Type Input */}
+                  {cert.issuer_type === 'Other' && (
+                    <div className="register-candidate-form__col-half">
+                      <div className="register-candidate-form__field-group">
+                        <label className="register-candidate-form__label">
+                          Please Specify Issuer Type{' '}
+                          <span className="register-candidate-form__required">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          className={`register-candidate-form__input ${cert.errors.issuer_type_other ? 'register-candidate-form__input--error' : ''}`}
+                          value={cert.issuer_type_other || ''}
+                          onChange={(e) =>
+                            handleCertificateChange(index, 'issuer_type_other', e.target.value)
+                          }
+                          placeholder="Enter custom issuer type (e.g., Non-profit Organization)"
+                          disabled={loading}
+                        />
+                        {cert.errors.issuer_type_other && (
+                          <span className="register-candidate-form__error-text">
+                            {cert.errors.issuer_type_other}
+                          </span>
+                        )}
+                        <small style={{ color: '#6c757d', display: 'block', marginTop: '5px' }}>
+                          Please specify the type of issuing organization
+                        </small>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Issuer Name */}
                   <div className="register-candidate-form__col-half">
