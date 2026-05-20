@@ -229,12 +229,12 @@ const Sidebar = () => {
           </Link>
 
 
-          {/* <Link
+          <Link
             to="/learning"
             className={`ta-menu-item ${isActive(["/learning", "/add-learning"]) ? "active" : ""}`}
           >
             <FaBook /> Learning
-          </Link> */}
+          </Link>
         </div>
 
         {/* SYSTEM */}

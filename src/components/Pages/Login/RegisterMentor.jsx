@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 import { BASE_URL } from "../../../ApiUrl";
 import "./Register.css";
+import { FaPlus, FaTrash } from 'react-icons/fa';
 
 const RegisterMentor = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const RegisterMentor = () => {
   // New states for specializations and certifications
   const [specializations, setSpecializations] = useState([]);
   const [certifications, setCertifications] = useState([]);
+  const [certificateErrors, setCertificateErrors] = useState({});
 
   const [formData, setFormData] = useState({
     full_name: "",
@@ -34,6 +36,79 @@ const RegisterMentor = () => {
 
   const [errors, setErrors] = useState({});
 
+  // Issuer Type options (matching backend)
+  const issuerTypeOptions = [
+    { value: 'Educational Institution', label: 'Educational Institution' },
+    { value: 'Client Company', label: 'Client Company' },
+    { value: 'A2Z Organization', label: 'A2Z Organization' },
+    { value: 'Training Center', label: 'Training Center' },
+    { value: 'Government Body', label: 'Government Body' },
+    { value: 'Professional Body', label: 'Professional Body' },
+    { value: 'Other', label: 'Other' },
+  ];
+
+  // Certification Type options (matching backend)
+  const certificationTypeOptions = [
+    { value: 'Educational', label: 'Educational' },
+    { value: 'Training', label: 'Training' },
+    { value: 'Experience', label: 'Experience' },
+    { value: 'Other', label: 'Other' },
+  ];
+
+  // Education level options
+  const educationLevelOptions = [
+    { value: 'High School', label: 'High School' },
+    { value: "Bachelor's", label: "Bachelor's Degree" },
+    { value: "Master's", label: "Master's Degree" },
+    { value: 'Doctorate', label: 'Doctorate (PhD)' },
+    { value: 'Diploma', label: 'Diploma' },
+    { value: 'Certificate', label: 'Certificate' },
+    { value: 'Associate', label: 'Associate Degree' },
+    { value: 'Other', label: 'Other' },
+  ];
+
+  // Training mode options
+  const trainingModeOptions = [
+    { value: 'online', label: 'Online' },
+    { value: 'offline', label: 'Offline (In-person)' },
+    { value: 'hybrid', label: 'Hybrid (Mixed)' },
+  ];
+
+  // Employment type options
+  const employmentTypeOptions = [
+    { value: 'full_time', label: 'Full Time' },
+    { value: 'part_time', label: 'Part Time' },
+    { value: 'contract', label: 'Contract' },
+    { value: 'freelance', label: 'Freelance' },
+    { value: 'internship', label: 'Internship' },
+  ];
+
+  // Helper function to create empty certification object
+  const makeEmptyCert = () => ({
+    id: Date.now() + Math.random(),
+    selectedFile: null,
+    existing_document: null,
+    document_name: '',
+    certification_type: '',
+    certification_type_other: '',
+    certification_name: '',
+    issued_date: '',
+    expiry_date: '',
+    issuing_organization: '',
+    issuer_type: '',
+    issuer_type_other: '',
+    education_level: '',
+    field_of_study: '',
+    grade_or_percentage: '',
+    training_program_name: '',
+    training_duration: '',
+    training_mode: '',
+    job_role: '',
+    employment_type: '',
+    work_responsibilities: '',
+    errors: {},
+  });
+
   useEffect(() => {
     fetchOptions();
   }, []);
@@ -42,8 +117,14 @@ const RegisterMentor = () => {
     if (id) {
       setIsEditMode(true);
       fetchMentorData();
+    } else {
+      initializeCertifications();
     }
   }, [id]);
+
+  const initializeCertifications = () => {
+    setCertifications([makeEmptyCert()]);
+  };
 
   const fetchOptions = async () => {
     try {
@@ -66,7 +147,6 @@ const RegisterMentor = () => {
 
       setLevels(activeLevels);
       
-      // Filter levels to only show levels with number greater than 3 (Level 4 and above)
       const filtered = activeLevels.filter(level => level.number > 3);
       setFilteredLevels(filtered);
       
@@ -74,7 +154,6 @@ const RegisterMentor = () => {
     } catch (err) {
       console.error("Error fetching options:", err);
       setError(err.message);
-
       Swal.fire({
         icon: "error",
         title: "Failed to Load Options",
@@ -110,7 +189,6 @@ const RegisterMentor = () => {
           max_trainees: mentorData.max_trainees || "",
         });
 
-        // Handle specializations
         if (mentorData.specializations && Array.isArray(mentorData.specializations)) {
           setSpecializations(mentorData.specializations.map(spec => ({
             department_id: spec.department,
@@ -120,7 +198,6 @@ const RegisterMentor = () => {
             max_trainees_for_specialization: spec.max_trainees_for_specialization
           })));
         } else if (mentorData.specializations && typeof mentorData.specializations[0] === 'number') {
-          // Handle old format (array of IDs)
           const oldSpecs = mentorData.specializations.map(deptId => ({
             department_id: deptId,
             level_id: "",
@@ -131,22 +208,35 @@ const RegisterMentor = () => {
           setSpecializations(oldSpecs);
         }
 
-        // Handle certifications
+        // Handle certifications with proper file handling
         if (mentorData.certifications && Array.isArray(mentorData.certifications)) {
-          setCertifications(mentorData.certifications.map(cert => ({
+          const existingCerts = mentorData.certifications.map(cert => ({
+            id: cert.id,
+            selectedFile: null,
+            existing_document: cert.document || null,
+            document_name: cert.document ? cert.document.split('/').pop() : '',
             certification_type: cert.certification_type || "",
+            certification_type_other: cert.certification_type_other || "",
             certification_name: cert.certification_name || "",
-            document: null,
-            document_url: cert.document_url || "",
             issued_date: cert.issued_date || "",
             expiry_date: cert.expiry_date || "",
             issuing_organization: cert.issuing_organization || "",
             issuer_type: cert.issuer_type || "",
-            other_issuer_type: cert.other_issuer_type || "",
-            other_certification_type: cert.other_certification_type || "",
-            keep_existing_document: true,
-            existing_document: cert.document
-          })));
+            issuer_type_other: cert.issuer_type_other || "",
+            education_level: cert.education_level || "",
+            field_of_study: cert.field_of_study || "",
+            grade_or_percentage: cert.grade_or_percentage || "",
+            training_program_name: cert.training_program_name || "",
+            training_duration: cert.training_duration || "",
+            training_mode: cert.training_mode || "",
+            job_role: cert.job_role || "",
+            employment_type: cert.employment_type || "",
+            work_responsibilities: cert.work_responsibilities || "",
+            errors: {},
+          }));
+          setCertifications(existingCerts);
+        } else {
+          initializeCertifications();
         }
       } else {
         throw new Error(result.message || "Failed to fetch mentor data");
@@ -154,7 +244,6 @@ const RegisterMentor = () => {
     } catch (err) {
       setError(err.message);
       console.error("Error fetching mentor data:", err);
-
       Swal.fire({
         icon: "error",
         title: "Failed to Load Mentor",
@@ -204,55 +293,163 @@ const RegisterMentor = () => {
     setSpecializations(specializations.filter((_, i) => i !== index));
   };
 
-  // Certification functions
-  const addCertification = () => {
-    setCertifications([
-      ...certifications,
-      {
-        certification_type: "",
-        certification_name: "",
-        document: null,
-        document_url: "",
-        issued_date: "",
-        expiry_date: "",
-        issuing_organization: "",
-        issuer_type: "",
-        other_issuer_type: "",
-        other_certification_type: "",
-        keep_existing_document: false,
-        existing_document: null,
-      },
-    ]);
+  // Certification functions - similar to Candidate code
+  const addCertificate = () => {
+    setCertifications((prev) => [...prev, makeEmptyCert()]);
   };
 
-  const updateCertification = (index, field, value) => {
-    const updated = [...certifications];
-    updated[index][field] = value;
-    setCertifications(updated);
+  const removeCertificate = (index) => {
+    if (certifications.length === 1) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Cannot Remove',
+        text: 'You must have at least one certificate entry',
+        confirmButtonText: 'OK',
+      });
+      return;
+    }
+
+    Swal.fire({
+      title: 'Remove Certificate?',
+      text: 'Are you sure you want to remove this certificate?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, remove it!',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setCertifications((prev) => prev.filter((_, i) => i !== index));
+        const newCertErrors = { ...certificateErrors };
+        delete newCertErrors[index];
+        setCertificateErrors(newCertErrors);
+      }
+    });
   };
 
-  const handleCertificationFile = (index, file) => {
+  const handleCertificateChange = (index, field, value) => {
+    setCertifications((prev) =>
+      prev.map((cert, i) => {
+        if (i !== index) return cert;
+        return {
+          ...cert,
+          [field]: value,
+          errors: { ...cert.errors, [field]: '' },
+        };
+      })
+    );
+  };
+
+  const handleCertificateFileChange = (index, file) => {
     if (!file) return;
-
+    
     if (file.type !== "application/pdf") {
-      Swal.fire({ icon: "error", title: "Invalid File Type", text: "Please upload only PDF files", timer: 3000 });
+      Swal.fire({ 
+        icon: "error", 
+        title: "Invalid File Type", 
+        text: "Please upload only PDF files", 
+        timer: 3000 
+      });
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      Swal.fire({ icon: "error", title: "File Too Large", text: "File size should not exceed 5MB", timer: 3000 });
+      Swal.fire({ 
+        icon: "error", 
+        title: "File Too Large", 
+        text: "File size should not exceed 5MB", 
+        timer: 3000 
+      });
       return;
     }
 
-    const updated = [...certifications];
-    updated[index].document = file;
-    updated[index].document_url = "";
-    updated[index].keep_existing_document = false;
-    setCertifications(updated);
+    setCertifications((prev) =>
+      prev.map((cert, i) => {
+        if (i !== index) return cert;
+        return {
+          ...cert,
+          selectedFile: file,
+          document_name: file.name,
+          errors: { ...cert.errors, document: '' },
+        };
+      })
+    );
   };
 
-  const removeCertification = (index) => {
-    setCertifications(certifications.filter((_, i) => i !== index));
+  // Validation functions
+  const validateCertificates = () => {
+    let isValid = true;
+    const newCertErrors = {};
+
+    certifications.forEach((cert, index) => {
+      const errs = {};
+      
+      if (!cert.certification_type) {
+        errs.certification_type = 'Certification type is required';
+        isValid = false;
+      } else if (cert.certification_type === 'Other' && !cert.certification_type_other?.trim()) {
+        errs.certification_type_other = 'Please specify the certification type';
+        isValid = false;
+      }
+      
+      if (!cert.certification_name?.trim()) {
+        errs.certification_name = 'Certification name is required';
+        isValid = false;
+      }
+      
+      if (!cert.issuer_type) {
+        errs.issuer_type = 'Issuer type is required';
+        isValid = false;
+      }
+      
+      if (cert.issuer_type === 'Other' && !cert.issuer_type_other?.trim()) {
+        errs.issuer_type_other = 'Please specify the issuer type';
+        isValid = false;
+      }
+      
+      if (!cert.issuing_organization?.trim()) {
+        errs.issuing_organization = 'Issuing organization is required';
+        isValid = false;
+      }
+      
+      if (!cert.issued_date) {
+        errs.issued_date = 'Issue date is required';
+        isValid = false;
+      }
+      
+      if (!cert.expiry_date) {
+        errs.expiry_date = 'Expiry date is required';
+        isValid = false;
+      }
+      
+      if (cert.issued_date && cert.expiry_date) {
+        if (new Date(cert.expiry_date) <= new Date(cert.issued_date)) {
+          errs.expiry_date = 'Expiry date must be after issue date';
+          isValid = false;
+        }
+      }
+
+      // Require a document only when creating a brand-new cert (no existing doc, no new file)
+      if (!isEditMode && !cert.selectedFile && !cert.existing_document) {
+        errs.document = 'Certificate document is required';
+        isValid = false;
+      }
+
+      if (Object.keys(errs).length > 0) {
+        newCertErrors[index] = errs;
+      }
+    });
+
+    setCertificateErrors(newCertErrors);
+
+    setCertifications((prev) =>
+      prev.map((cert, i) => ({
+        ...cert,
+        errors: newCertErrors[i] || {},
+      }))
+    );
+
+    return isValid;
   };
 
   const validateForm = () => {
@@ -304,65 +501,99 @@ const RegisterMentor = () => {
     }
 
     setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    if (Object.keys(newErrors).length > 0) {
+  // Function to log the payload in JSON format before submission
+  const logPayload = () => {
+    console.log('='.repeat(60));
+    console.log(isEditMode ? 'EDIT FORM SUBMISSION STARTED' : 'CREATE FORM SUBMISSION STARTED');
+    console.log('='.repeat(60));
+    
+    const candidatePayload = {
+      full_name: formData.full_name,
+      phone_number: formData.phone_number,
+      email: formData.email,
+      password: formData.password || undefined,
+      current_company: formData.current_company || "",
+      years_of_experience: parseFloat(formData.years_of_experience) || 0,
+      max_trainees: parseInt(formData.max_trainees) || 5,
+      mentorship_status: "pending",
+    };
+    
+    console.log('📦 Mentor Payload (JSON):', JSON.stringify(candidatePayload, null, 2));
+    
+    const certPayloadPreview = certifications.map((cert, index) => ({
+      [`certificate_${index + 1}`]: {
+        candidate: '<<will be filled after candidate creation>>',
+        certification_type: cert.certification_type,
+        certification_type_other: cert.certification_type === 'Other' ? cert.certification_type_other : '',
+        certification_name: cert.certification_name,
+        issuer_type: cert.issuer_type,
+        issuer_type_other: cert.issuer_type === 'Other' ? cert.issuer_type_other : '',
+        issuing_organization: cert.issuing_organization,
+        issued_date: cert.issued_date,
+        expiry_date: cert.expiry_date,
+        document: cert.selectedFile
+          ? { name: cert.selectedFile.name, size: cert.selectedFile.size, type: cert.selectedFile.type }
+          : cert.existing_document || null,
+        ...(cert.certification_type === 'Educational' && {
+          education_level: cert.education_level,
+          field_of_study: cert.field_of_study,
+          grade_or_percentage: cert.grade_or_percentage,
+        }),
+        ...(cert.certification_type === 'Experience' && {
+          job_role: cert.job_role,
+          employment_type: cert.employment_type,
+          work_responsibilities: cert.work_responsibilities,
+        }),
+        ...(['Training', 'safety_training', 'compliance_training', 'mentorship_program', 'background_check'].includes(cert.certification_type) && {
+          training_program_name: cert.training_program_name,
+          training_duration: cert.training_duration,
+          training_mode: cert.training_mode,
+        }),
+      },
+    }));
+    
+    console.log('📜 Certificates Payload (multipart — file info shown as object):',
+      JSON.stringify(certPayloadPreview, null, 2)
+    );
+    
+    console.log('📎 Files being uploaded:');
+    let hasFiles = false;
+    certifications.forEach((cert, index) => {
+      if (cert.selectedFile && cert.selectedFile instanceof File) {
+        console.log(`  - Certificate ${index + 1} Document: ${cert.selectedFile.name} (${(cert.selectedFile.size / 1024 / 1024).toFixed(2)} MB)`);
+        hasFiles = true;
+      }
+    });
+    
+    if (!hasFiles) {
+      console.log('  No files to upload (using JSON only)');
+    }
+    console.log('='.repeat(60));
+  };
+
+const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    logPayload();
+
+    if (!validateForm() || !validateCertificates()) {
       Swal.fire({
         icon: "error",
         title: "Validation Failed",
         text: "Please check all required fields and try again.",
-        timer: 3000,
         showConfirmButton: true,
       });
-      return false;
+      return;
     }
-
-    return true;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validateForm()) return;
 
     setLoading(true);
     setError("");
 
     try {
-      // ✅ Prepare Specializations
-      const specializationsData = specializations.map((spec) => ({
-        department_id: parseInt(spec.department_id),
-        level_id: parseInt(spec.level_id),
-        years_of_experience_in_specialization: parseFloat(
-          spec.years_of_experience_in_specialization || 0
-        ),
-        is_primary_specialization: spec.is_primary_specialization || false,
-        max_trainees_for_specialization: spec.max_trainees_for_specialization
-          ? parseInt(spec.max_trainees_for_specialization)
-          : 5,
-      }));
-
-      // ✅ Prepare Certifications
-      const certificationsData = certifications.map((cert) => ({
-        certification_type: cert.certification_type || "",
-        certification_name: cert.certification_name || "",
-        issued_date: cert.issued_date || null,
-        expiry_date: cert.expiry_date || null,
-        issuing_organization: cert.issuing_organization || "",
-        issuer_type: cert.issuer_type || "",
-        other_issuer_type: cert.issuer_type === "other" ? cert.other_issuer_type : "",
-        other_certification_type: cert.certification_type === "other" ? cert.other_certification_type : "",
-
-        // ⚠️ If backend expects file upload, this must be FormData (not JSON)
-        document: cert.document
-          ? cert.document.name   // (temporary: sending file name)
-          : cert.document_url || null,
-
-        keep_existing_document:
-          cert.keep_existing_document && cert.existing_document ? true : false,
-      }));
-
-      // ✅ FINAL PAYLOAD (FIXED KEYS)
-      const payload = {
+      const mentorPayload = {
         full_name: formData.full_name,
         phone_number: formData.phone_number,
         email: formData.email,
@@ -371,39 +602,116 @@ const RegisterMentor = () => {
         years_of_experience: parseFloat(formData.years_of_experience) || 0,
         max_trainees: parseInt(formData.max_trainees) || 5,
         mentorship_status: "pending",
-
-        // ✅ FIXED FIELD NAMES
-        specializations_data: specializationsData,
-        certifications_data: certificationsData,
       };
 
-      // ✅ DEBUG
-      console.log("🚀 FINAL PAYLOAD:", JSON.stringify(payload, null, 2));
+      console.log('📦 Mentor Payload (JSON):', JSON.stringify(mentorPayload, null, 2));
 
-      const url = isEditMode
-        ? `${BASE_URL}/api/mentor/mentors/${id}/`
-        : `${BASE_URL}/api/mentor/mentors/`;
+      const specializationsData = specializations.map((spec) => ({
+        department_id: parseInt(spec.department_id),
+        level_id: parseInt(spec.level_id),
+        years_of_experience_in_specialization: parseFloat(spec.years_of_experience_in_specialization || 0),
+        is_primary_specialization: spec.is_primary_specialization || false,
+        max_trainees_for_specialization: spec.max_trainees_for_specialization
+          ? parseInt(spec.max_trainees_for_specialization)
+          : 5,
+      }));
 
-      const response = await fetch(url, {
-        method: isEditMode ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+      const certificationsData = certifications.map((cert) => ({
+        certification_type: cert.certification_type,
+        certification_type_other: cert.certification_type === 'Other' ? cert.certification_type_other : '',
+        certification_name: cert.certification_name,
+        certification_name_other: cert.certification_name_other || '',
+        issuer_type: cert.issuer_type,
+        issuer_type_other: cert.issuer_type === 'Other' ? cert.issuer_type_other : '',
+        issuing_organization: cert.issuing_organization,
+        issued_date: cert.issued_date,
+        expiry_date: cert.expiry_date,
+        ...(cert.certification_type === 'Educational' && {
+          education_level: cert.education_level,
+          field_of_study: cert.field_of_study,
+          grade_or_percentage: cert.grade_or_percentage,
+        }),
+        ...(cert.certification_type === 'Experience' && {
+          job_role: cert.job_role,
+          employment_type: cert.employment_type,
+          work_responsibilities: cert.work_responsibilities,
+        }),
+        ...(cert.certification_type === 'Training' && {
+          training_program_name: cert.training_program_name,
+          training_duration: cert.training_duration,
+          training_mode: cert.training_mode,
+        }),
+      }));
+
+      const formDataToSend = new FormData();
+      Object.entries(mentorPayload).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formDataToSend.append(key, value);
+        }
       });
 
-      const responseData = await response.json();
+      formDataToSend.append('specializations_data', JSON.stringify(specializationsData));
+      formDataToSend.append('certifications_data', JSON.stringify(certificationsData));
 
-      console.log("📥 RESPONSE:", responseData);
+      certifications.forEach((cert, index) => {
+        if (cert.selectedFile && cert.selectedFile instanceof File) {
+          formDataToSend.append(`certification_document_${index}`, cert.selectedFile);
+        }
+      });
 
-      if (!response.ok) {
-        throw new Error(responseData?.message || "Request failed");
+      console.log('📤 Complete FormData payload:');
+      const formDataLog = {};
+      formDataToSend.forEach((value, key) => {
+        if (value instanceof File) {
+          formDataLog[key] = {
+            type: 'File',
+            name: value.name,
+            size: value.size,
+            mimeType: value.type,
+          };
+        } else {
+          formDataLog[key] = value;
+        }
+      });
+      console.log(JSON.stringify(formDataLog, null, 2));
+
+      const method = isEditMode ? 'PUT' : 'POST';
+      const endpointPath = isEditMode
+        ? `api/mentor/mentors/${id}/`
+        : 'api/mentor/mentors/';
+      const mentorUrl = new URL(endpointPath, BASE_URL).href;
+
+      const mentorRes = await fetch(mentorUrl, {
+        method,
+        body: formDataToSend,
+      });
+
+      const mentorData = await mentorRes.json().catch(() => null);
+
+      if (!mentorRes.ok) {
+        if (mentorData?.errors) {
+          const serverErrors = {};
+          Object.keys(mentorData.errors).forEach((key) => {
+            serverErrors[key] = Array.isArray(mentorData.errors[key])
+              ? mentorData.errors[key][0]
+              : mentorData.errors[key];
+          });
+          setErrors(serverErrors);
+          throw new Error('Please check the form for errors');
+        }
+        throw new Error(
+          mentorData?.message ||
+            `Failed to ${isEditMode ? 'update' : 'create'} mentor`
+        );
       }
+
+      console.log('✅ Mentor created with nested specializations and certifications');
 
       await Swal.fire({
         icon: "success",
         title: isEditMode ? "Updated!" : "Created!",
-        text: "Mentor saved successfully",
+        html: `Mentor ${isEditMode ? 'updated' : 'created'} successfully.<br/>
+               ${specializations.length} specialization(s) and ${certifications.length} certificate(s) saved.`,
         timer: 2000,
         showConfirmButton: false,
       });
@@ -411,14 +719,13 @@ const RegisterMentor = () => {
       navigate("/");
     } catch (err) {
       console.error("❌ ERROR:", err);
-
+      setError(err.message);
       Swal.fire({
         icon: "error",
-        title: "Save Failed",
+        title: isEditMode ? "Update Failed" : "Creation Failed",
         text: err.message,
+        showConfirmButton: true,
       });
-
-      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -470,12 +777,12 @@ const RegisterMentor = () => {
             <p className="register-mentor-header__subtitle">
               {isEditMode
                 ? "Update the mentor details below"
-                : "Fill in the mentor details below"}
+                : "Fill in the mentor details and add certifications below"}
             </p>
           </div>
         </div>
 
-        {/* Info Alert for Level Restriction - Only show for new mentors */}
+        {/* Info Alert for Level Restriction */}
         {!isEditMode && (
           <div className="register-mentor-alert register-mentor-alert--info" role="alert">
             <span className="register-mentor-alert__message">
@@ -817,210 +1124,472 @@ const RegisterMentor = () => {
               <span className="register-mentor-section__title-icon">📜</span>
               Certifications
             </h3>
+            <p className="register-mentor-section__subtitle">
+              Add professional certifications for this mentor
+            </p>
 
             {certifications.map((cert, index) => (
-              <div key={index} className="register-mentor-certification-card">
+              <div
+                key={cert.id}
+                className="certificate-entry"
+                style={{
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '8px',
+                  padding: '20px',
+                  marginBottom: '20px',
+                  position: 'relative',
+                  backgroundColor: '#f9f9f9',
+                }}
+              >
+                {/* Remove button */}
+                {certifications.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeCertificate(index)}
+                    style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      background: '#dc3545',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '5px',
+                      padding: '5px 10px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                    }}
+                  >
+                    <FaTrash /> Remove
+                  </button>
+                )}
+
+                <h4 style={{ marginBottom: '15px', color: '#333' }}>
+                  Certificate #{index + 1}
+                </h4>
+
                 <div className="register-mentor-form__row">
+                  {/* Certification Type */}
                   <div className="register-mentor-form__col-half">
                     <div className="register-mentor-form__field-group">
-                      <label className="register-mentor-form__label">Certification Type</label>
+                      <label className="register-mentor-form__label">
+                        Certification Type{' '}
+                        <span className="register-mentor-form__required">*</span>
+                      </label>
                       <select
-                        className="register-mentor-form__select"
+                        className={`register-mentor-form__select ${cert.errors.certification_type ? "register-mentor-form__select--error" : ""}`}
                         value={cert.certification_type}
-                        onChange={(e) => updateCertification(index, "certification_type", e.target.value)}
+                        onChange={(e) => handleCertificateChange(index, "certification_type", e.target.value)}
                         disabled={loading}
                       >
-                        <option value="">Select Type</option>
-                        <option value="background_check">Background Check</option>
-                        <option value="mentorship_program">Mentorship Program</option>
-                        <option value="technical_certification">Technical Certification</option>
-                        <option value="industry_certification">Industry Certification</option>
-                        <option value="safety_training">Safety Training</option>
-                        <option value="compliance_training">Compliance Training</option>
-                        <option value="other">Other</option>
+                        <option value="">Select Certification Type</option>
+                        {certificationTypeOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
                       </select>
+                      {cert.errors.certification_type && (
+                        <span className="register-mentor-form__error-text">
+                          {cert.errors.certification_type}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Show other certification type input when "other" is selected */}
-                  {cert.certification_type === "other" && (
+                  {/* Other Certification Type Input */}
+                  {cert.certification_type === 'Other' && (
                     <div className="register-mentor-form__col-half">
                       <div className="register-mentor-form__field-group">
-                        <label className="register-mentor-form__label">Specify Certification Type</label>
+                        <label className="register-mentor-form__label">
+                          Please Specify Certification Type{' '}
+                          <span className="register-mentor-form__required">*</span>
+                        </label>
                         <input
                           type="text"
-                          className="register-mentor-form__input"
-                          value={cert.other_certification_type || ""}
-                          onChange={(e) => updateCertification(index, "other_certification_type", e.target.value)}
-                          placeholder="Please specify certification type"
+                          className={`register-mentor-form__input ${cert.errors.certification_type_other ? "register-mentor-form__input--error" : ""}`}
+                          value={cert.certification_type_other || ""}
+                          onChange={(e) => handleCertificateChange(index, "certification_type_other", e.target.value)}
+                          placeholder="Enter custom certification type"
                           disabled={loading}
                         />
+                        {cert.errors.certification_type_other && (
+                          <span className="register-mentor-form__error-text">
+                            {cert.errors.certification_type_other}
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}
 
+                  {/* Certification Name */}
                   <div className="register-mentor-form__col-half">
                     <div className="register-mentor-form__field-group">
-                      <label className="register-mentor-form__label">Certification Name</label>
+                      <label className="register-mentor-form__label">
+                        Certification Name{' '}
+                        <span className="register-mentor-form__required">*</span>
+                      </label>
                       <input
                         type="text"
-                        className="register-mentor-form__input"
+                        className={`register-mentor-form__input ${cert.errors.certification_name ? "register-mentor-form__input--error" : ""}`}
                         value={cert.certification_name}
-                        onChange={(e) => updateCertification(index, "certification_name", e.target.value)}
-                        placeholder="Certification name"
+                        onChange={(e) => handleCertificateChange(index, "certification_name", e.target.value)}
+                        placeholder="Enter certification name"
                         disabled={loading}
                       />
+                      {cert.errors.certification_name && (
+                        <span className="register-mentor-form__error-text">
+                          {cert.errors.certification_name}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  <div className="register-mentor-form__col-third">
-                    <div className="register-mentor-form__field-group">
-                      <label className="register-mentor-form__label">Issued Date</label>
-                      <input
-                        type="date"
-                        className="register-mentor-form__input"
-                        value={cert.issued_date}
-                        onChange={(e) => updateCertification(index, "issued_date", e.target.value)}
-                        disabled={loading}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="register-mentor-form__col-third">
-                    <div className="register-mentor-form__field-group">
-                      <label className="register-mentor-form__label">Expiry Date</label>
-                      <input
-                        type="date"
-                        className="register-mentor-form__input"
-                        value={cert.expiry_date}
-                        onChange={(e) => updateCertification(index, "expiry_date", e.target.value)}
-                        disabled={loading}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="register-mentor-form__col-third">
+                  {/* Issuer Type */}
+                  <div className="register-mentor-form__col-half">
                     <div className="register-mentor-form__field-group">
                       <label className="register-mentor-form__label">
-                        Issuer Type <span className="register-mentor-form__required">*</span>
+                        Issuer Type{' '}
+                        <span className="register-mentor-form__required">*</span>
                       </label>
                       <select
-                        className="register-mentor-form__select"
+                        className={`register-mentor-form__select ${cert.errors.issuer_type ? "register-mentor-form__select--error" : ""}`}
                         value={cert.issuer_type}
-                        onChange={(e) => updateCertification(index, "issuer_type", e.target.value)}
+                        onChange={(e) => handleCertificateChange(index, "issuer_type", e.target.value)}
                         disabled={loading}
                       >
                         <option value="">Select Issuer Type</option>
-                        <option value="government">Government</option>
-                        <option value="private_organization">Private Organization</option>
-                        <option value="educational_institution">Educational Institution</option>
-                        <option value="professional_body">Professional Body</option>
-                        <option value="corporate">Corporate</option>
-                        <option value="other">Other</option>
+                        {issuerTypeOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
                       </select>
+                      {cert.errors.issuer_type && (
+                        <span className="register-mentor-form__error-text">
+                          {cert.errors.issuer_type}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {/* Show other issuer type input when "other" is selected */}
-                  {cert.issuer_type === "other" && (
-                    <div className="register-mentor-form__col-third">
+                  {/* Other Issuer Type Input */}
+                  {cert.issuer_type === 'Other' && (
+                    <div className="register-mentor-form__col-half">
                       <div className="register-mentor-form__field-group">
-                        <label className="register-mentor-form__label">Specify Issuer Type</label>
+                        <label className="register-mentor-form__label">
+                          Please Specify Issuer Type{' '}
+                          <span className="register-mentor-form__required">*</span>
+                        </label>
                         <input
                           type="text"
-                          className="register-mentor-form__input"
-                          value={cert.other_issuer_type || ""}
-                          onChange={(e) => updateCertification(index, "other_issuer_type", e.target.value)}
-                          placeholder="Please specify issuer type"
+                          className={`register-mentor-form__input ${cert.errors.issuer_type_other ? "register-mentor-form__input--error" : ""}`}
+                          value={cert.issuer_type_other || ""}
+                          onChange={(e) => handleCertificateChange(index, "issuer_type_other", e.target.value)}
+                          placeholder="Enter custom issuer type"
                           disabled={loading}
                         />
+                        {cert.errors.issuer_type_other && (
+                          <span className="register-mentor-form__error-text">
+                            {cert.errors.issuer_type_other}
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}
 
+                  {/* Issuing Organization */}
                   <div className="register-mentor-form__col-half">
                     <div className="register-mentor-form__field-group">
-                      <label className="register-mentor-form__label">Issuing Organization</label>
+                      <label className="register-mentor-form__label">
+                        Issuing Organization{' '}
+                        <span className="register-mentor-form__required">*</span>
+                      </label>
                       <input
                         type="text"
-                        className="register-mentor-form__input"
+                        className={`register-mentor-form__input ${cert.errors.issuing_organization ? "register-mentor-form__input--error" : ""}`}
                         value={cert.issuing_organization}
-                        onChange={(e) => updateCertification(index, "issuing_organization", e.target.value)}
-                        placeholder="Organization"
+                        onChange={(e) => handleCertificateChange(index, "issuing_organization", e.target.value)}
+                        placeholder="Enter issuing organization name"
                         disabled={loading}
                       />
-                    </div>
-                  </div>
-
-                  <div className="register-mentor-form__col-half">
-                    <div className="register-mentor-form__field-group">
-                      <label className="register-mentor-form__label">Document URL</label>
-                      <input
-                        type="url"
-                        className="register-mentor-form__input"
-                        value={cert.document_url || ""}
-                        onChange={(e) => updateCertification(index, "document_url", e.target.value)}
-                        placeholder="https://example.com/document.pdf"
-                        disabled={loading || !!cert.document}
-                      />
-                      {cert.document_url && !cert.document && (
-                        <small className="register-mentor-form__help-text">✓ Document URL provided</small>
+                      {cert.errors.issuing_organization && (
+                        <span className="register-mentor-form__error-text">
+                          {cert.errors.issuing_organization}
+                        </span>
                       )}
                     </div>
                   </div>
 
+                  {/* Type-specific fields */}
+                  {cert.certification_type === 'Educational' && (
+                    <>
+                      <div className="register-mentor-form__col-third">
+                        <div className="register-mentor-form__field-group">
+                          <label className="register-mentor-form__label">Education Level</label>
+                          <select
+                            className="register-mentor-form__select"
+                            value={cert.education_level}
+                            onChange={(e) => handleCertificateChange(index, "education_level", e.target.value)}
+                            disabled={loading}
+                          >
+                            <option value="">Select Education Level</option>
+                            {educationLevelOptions.map((opt) => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="register-mentor-form__col-third">
+                        <div className="register-mentor-form__field-group">
+                          <label className="register-mentor-form__label">Field of Study</label>
+                          <input
+                            type="text"
+                            className="register-mentor-form__input"
+                            value={cert.field_of_study}
+                            onChange={(e) => handleCertificateChange(index, "field_of_study", e.target.value)}
+                            placeholder="e.g., Computer Science, Business"
+                            disabled={loading}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="register-mentor-form__col-third">
+                        <div className="register-mentor-form__field-group">
+                          <label className="register-mentor-form__label">Grade/Percentage</label>
+                          <input
+                            type="text"
+                            className="register-mentor-form__input"
+                            value={cert.grade_or_percentage}
+                            onChange={(e) => handleCertificateChange(index, "grade_or_percentage", e.target.value)}
+                            placeholder="e.g., A+, 85%, 3.5 GPA"
+                            disabled={loading}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {cert.certification_type === 'Experience' && (
+                    <>
+                      <div className="register-mentor-form__col-half">
+                        <div className="register-mentor-form__field-group">
+                          <label className="register-mentor-form__label">Job Role</label>
+                          <input
+                            type="text"
+                            className="register-mentor-form__input"
+                            value={cert.job_role}
+                            onChange={(e) => handleCertificateChange(index, "job_role", e.target.value)}
+                            placeholder="e.g., Senior Software Engineer"
+                            disabled={loading}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="register-mentor-form__col-half">
+                        <div className="register-mentor-form__field-group">
+                          <label className="register-mentor-form__label">Employment Type</label>
+                          <select
+                            className="register-mentor-form__select"
+                            value={cert.employment_type}
+                            onChange={(e) => handleCertificateChange(index, "employment_type", e.target.value)}
+                            disabled={loading}
+                          >
+                            <option value="">Select Employment Type</option>
+                            {employmentTypeOptions.map((opt) => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      
+                      <div className="register-mentor-form__col-full">
+                        <div className="register-mentor-form__field-group">
+                          <label className="register-mentor-form__label">Work Responsibilities</label>
+                          <textarea
+                            className="register-mentor-form__textarea"
+                            value={cert.work_responsibilities}
+                            onChange={(e) => handleCertificateChange(index, "work_responsibilities", e.target.value)}
+                            placeholder="Describe key responsibilities and achievements"
+                            rows="3"
+                            disabled={loading}
+                            style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ddd' }}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {cert.certification_type === 'Training' && (
+                    <>
+                      <div className="register-mentor-form__col-half">
+                        <div className="register-mentor-form__field-group">
+                          <label className="register-mentor-form__label">Training Program Name</label>
+                          <input
+                            type="text"
+                            className="register-mentor-form__input"
+                            value={cert.training_program_name}
+                            onChange={(e) => handleCertificateChange(index, "training_program_name", e.target.value)}
+                            placeholder="Enter training program name"
+                            disabled={loading}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="register-mentor-form__col-half">
+                        <div className="register-mentor-form__field-group">
+                          <label className="register-mentor-form__label">Training Duration</label>
+                          <input
+                            type="text"
+                            className="register-mentor-form__input"
+                            value={cert.training_duration}
+                            onChange={(e) => handleCertificateChange(index, "training_duration", e.target.value)}
+                            placeholder="e.g., 40 hours, 3 months"
+                            disabled={loading}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="register-mentor-form__col-half">
+                        <div className="register-mentor-form__field-group">
+                          <label className="register-mentor-form__label">Training Mode</label>
+                          <select
+                            className="register-mentor-form__select"
+                            value={cert.training_mode}
+                            onChange={(e) => handleCertificateChange(index, "training_mode", e.target.value)}
+                            disabled={loading}
+                          >
+                            <option value="">Select Training Mode</option>
+                            {trainingModeOptions.map((opt) => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Issue Date */}
                   <div className="register-mentor-form__col-half">
                     <div className="register-mentor-form__field-group">
-                      <label className="register-mentor-form__label">Upload PDF Document</label>
+                      <label className="register-mentor-form__label">
+                        Issued Date{' '}
+                        <span className="register-mentor-form__required">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        className={`register-mentor-form__input ${cert.errors.issued_date ? "register-mentor-form__input--error" : ""}`}
+                        value={cert.issued_date}
+                        onChange={(e) => handleCertificateChange(index, "issued_date", e.target.value)}
+                        disabled={loading}
+                      />
+                      {cert.errors.issued_date && (
+                        <span className="register-mentor-form__error-text">
+                          {cert.errors.issued_date}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Expiry Date */}
+                  <div className="register-mentor-form__col-half">
+                    <div className="register-mentor-form__field-group">
+                      <label className="register-mentor-form__label">
+                        Expiry Date{' '}
+                        <span className="register-mentor-form__required">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        className={`register-mentor-form__input ${cert.errors.expiry_date ? "register-mentor-form__input--error" : ""}`}
+                        value={cert.expiry_date}
+                        onChange={(e) => handleCertificateChange(index, "expiry_date", e.target.value)}
+                        disabled={loading}
+                      />
+                      {cert.errors.expiry_date && (
+                        <span className="register-mentor-form__error-text">
+                          {cert.errors.expiry_date}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Document Upload */}
+                  <div className="register-mentor-form__col-full">
+                    <div className="register-mentor-form__field-group">
+                      <label className="register-mentor-form__label">
+                        Certificate Document{' '}
+                        {!isEditMode && !cert.existing_document && (
+                          <span className="register-mentor-form__required">*</span>
+                        )}
+                        {isEditMode && (
+                          <span style={{ color: '#6c757d', fontSize: '13px' }}>
+                            {' '}(optional — leave blank to keep existing)
+                          </span>
+                        )}
+                      </label>
                       <input
                         type="file"
-                        className="register-mentor-form__input"
+                        className={`register-mentor-form__input ${cert.errors.document ? "register-mentor-form__input--error" : ""}`}
+                        onChange={(e) => handleCertificateFileChange(index, e.target.files[0])}
                         accept=".pdf"
-                        onChange={(e) => handleCertificationFile(index, e.target.files[0])}
                         disabled={loading}
                       />
-                      {cert.document && (
-                        <small className="register-mentor-form__help-text register-mentor-form__help-text--success">
-                          ✓ File selected: {cert.document.name}
+                      {cert.errors.document && (
+                        <span className="register-mentor-form__error-text">
+                          {cert.errors.document}
+                        </span>
+                      )}
+                      {/* Show existing document link */}
+                      {cert.existing_document && !cert.selectedFile && (
+                        <small style={{ color: '#28a745', display: 'block', marginTop: '5px' }}>
+                          ✓ Current document:{' '}
+                          <a
+                            href={cert.existing_document}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {cert.document_name || 'View file'}
+                          </a>
                         </small>
                       )}
-                      {!cert.document && cert.existing_document && (
-                        <small className="register-mentor-form__help-text">
-                          📄 Existing document available
+                      {/* Show newly selected file name */}
+                      {cert.selectedFile && (
+                        <small style={{ color: '#007bff', display: 'block', marginTop: '5px' }}>
+                          New file selected: {cert.selectedFile.name}
                         </small>
                       )}
-                      <small className="register-mentor-form__help-text">Max 5MB, PDF only</small>
+                      <small style={{ color: '#6c757d', display: 'block', marginTop: '5px' }}>
+                        Supported format: PDF only (max 5 MB)
+                      </small>
                     </div>
                   </div>
-
-                  <div className="register-mentor-form__col-full">
-                    <button
-                      type="button"
-                      className="register-mentor-form__btn register-mentor-form__btn--danger register-mentor-form__btn--small"
-                      onClick={() => removeCertification(index)}
-                      disabled={loading}
-                    >
-                      Remove Certification
-                    </button>
-                  </div>
                 </div>
-                {/* Add gap between certification cards */}
-                {index < certifications.length - 1 && <div style={{ marginBottom: "20px" }}></div>}
               </div>
             ))}
 
-            <div className="register-mentor-form__row">
-              <div className="register-mentor-form__col-full">
+            {/* Add Another Certificate — only in create mode */}
+            {!isEditMode && (
+              <div style={{ textAlign: 'center', marginTop: '15px' }}>
                 <button
                   type="button"
-                  className="register-mentor-form__btn register-mentor-form__btn--secondary"
-                  onClick={addCertification}
+                  onClick={addCertificate}
+                  style={{
+                    background: '#28a745',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '5px',
+                    padding: '10px 20px',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
                   disabled={loading}
                 >
-                  + Add Certification
+                  <FaPlus /> Add Another Certificate
                 </button>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Form Actions */}
@@ -1046,7 +1615,7 @@ const RegisterMentor = () => {
               ) : isEditMode ? (
                 "Update Mentor"
               ) : (
-                "Add Mentor"
+                `Create Mentor with ${certifications.length} Certificate(s)`
               )}
             </button>
           </div>
