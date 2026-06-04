@@ -293,12 +293,12 @@ const AddLearning = () => {
       return;
     }
 
-    // Validate file size (100MB for video, 5MB for thumbnail)
-    if (type === 'video' && file.size > 100 * 1024 * 1024) {
+    // Validate file size (1024MB for video, 5MB for thumbnail)
+    if (type === 'video' && file.size > 1024 * 1024 * 1024) {
       Swal.fire({
         icon: 'error',
         title: 'File Too Large',
-        text: 'Video file size should not exceed 100MB',
+        text: 'Video file size should not exceed 1GB',
         timer: 3000,
       });
       return;
