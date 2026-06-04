@@ -429,33 +429,46 @@ const AddAnnouncement = () => {
         throw new Error("User not found. Please login again.");
       }
 
-      // ✅ Payload
-      const payload = {
-        title: formData.title.trim(),
-        content: formData.content.trim(),
-        content_type: formData.content_type,
-        priority: formData.priority,
-        target_audience: formData.target_audience,
-        author_type: isEditMode ? formData.author_type : "admin",
-        author_id: isEditMode ? formData.author_id : author_id,
-        status: isEditMode ? formData.status : status,
-        expires_at: formData.expires_at
-          ? new Date(formData.expires_at).toISOString().slice(0, 19)
-          : null,
-        attachment: selectedFile
-          ? selectedFile.name
-          : existingFile?.url || null,
-        target_departments:
-          formData.target_audience === "specific_department"
-            ? formData.target_departments
-            : [],
-        target_levels:
-          formData.target_audience === "specific_level"
-            ? formData.target_levels
-            : [],
-      };
+      // ✅ Use FormData for file upload
+      const formDataObj = new FormData();
+      formDataObj.append("title", formData.title.trim());
+      formDataObj.append("content", formData.content.trim());
+      formDataObj.append("content_type", formData.content_type);
+      formDataObj.append("priority", formData.priority);
+      formDataObj.append("target_audience", formData.target_audience);
+      formDataObj.append("author_type", isEditMode ? formData.author_type : "admin");
+      formDataObj.append("author_id", isEditMode ? formData.author_id : author_id);
+      formDataObj.append("status", isEditMode ? formData.status : status);
 
-      console.log("📦 Payload:", payload);
+      if (formData.expires_at) {
+        formDataObj.append(
+          "expires_at",
+          new Date(formData.expires_at).toISOString().slice(0, 19),
+        );
+      }
+
+      // Handle file attachment
+      if (selectedFile) {
+        formDataObj.append("attachment", selectedFile);
+      }
+      // Note: If no new file is selected in edit mode, we don't send the attachment field
+      // This allows DRF partial=True to keep the existing file URL in the database
+
+      // Handle target departments
+      if (formData.target_audience === "specific_department") {
+        formData.target_departments.forEach((deptId) => {
+          formDataObj.append("target_departments", deptId);
+        });
+      }
+
+      // Handle target levels
+      if (formData.target_audience === "specific_level") {
+        formData.target_levels.forEach((levelId) => {
+          formDataObj.append("target_levels", levelId);
+        });
+      }
+
+      console.log("📦 Sending FormData...");
 
       const method = isEditMode ? "PUT" : "POST";
       const url = isEditMode
@@ -464,10 +477,8 @@ const AddAnnouncement = () => {
 
       const response = await fetch(url, {
         method: method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        // Important: Don't set Content-Type header when sending FormData
+        body: formDataObj,
       });
 
       // ✅ Safely parse response

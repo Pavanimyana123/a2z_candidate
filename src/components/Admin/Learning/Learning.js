@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../Layout/Sidebar";
 import Header from "../Layout/Header";
 import "./Learning.css";
-import { FaSearch, FaFilter, FaEdit, FaTrash, FaBook, FaClock, FaCheckCircle, FaHourglassHalf, FaBuilding, FaLayerGroup } from "react-icons/fa";
+import { FaSearch, FaFilter, FaEdit, FaTrash, FaBook, FaClock, FaCheckCircle, FaHourglassHalf, FaBuilding, FaLayerGroup, FaVideo } from "react-icons/fa";
 import Swal from 'sweetalert2';
 import { BASE_URL } from "../../../ApiUrl";
 
@@ -26,7 +26,7 @@ const Learning = () => {
     try {
       setLoading(true);
       // Use the correct endpoint from your API
-      const response = await fetch(`${BASE_URL}/api/candidate/learning-modules/`);
+      const response = await fetch(`${BASE_URL}/api/mentor/learning-modules/`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -165,13 +165,6 @@ const Learning = () => {
       <span className="learning-pill optional">Optional</span>;
   };
 
-  // Assessment badge component
-  const getAssessmentBadge = (hasAssessment) => {
-    return hasAssessment ? 
-      <span className="learning-pill has-assessment">Has Assessment</span> : 
-      <span className="learning-pill no-assessment">No Assessment</span>;
-  };
-
   return (
     <div className="ta-layout-wrapper">
       <Sidebar />
@@ -185,51 +178,50 @@ const Learning = () => {
                 <h2><FaBook className="me-2" /> Learning Modules Management</h2>
                 <p>View and manage all learning modules ({learnings.length} total)</p>
               </div>
-              <button onClick={handleAddLearning} className="btn btn-primary learning-add-btn">
-                Add Learning Module
-              </button>
             </div>
 
-            {/* Filters */}
-            <div className="learning-filters-box">
-              <div className="learning-filters">
-                <div className="learning-search">
-                  <FaSearch />
-                  <input 
-                    type="text" 
-                    placeholder="Search by title, description, type..." 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-
-                <select 
-                  className="learning-select"
-                  value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value)}
-                >
-                  <option value="All Types">All Types</option>
-                  {uniqueTypes.map(type => (
-                    <option key={type} value={type}>
-                      {getModuleTypeDisplay(type)}
-                    </option>
-                  ))}
-                </select>
-
-                <select 
-                  className="learning-select"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="All Status">All Status</option>
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-
-                <button className="learning-filter-btn" onClick={fetchLearnings}>
-                  <FaFilter />
-                </button>
+            {/* Filters and Add Button in same line */}
+            <div className="learning-actions-row">
+              <div className="learning-search-box">
+                <FaSearch />
+                <input 
+                  type="text" 
+                  placeholder="Search modules..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
+
+              <select 
+                className="learning-select"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+              >
+                <option value="All Types">All Types</option>
+                {uniqueTypes.map(type => (
+                  <option key={type} value={type}>
+                    {getModuleTypeDisplay(type)}
+                  </option>
+                ))}
+              </select>
+
+              <select 
+                className="learning-select"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="All Status">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+
+              <button className="learning-filter-btn" onClick={fetchLearnings}>
+                <FaFilter />
+              </button>
+
+              <button onClick={handleAddLearning} className="btn btn-primary learning-add-btn">
+                Add Module
+              </button>
             </div>
 
             {/* Loading State */}
@@ -252,46 +244,27 @@ const Learning = () => {
               </div>
             )}
 
-            {/* Table */}
+            {/* Grid View */}
             {!loading && !error && (
-              <div className="learning-table-wrapper">
-                <table className="table learning-table">
-                  <thead>
-                    <tr>
-                      <th>Title</th>
-                      <th>Type</th>
-                      {/* <th>Department</th> */}
-                      {/* <th>Level</th> */}
-                      <th>Duration</th>
-                      <th>Assessment</th>
-                      <th>Mandatory</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredLearnings.length > 0 ? (
-                      filteredLearnings.map((module) => (
-                        <LearningRow 
-                          key={module.id}
-                          module={module}
-                          onEdit={handleEdit}
-                          onDelete={confirmDelete}
-                          getStatusBadge={getStatusBadge}
-                          getMandatoryBadge={getMandatoryBadge}
-                          getAssessmentBadge={getAssessmentBadge}
-                          getModuleTypeDisplay={getModuleTypeDisplay}
-                        />
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="9" className="text-center py-4">
-                          No learning modules found
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <div className="learning-grid">
+                {filteredLearnings.length > 0 ? (
+                  filteredLearnings.map((module) => (
+                    <LearningCard 
+                      key={module.id}
+                      module={module}
+                      onEdit={handleEdit}
+                      onDelete={confirmDelete}
+                      onView={() => navigate(`/learning/module/${module.id}`)}
+                      getStatusBadge={getStatusBadge}
+                      getMandatoryBadge={getMandatoryBadge}
+                      getModuleTypeDisplay={getModuleTypeDisplay}
+                    />
+                  ))
+                ) : (
+                  <div className="learning-no-results">
+                    <p>No learning modules found</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -301,87 +274,79 @@ const Learning = () => {
   );
 };
 
-/* ---- Row Component ---- */
-const LearningRow = ({ module, onEdit, onDelete, getStatusBadge, getMandatoryBadge, getAssessmentBadge, getModuleTypeDisplay }) => {
+/* ---- Card Component ---- */
+const LearningCard = ({ module, onEdit, onDelete, onView, getStatusBadge, getMandatoryBadge, getModuleTypeDisplay }) => {
   // Format duration
   const formatDuration = (hours) => {
     if (!hours || hours === '0.0') return 'N/A';
     return `${hours} ${parseFloat(hours) === 1 ? 'hour' : 'hours'}`;
   };
 
-  // Truncate description for tooltip
-  const truncateText = (text, maxLength = 50) => {
+  // Truncate description
+  const truncateText = (text, maxLength = 80) => {
     if (!text) return '';
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
   };
 
+  const totalVideos = module.sessions?.reduce((total, session) => total + (session.videos?.length || 0), 0) || 0;
+
+  // Fix thumbnail URL if it's a relative path
+  const getThumbnailUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    return `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
   return (
-    <tr>
-      <td className="learning-name">
-        <div className="learning-info">
-          <FaBook className="learning-icon" />
-          <div>
-            <strong title={module.title}>{module.title || 'N/A'}</strong>
-            {module.description && (
-              <small className="d-block text-muted" title={module.description}>
-                {truncateText(module.description)}
-              </small>
-            )}
+    <div className="learning-card">
+      <div className="learning-card-thumbnail" onClick={onView}>
+        {module.thumbnail ? (
+          <img src={getThumbnailUrl(module.thumbnail)} alt={module.title} />
+        ) : (
+          <div className="learning-card-placeholder">
+            <FaBook />
+          </div>
+        )}
+        <div className="learning-card-status">
+          {getStatusBadge(module.is_active)}
+        </div>
+      </div>
+      
+      <div className="learning-card-body">
+        <div className="learning-card-header">
+          <span className="learning-card-type">{getModuleTypeDisplay(module.module_type)}</span>
+          <div className="learning-card-actions">
+            <FaEdit className="edit-icon" onClick={(e) => { e.stopPropagation(); onEdit(module.id); }} />
+            <FaTrash className="delete-icon" onClick={(e) => { e.stopPropagation(); onDelete(module); }} />
           </div>
         </div>
-      </td>
-      <td>
-        <span className="learning-category">
-          {getModuleTypeDisplay(module.module_type)}
-        </span>
-      </td>
-      {/* <td>
-        <div className="d-flex align-items-center">
-          <FaBuilding className="me-1 text-secondary" size={12} />
-          <span title={module.target_department}>
-            {module.target_department ? module.target_department.substring(0, 8) + '...' : 'N/A'}
-          </span>
+        
+        <h3 className="learning-card-title" onClick={onView} title={module.title}>
+          {module.title || 'N/A'}
+        </h3>
+        
+        <p className="learning-card-desc">
+          {truncateText(module.description)}
+        </p>
+        
+        <div className="learning-card-meta">
+          <div className="meta-item">
+            <FaClock /> <span>{formatDuration(module.duration_hours)}</span>
+          </div>
+          <div className="meta-item">
+            <FaCheckCircle /> <span>{module.sessions?.length || 0} Sessions</span>
+          </div>
+          <div className="meta-item">
+            <FaVideo /> <span>{totalVideos} Videos</span>
+          </div>
         </div>
-      </td> */}
-      {/* <td>
-        <div className="d-flex align-items-center">
-          <FaLayerGroup className="me-1 text-secondary" size={12} />
-          <span title={module.target_level}>
-            {module.target_level ? module.target_level.substring(0, 8) + '...' : 'N/A'}
-          </span>
+        
+        <div className="learning-card-footer">
+          {getMandatoryBadge(module.is_mandatory)}
+          <button className="btn btn-outline-primary btn-sm" onClick={onView}>View Content</button>
         </div>
-      </td> */}
-      <td>
-        <span className="learning-duration">
-          <FaClock className="me-1" />
-          {formatDuration(module.duration_hours)}
-        </span>
-      </td>
-      <td>
-        {getAssessmentBadge(module.has_assessment)}
-        {module.has_assessment && module.passing_score && (
-          <small className="d-block text-muted mt-1">
-            Pass: {module.passing_score}%
-          </small>
-        )}
-      </td>
-      <td>{getMandatoryBadge(module.is_mandatory)}</td>
-      <td>{getStatusBadge(module.is_active)}</td>
-      <td>
-        <div className="learning-action-icons">
-          <FaEdit 
-            className="learning-action-icon edit-icon" 
-            onClick={() => onEdit(module.id)}
-            title="Edit Module"
-          />
-          <FaTrash 
-            className="learning-action-icon delete-icon" 
-            onClick={() => onDelete(module)}
-            title="Delete Module"
-          />
-        </div>
-      </td>
-    </tr>
+      </div>
+    </div>
   );
 };
 

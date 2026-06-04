@@ -45,6 +45,8 @@ import UserManagement from './components/SuperAdmin/SuperAdminUser/SuperAdminUse
 import SuperAdminLevelsManagement from './components/SuperAdmin/SuperAdminLevelManagement/SuperAdminLevel';
 import DepartmentStructure from './components/SuperAdmin/SuperAdminDepartment/SuperAdminDepartment';
 import Compliance from './components/SuperAdmin/SuperAdminCompliance/SuperAdminCompliance';
+import SuperAdminRoles from './components/SuperAdmin/SuperAdminRoles/SuperAdminRoles';
+import SuperAdminRolesPermissions from './components/SuperAdmin/SuperAdminRoles/SuperAdminRolesPermissions';
 import SuperAdminCertifications from './components/SuperAdmin/SuperAdminCertificate/SuperAdminCertificate';
 import LMS from './components/SuperAdmin/SuperAdminLMS/SuperAdminLMS';
 import Reports from './components/SuperAdmin/SuperAdminReports/SuperAdminReports';
@@ -86,12 +88,16 @@ import CandidateCompliance from "./components/Candidate/CandidateCompliance/Cand
 import CandidateCertifications from "./components/Candidate/CandidateCertification/CartificationCertificate";
 import AddCandidateCertificate from "./components/Candidate/CandidateCertification/AddCandidateCertificate";
 import CandidateLearning from "./components/Candidate/CandidateLearning/CandidateLearning";
+import CandidateModuleDetail from "./components/Candidate/CandidateLearning/CandidateModuleDetail";
 import CandidateMentorship from "./components/Candidate/CandidateMentorship/CandidateMentorship";
 import FindMentor from "./components/Candidate/CandidateMentorship/FindMentor";
 import Learning from "./components/Admin/Learning/Learning";
 import AddLearning from "./components/Admin/Learning/AddLearning";
+import ModuleDetail from "./components/Admin/Learning/ModuleDetail";
+import LearningModule from "./components/Mentor/LearningModule/LearningModule";
 import AdminProfessionalIdentity from "./components/Admin/AdminProfessionalIdentity/AdminProfessionalIdentity";
 import MentorProfessionalIdentity from "./components/Mentor/MentorProfessionalIdentity/MentorProfessionalIdentity";
+import CandidateProfessionalId from "./components/Admin/Candidates/CandidateProfessionalId";
 
 import CandidateAnnouncements from './components/Candidate/CandidateAnnouncements/CandidateAnnouncements';
 import CandidateAddAnnouncement from './components/Candidate/CandidateAnnouncements/AddAnnouncements';
@@ -141,6 +147,7 @@ function App() {
           element={<CertificationCategories />}
         />
         <Route path="/learning" element={<Learning />} />
+        <Route path="/learning/module/:id" element={<ModuleDetail />} />
         <Route path="/add-learning" element={<AddLearning />} />
         <Route path="/add-learning/:id" element={<AddLearning />} />
         <Route path="/report" element={<ReportsAnalytics />} />
@@ -160,6 +167,7 @@ function App() {
 
 
         <Route path="/mentor-dashboard" element={<MentorDashboard />} />
+        <Route path="/mentor-learning" element={<LearningModule />} />
         <Route
           path="/mentor-professional-identity"
           element={<MentorProfessionalIdentity />}
@@ -198,6 +206,14 @@ function App() {
         <Route
           path="/candidate-professionality"
           element={<CandidateProfessionalIdentity />}
+        />
+        <Route
+          path="/candidate-professionality/:id"
+          element={<CandidateProfessionalIdentity />}
+        />
+        <Route
+          path="/candidate-professional-id/:id"
+          element={<CandidateProfessionalId />}
         />
         <Route
           path="/candidate-digital"
@@ -239,6 +255,7 @@ function App() {
           element={<AddCandidateCertificate />}
         />
         <Route path="/candidate-learning" element={<CandidateLearning />} />
+        <Route path="/candidate-learning/module/:id" element={<CandidateModuleDetail />} />
         <Route path="/candidate-mentorship" element={<CandidateMentorship />} />
         <Route path="/find-mentor" element={<FindMentor />} />
 
@@ -252,6 +269,8 @@ function App() {
               <Route path="/super-dashboard" element={<SuperDashboard />} />
               <Route path="/control-tower" element={<ControlTower />} />
               <Route path="/super-users" element={<UserManagement />} />
+              <Route path="/super-roles" element={<SuperAdminRoles />} />
+              <Route path="/super-roles/:id/permissions" element={<SuperAdminRolesPermissions />} />
               <Route path="/super-levels" element={<SuperAdminLevelsManagement />} />
               <Route path="/super-departments" element={<DepartmentStructure />} />
               <Route path="/super-compliance" element={<Compliance />} />

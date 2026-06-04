@@ -194,6 +194,10 @@ const Candidates = () => {
     navigate(`/add-candidate/${candidateId}`);
   };
 
+  const handleViewProfessionalId = (candidateId) => {
+    navigate(`/candidate-professional-id/${candidateId}`);
+  };
+
   const handleDelete = async (candidateId, candidateName) => {
     try {
       const response = await fetch(`${BASE_URL}/api/candidate/candidates/${candidateId}/`, {
@@ -384,6 +388,7 @@ const Candidates = () => {
                   <thead>
                     <tr>
                       <th>Candidate Name</th>
+                      <th>Professional ID</th>
                       <th>Email</th>
                       <th>Phone</th>
                       <th>City</th>
@@ -404,13 +409,14 @@ const Candidates = () => {
                           onDelete={confirmDelete}
                           onApprove={handleApprove}
                           onReject={handleReject}
+                          onView={handleViewProfessionalId}
                           actionLoading={actionLoading}
                           getStatusInfo={getStatusInfo}
                         />
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="8" className="text-center py-4">
+                        <td colSpan="9" className="text-center py-4">
                           No candidates found
                           {searchTerm && (
                             <div>
@@ -437,7 +443,7 @@ const Candidates = () => {
 };
 
 /* ---- Row Component ---- */
-const CandidateRow = ({ candidate, levelName, onEdit, onDelete, onApprove, onReject, actionLoading, getStatusInfo }) => {
+const CandidateRow = ({ candidate, levelName, onEdit, onDelete, onApprove, onReject, onView, actionLoading, getStatusInfo }) => {
   // Format date function
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -468,6 +474,14 @@ const CandidateRow = ({ candidate, levelName, onEdit, onDelete, onApprove, onRej
     <tr>
       <td className="candidates-name">
         {candidate.full_name || 'N/A'}
+      </td>
+      <td>
+        <button
+          className="btn btn-sm btn-outline-primary"
+          onClick={() => onView(candidate.id)}
+        >
+          View ID
+        </button>
       </td>
       <td>{candidate.email || 'N/A'}</td>
       <td>{candidate.phone_number || 'N/A'}</td>

@@ -164,6 +164,13 @@ const MentorSidebar = () => {
           >
             <FaUserPlus /> Candidate Requests
           </Link>
+          
+          <Link
+            to="/mentor-learning"
+            className={`ta-menu-item ${isActive("/mentor-learning") ? "active" : ""}`}
+          >
+            <FaBook /> Learning
+          </Link>
 
           <Link
             to="/progression-management"

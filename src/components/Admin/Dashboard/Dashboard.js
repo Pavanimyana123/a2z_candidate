@@ -61,7 +61,7 @@ const fetchAnnouncements = async () => {
   try {
     const response = await fetch(`${BASE_URL}/api/admin/news-announcements/`);
     const data = await response.json();
-
+    console.log('data', data)
     let announcementsData = [];
 
     if (data.status && data.data) {

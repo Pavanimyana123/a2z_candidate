@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import CandidateSidebar from "../Layout/CandidateSidebar";
 import Header from "../Layout/CandidateHeader";
 import {
@@ -7,64 +8,66 @@ import {
   FaCheckCircle,
   FaClock,
   FaBook,
-  FaAward,
-  FaHourglassHalf,
-  FaBuilding,
-  FaLayerGroup
+  FaHourglassHalf
 } from "react-icons/fa";
 import "./CandidateLearning.css";
 import Swal from 'sweetalert2';
 import { BASE_URL } from "../../../ApiUrl";
 
 const CandidateLearningDashboard = () => {
-  const [modules, setModules] = useState([]);
+  const [assignedModules, setAssignedModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filteredModules, setFilteredModules] = useState([]);
   const [selectedType, setSelectedType] = useState("All");
   const [showFilters, setShowFilters] = useState(false);
+  const [candidate, setCandidate] = useState(null);
+  const navigate = useNavigate();
 
-  // Fetch learning modules
   useEffect(() => {
-    fetchLearningModules();
+    const storedUser = localStorage.getItem("candidate_user");
+
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        const actualId = parsedUser.user_id || parsedUser.id || parsedUser.pk;
+        setCandidate({ ...parsedUser, id: actualId });
+        fetchAssignedModules(actualId);
+      } catch (err) {
+        console.error("Error parsing candidate data:", err);
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    // Apply filters whenever modules or selectedType changes
     filterModules();
-  }, [modules, selectedType]);
+  }, [assignedModules, selectedType]);
 
-  const fetchLearningModules = async () => {
+  const fetchAssignedModules = async (candidateId) => {
     try {
       setLoading(true);
-      const response = await fetch(`${BASE_URL}/api/candidate/learning-modules/`);
+      const response = await fetch(`${BASE_URL}/api/mentor/candidate-assigned-modules/?candidate_id=${candidateId}`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const result = await response.json();
-      console.log('API Response:', result);
       
       if (result.status && result.data) {
-        setModules(result.data);
+        setAssignedModules(result.data);
         setFilteredModules(result.data);
       } else {
-        throw new Error(result.message || 'Failed to fetch learning modules');
+        throw new Error(result.message || 'Failed to fetch assigned modules');
       }
       
       setError(null);
     } catch (err) {
       setError(err.message);
-      console.error('Error fetching learning modules:', err);
-      
-      Swal.fire({
-        icon: 'error',
-        title: 'Failed to Load Learning Modules',
-        text: err.message || 'An error occurred while fetching learning modules',
-        timer: 3000,
-        showConfirmButton: true
-      });
+      console.error('Error fetching modules:', err);
     } finally {
       setLoading(false);
     }
@@ -72,14 +75,53 @@ const CandidateLearningDashboard = () => {
 
   const filterModules = () => {
     if (selectedType === "All") {
-      setFilteredModules(modules);
+      setFilteredModules(assignedModules);
     } else {
-      const filtered = modules.filter(module => module.module_type === selectedType);
+      const filtered = assignedModules.filter(item => 
+        item.module_details?.module_type === selectedType
+      );
       setFilteredModules(filtered);
     }
   };
 
-  // Helper function to get module type display name
+  const updateModuleAssignmentStatus = async (assignmentId, action) => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/mentor/module-assignments/${assignmentId}/status/`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Status update failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.status) {
+        setAssignedModules(prev => prev.map(item => (
+          item.id === assignmentId ? { ...item, status: action === 'start' ? 'in_progress' : item.status } : item
+        )));
+        return true;
+      }
+
+      console.error('Status update error:', result);
+      return false;
+    } catch (err) {
+      console.error('Error updating module assignment status:', err);
+      return false;
+    }
+  };
+
+  const handleModuleStart = async (item) => {
+    const updated = await updateModuleAssignmentStatus(item.id, 'start');
+    if (updated) {
+      navigate(`/candidate-learning/module/${item.module_details?.id}`);
+    }
+  };
+
+  // Helper functions
   const getModuleTypeDisplay = (type) => {
     const types = {
       'orientation': 'Orientation',
@@ -92,7 +134,6 @@ const CandidateLearningDashboard = () => {
     return types[type] || type || 'General';
   };
 
-  // Helper function to get module type color
   const getModuleTypeColor = (type) => {
     const colors = {
       'orientation': '#4299e1',
@@ -105,38 +146,26 @@ const CandidateLearningDashboard = () => {
     return colors[type] || '#718096';
   };
 
-  // Calculate stats
   const calculateStats = () => {
-    // For demo purposes - in a real app, you would track user progress
-    // Here we're just simulating stats based on modules data
-    const totalModules = modules.length;
-    const completedModules = modules.filter(m => m.id % 2 === 0).length; // Simulate completed
-    const inProgressModules = modules.filter(m => m.id % 3 === 0).length; // Simulate in progress
+    const total = assignedModules.length;
+    const completed = assignedModules.filter(m => m.status === 'completed').length;
+    const inProgress = assignedModules.filter(m => m.status === 'in_progress').length;
     
-    // Calculate total hours
-    const totalHours = modules.reduce((acc, module) => {
-      return acc + (parseFloat(module.duration_hours) || 0);
+    const totalHours = assignedModules.reduce((acc, item) => {
+      return acc + (parseFloat(item.module_details?.duration_hours) || 0);
     }, 0);
     
-    // Simulate completed hours (about 30% of total)
-    const completedHours = Math.round(totalHours * 0.3);
-    
     return {
-      total: totalModules,
-      completed: completedModules,
-      inProgress: inProgressModules,
-      totalHours: totalHours.toFixed(1),
-      completedHours: completedHours
+      total,
+      completed,
+      inProgress,
+      totalHours: totalHours.toFixed(1)
     };
   };
 
   const stats = calculateStats();
-
-  // Get unique module types for filter
-  const moduleTypes = ["All", ...new Set(modules.map(m => m.module_type).filter(Boolean))];
-
-  // Get continue learning modules (simulate in-progress modules)
-  const continueModules = modules.filter((m, index) => index % 3 === 0).slice(0, 2);
+  const moduleTypes = ["All", ...new Set(assignedModules.map(m => m.module_details?.module_type).filter(Boolean))];
+  const continueModules = assignedModules.filter(m => m.status === 'in_progress' || (m.completion_percentage > 0 && m.status !== 'completed')).slice(0, 2);
 
   if (loading) {
     return (
@@ -170,7 +199,7 @@ const CandidateLearningDashboard = () => {
                 <p>{error}</p>
                 <button 
                   className="btn btn-primary mt-3"
-                  onClick={fetchLearningModules}
+                  onClick={() => fetchAssignedModules(candidate?.id || candidate?.pk)}
                 >
                   Retry
                 </button>
@@ -198,7 +227,7 @@ const CandidateLearningDashboard = () => {
               <div>
                 <h2>Learning & Upskilling</h2>
                 <p className="cld-muted">
-                  {modules.length} modules available • Develop your competencies with structured training
+                  {assignedModules.length} modules assigned • Develop your competencies with structured training
                 </p>
               </div>
 
@@ -243,14 +272,14 @@ const CandidateLearningDashboard = () => {
               />
               <StatCard 
                 icon={<FaHourglassHalf />} 
-                value={`${stats.completedHours}h`} 
-                label="Hours Completed" 
+                value={`${stats.totalHours}h`} 
+                label="Total Time" 
                 color="#9f7aea"
               />
               <StatCard 
                 icon={<FaBook />} 
-                value={`${stats.totalHours}h`} 
-                label="Total Available" 
+                value={stats.total.toString()} 
+                label="Total Assigned" 
                 color="#ed8936"
               />
             </div>
@@ -264,16 +293,17 @@ const CandidateLearningDashboard = () => {
                 </div>
 
                 <div className="row g-4">
-                  {continueModules.map((module, index) => (
+                  {continueModules.map((item) => (
                     <ContinueCard
-                      key={module.id}
-                      title={module.title}
-                      desc={module.description}
-                      hours={`${module.duration_hours} hours`}
-                      type={module.module_type}
-                      typeDisplay={getModuleTypeDisplay(module.module_type)}
-                      typeColor={getModuleTypeColor(module.module_type)}
-                      progress={30 + (index * 15)} // Simulate different progress
+                      key={item.id}
+                      title={item.module_details?.title}
+                      desc={item.module_details?.description}
+                      hours={`${item.module_details?.duration_hours} hours`}
+                      type={item.module_details?.module_type}
+                      typeDisplay={getModuleTypeDisplay(item.module_details?.module_type)}
+                      typeColor={getModuleTypeColor(item.module_details?.module_type)}
+                      progress={item.completion_percentage}
+                      onContinue={() => navigate(`/candidate-learning/module/${item.module_details?.id}`)}
                     />
                   ))}
                 </div>
@@ -283,34 +313,36 @@ const CandidateLearningDashboard = () => {
             {/* ================= ALL LEARNING MODULES ================= */}
             <div className="cld-card mb-4">
               <div className="mb-3">
-                <h4>All Learning Modules</h4>
+                <h4>Your Learning Modules</h4>
                 <p className="cld-muted">
-                  {filteredModules.length} modules available • Browse available training content
+                  {filteredModules.length} modules assigned • Browse your training content
                 </p>
               </div>
 
               {filteredModules.length > 0 ? (
-                filteredModules.map((module, index) => (
+                filteredModules.map((item) => (
                   <ModuleRow
-                    key={module.id}
-                    id={module.id}
-                    title={module.title}
-                    type={module.module_type}
-                    typeDisplay={getModuleTypeDisplay(module.module_type)}
-                    typeColor={getModuleTypeColor(module.module_type)}
-                    hours={`${module.duration_hours} hours`}
-                    description={module.description}
-                    hasAssessment={module.has_assessment}
-                    isMandatory={module.is_mandatory}
-                    passingScore={module.passing_score}
-                    completed={index % 4 === 0}
-                    // progress={index % 3 === 0 ? 75 : index % 3 === 1 ? 30 : null}
-                    start={index % 5 === 0}
+                    key={item.id}
+                    id={item.module_details?.id}
+                    title={item.module_details?.title}
+                    type={item.module_details?.module_type}
+                    typeDisplay={getModuleTypeDisplay(item.module_details?.module_type)}
+                    typeColor={getModuleTypeColor(item.module_details?.module_type)}
+                    hours={`${item.module_details?.duration_hours} hours`}
+                    description={item.module_details?.description}
+                    hasAssessment={item.module_details?.has_assessment}
+                    isMandatory={item.module_details?.is_mandatory}
+                    passingScore={item.module_details?.passing_score}
+                    completed={item.status === 'completed'}
+                    progress={item.completion_percentage}
+                    status={item.status}
+                    onStart={() => handleModuleStart(item)}
+                    onView={() => navigate(`/candidate-learning/module/${item.module_details?.id}`)}
                   />
                 ))
               ) : (
                 <div className="text-center py-4">
-                  <p className="cld-muted">No modules found matching your filter.</p>
+                  <p className="cld-muted">No modules assigned yet.</p>
                 </div>
               )}
             </div>
@@ -352,17 +384,10 @@ const StatCard = ({ icon, value, label, color }) => (
   </div>
 );
 
-const ContinueCard = ({ title, desc, hours, type, typeDisplay, typeColor, progress }) => (
+const ContinueCard = ({ title, desc, hours, type, typeDisplay, typeColor, progress, onContinue }) => (
   <div className="col-lg-6">
-    <div className="cld-continue-card">
+    <div className="cld-continue-card" onClick={onContinue} style={{ cursor: 'pointer' }}>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        {/* <span className="cld-badge" style={{ 
-          backgroundColor: `${typeColor}20`, 
-          color: typeColor,
-          border: `1px solid ${typeColor}40`
-        }}>
-          {typeDisplay}
-        </span> */}
         <span style={{ color: '#6c7a89', fontWeight: '500' }}>{hours}</span>
       </div>
 
@@ -373,7 +398,7 @@ const ContinueCard = ({ title, desc, hours, type, typeDisplay, typeColor, progre
         <div style={{ width: `${progress}%`, backgroundColor: typeColor }} />
       </div>
 
-      <button className="btn cld-primary-btn" style={{ backgroundColor: typeColor }}>
+      <button className="btn cld-primary-btn" style={{ backgroundColor: typeColor }} onClick={(e) => { e.stopPropagation(); onContinue(); }}>
         <FaPlay /> Continue
       </button>
     </div>
@@ -381,6 +406,7 @@ const ContinueCard = ({ title, desc, hours, type, typeDisplay, typeColor, progre
 );
 
 const ModuleRow = ({ 
+  id,
   title, 
   type, 
   typeDisplay, 
@@ -392,9 +418,11 @@ const ModuleRow = ({
   passingScore,
   completed, 
   progress, 
-  start 
+  status,
+  onStart,
+  onView
 }) => (
-  <div className="cld-module-row">
+  <div className="cld-module-row" onClick={onView} style={{ cursor: 'pointer' }}>
     <div className="cld-module-left">
       {completed ? (
         <FaCheckCircle className="cld-green" style={{ color: '#2d8b85' }} />
@@ -434,7 +462,7 @@ const ModuleRow = ({
     </div>
 
     <div className="cld-module-right">
-      {progress && (
+      {progress > 0 && (
         <div className="cld-mini-progress">
           <div style={{ width: `${progress}%`, backgroundColor: typeColor }} />
           <span style={{ color: typeColor }}>{progress}%</span>
@@ -444,15 +472,19 @@ const ModuleRow = ({
       <span style={{ color: '#6c7a89', minWidth: '60px' }}>{hours}</span>
 
       {completed ? (
-        <button className="btn btn-light" style={{ minWidth: '90px' }}>
+        <button className="btn btn-light" style={{ minWidth: '90px' }} onClick={(e) => { e.stopPropagation(); onView(); }}>
           Review
         </button>
-      ) : progress ? (
-        <button className="btn cld-primary-btn" style={{ minWidth: '90px', backgroundColor: typeColor }}>
+      ) : status === 'in_progress' ? (
+        <button className="btn cld-primary-btn" style={{ minWidth: '90px', backgroundColor: typeColor }} onClick={(e) => { e.stopPropagation(); onView(); }}>
+          <FaPlay style={{ fontSize: '12px' }} /> Resume
+        </button>
+      ) : progress > 0 ? (
+        <button className="btn cld-primary-btn" style={{ minWidth: '90px', backgroundColor: typeColor }} onClick={(e) => { e.stopPropagation(); onView(); }}>
           <FaPlay style={{ fontSize: '12px' }} /> Continue
         </button>
       ) : (
-        <button className="btn cld-primary-btn" style={{ minWidth: '90px', backgroundColor: typeColor }}>
+        <button className="btn cld-primary-btn" style={{ minWidth: '90px', backgroundColor: typeColor }} onClick={(e) => { e.stopPropagation(); onStart(); }}>
           Start
         </button>
       )}

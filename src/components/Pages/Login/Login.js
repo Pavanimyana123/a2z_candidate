@@ -7,11 +7,6 @@ import "./Login.css";
 import { BASE_URL } from "../../../ApiUrl";
 import A2ZLogo from "../../Shared/Images/A2Zlogo.jpeg";
 
-// Super Admin static credentials
-const SUPER_ADMIN_CREDENTIALS = {
-  email: "SuperAdmin@gmail.com",
-  password: "SuperAdmin@123"
-};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -22,55 +17,6 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [showRegistrationOptions, setShowRegistrationOptions] = useState(false);
 
-  // Super Admin login handler
-  const handleSuperAdminLogin = async () => {
-    setLoading(true);
-    
-    try {
-      // Create Super Admin user data object
-      const superAdminData = {
-        id: "SA-001",
-        full_name: "Super Administrator",
-        email: SUPER_ADMIN_CREDENTIALS.email,
-        user_type: "super_admin",
-        role: "super_admin",
-        identifier: SUPER_ADMIN_CREDENTIALS.email,
-        permissions: ["all"],
-        token: "super_admin_static_token_" + Date.now(),
-        created_at: new Date().toISOString()
-      };
-
-      // Store in localStorage
-      localStorage.setItem("super_admin_user", JSON.stringify(superAdminData));
-      localStorage.setItem("super_admin_token", superAdminData.token);
-
-      // Show success message
-      await Swal.fire({
-        icon: 'success',
-        title: 'Super Admin Login Successful!',
-        text: 'Welcome to OCEANSTAR MAIN Control Tower',
-        timer: 2000,
-        showConfirmButton: false
-      });
-
-      // Navigate to Super Admin dashboard
-      navigate('/super-dashboard');
-
-    } catch (error) {
-      console.error('Super Admin login error:', error);
-      setError('Super Admin login failed');
-      
-      Swal.fire({
-        icon: 'error',
-        title: 'Login Failed',
-        text: 'Super Admin authentication failed',
-        timer: 3000,
-        showConfirmButton: true
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -83,17 +29,6 @@ const Login = () => {
       return;
     }
 
-    // Check for Super Admin credentials first
-    if (
-      identifier.trim().toLowerCase() === SUPER_ADMIN_CREDENTIALS.email.toLowerCase() &&
-      password === SUPER_ADMIN_CREDENTIALS.password
-    ) {
-      console.log('🔐 Super Admin credentials detected');
-      await handleSuperAdminLogin();
-      return;
-    }
-
-    // If not Super Admin, proceed with normal API login
     console.log('🔄 Proceeding with normal login flow');
 
     try {
@@ -133,6 +68,8 @@ const Login = () => {
           storageKey = "mentor_user";
         } else if (userType === "candidate") {
           storageKey = "candidate_user";
+        } else if (userType === "superadmin") {
+          storageKey = "super_admin_user";
         }
 
         localStorage.setItem(storageKey, JSON.stringify(data.data));
@@ -144,7 +81,8 @@ const Login = () => {
         const token = data.data.token || data.token;
 
         if (token) {
-          localStorage.setItem(`${userType}_token`, token);
+          const tokenKey = userType === 'superadmin' ? 'super_admin_token' : `${userType}_token`;
+          localStorage.setItem(tokenKey, token);
         }
 
         /* -----------------------------------------
@@ -174,6 +112,10 @@ const Login = () => {
 
           case 'candidate':
             navigate('/candidate-dashboard');
+            break;
+
+          case 'superadmin':
+            navigate('/super-dashboard');
             break;
 
           default:
@@ -449,29 +391,6 @@ const Login = () => {
               >
                 <FaUserPlus className="me-2" />
                 Register New Account
-              </button>
-            </div>
-
-            {/* Super Admin Quick Login Button (Optional - for development) */}
-            <div className="d-grid mb-3">
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={() => {
-                  setIdentifier(SUPER_ADMIN_CREDENTIALS.email);
-                  setPassword(SUPER_ADMIN_CREDENTIALS.password);
-                }}
-                style={{
-                  padding: "12px",
-                  fontSize: "12px",
-                  fontWeight: "500",
-                  borderRadius: "8px",
-                  borderColor: "#e5e7eb"
-                }}
-                title="Quick fill Super Admin credentials"
-              >
-                <FaUserShield className="me-2" />
-                Super Admin Quick Access
               </button>
             </div>
 

@@ -102,6 +102,10 @@ const SuperAdminSidebar = () => {
             <FaUsers /> User Management
           </Link>
 
+          <Link to="/super-roles" className={`ta-menu-item ${isActive("/super-roles") ? "active" : ""}`}>
+            <FaShieldAlt /> Roles
+          </Link>
+
           <Link to="/super-levels" className={`ta-menu-item ${isActive("/super-levels") ? "active" : ""}`}>
             <FaLayerGroup /> Levels Management
           </Link>
