@@ -1,0 +1,801 @@
+/* ============================================================
+   CreateCertificate.css
+   Two-column layout: form left, certificate preview right
+   Three marine certificate templates
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+/* ── Two-column wrapper ───────────────────────────────────── */
+.cc-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 32px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Left: Form panel ─────────────────────────────────────── */
+.cc-form-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cc-form-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px;
+}
+
+.cc-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cc-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.cc-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 40px 10px 14px;
+  font-size: 14px;
+  color: #1e293b;
+  cursor: pointer;
+  width: 100%;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  outline: none;
+}
+
+.cc-select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.cc-select option[value=""] {
+  color: #94a3b8;
+}
+
+/* placeholder style for empty select */
+.cc-select.placeholder {
+  color: #94a3b8;
+}
+
+.cc-info-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+/* ── Action buttons ───────────────────────────────────────── */
+.cc-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.cc-btn-submit {
+  background: #0f172a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.cc-btn-submit:hover {
+  background: #1e293b;
+  transform: translateY(-1px);
+}
+
+.cc-btn-reset {
+  background: #fff;
+  color: #1e293b;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+}
+
+.cc-btn-reset:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.cc-btn-cancel {
+  background: none;
+  color: #64748b;
+  border: none;
+  padding: 9px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.18s;
+}
+
+.cc-btn-cancel:hover {
+  color: #1e293b;
+}
+
+/* ── Right: Preview panel ─────────────────────────────────── */
+.cc-preview-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cc-preview-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.cc-preview-frame {
+  width: 100%;
+}
+
+/* ── Certificate base ─────────────────────────────────────── */
+.cc-cert {
+  width: 100%;
+}
+
+/* ── Certificate preview animation ───────────────────────── */
+@keyframes ccFadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.cc-cert {
+  animation: ccFadeUp 0.3s ease;
+}
+
+/* ============================================================
+   TEMPLATE 1  —  Admiralty Commission / Achievement
+   Deep navy #0B1F3A · Gold #C9A84C
+   ============================================================ */
+.cert-1 {
+  background: #0B1F3A;
+  border: 6px solid #C9A84C;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 1.414 / 1;
+  box-sizing: border-box;
+}
+
+.cert-1-inner {
+  position: absolute;
+  inset: 12px;
+  border: 1.5px solid #C9A84C;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 36px 24px;
+  box-sizing: border-box;
+}
+
+/* corner ornaments */
+.cert-1-corner {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+}
+.cert-1-corner svg { width: 100%; height: 100%; }
+.cert-1-corner.tl { top: 18px;    left: 18px;   }
+.cert-1-corner.tr { top: 18px;    right: 18px;  }
+.cert-1-corner.bl { bottom: 18px; left: 18px;   }
+.cert-1-corner.br { bottom: 18px; right: 18px;  }
+
+/* top block */
+.cert-1-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.cert-1-title {
+  font-family: 'Cinzel', serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  color: #C9A84C;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.cert-1-anchor-icon {
+  font-size: 34px;
+  color: #C9A84C;
+  line-height: 1;
+}
+
+.cert-1-heading {
+  font-family: 'Cinzel', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #EDE0C4;
+  text-align: center;
+  line-height: 1.25;
+  margin: 4px 0;
+}
+
+/* body block */
+.cert-1-body-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.cert-1-body-text {
+  font-family: 'EB Garamond', serif;
+  font-size: 11px;
+  color: #AABDD1;
+  text-align: center;
+  line-height: 1.7;
+  max-width: 360px;
+}
+
+.cert-1-name {
+  font-family: 'EB Garamond', serif;
+  font-size: 22px;
+  font-style: italic;
+  color: #EDE0C4;
+  border-bottom: 1px solid #C9A84C;
+  padding-bottom: 4px;
+  text-align: center;
+  min-width: 220px;
+}
+
+.cert-1-rank {
+  font-family: 'EB Garamond', serif;
+  font-size: 13px;
+  color: #EDE0C4;
+}
+
+/* footer */
+.cert-1-footer {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.cert-1-sig-block {
+  text-align: center;
+}
+
+.cert-1-sig-line {
+  width: 110px;
+  border-top: 1px solid #C9A84C;
+  margin: 0 auto 4px;
+}
+
+.cert-1-sig-label {
+  font-family: 'Cinzel', serif;
+  font-size: 7.5px;
+  color: #7A9BBF;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.cert-1-seal {
+  width: 54px;
+  height: 54px;
+  border: 2px solid #C9A84C;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  position: relative;
+}
+
+.cert-1-seal::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px dashed #C9A84C;
+  border-radius: 50%;
+}
+
+.cert-1-seal-text {
+  font-family: 'Cinzel', serif;
+  font-size: 5px;
+  color: #C9A84C;
+  letter-spacing: 0.05em;
+  text-align: center;
+  line-height: 1.3;
+  z-index: 1;
+}
+
+/* wave */
+.cert-1-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 22px;
+  opacity: 0.12;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* ============================================================
+   TEMPLATE 2  —  Navigator Competency Certificate
+   Forest green #1B3D2A · Mid green #7BC47F · Ivory #F7F4EE
+   ============================================================ */
+.cert-2 {
+  background: #F7F4EE;
+  border: 3px solid #1B3D2A;
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 1.414 / 1;
+  box-sizing: border-box;
+}
+
+.cert-2-header {
+  background: #1B3D2A;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.cert-2-logo-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cert-2-logo-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 2px solid #7BC47F;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #7BC47F;
+}
+
+.cert-2-org {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #EBF5EC;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cert-2-org-sub {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px;
+  color: #7BC47F;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cert-2-cert-no {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: #7BC47F;
+}
+
+.cert-2-stripe {
+  height: 4px;
+  background: repeating-linear-gradient(
+    90deg,
+    #7BC47F 0,
+    #7BC47F 8px,
+    transparent 8px,
+    transparent 16px
+  );
+  flex-shrink: 0;
+}
+
+.cert-2-body-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 24px 16px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.cert-2-certifies {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px;
+  color: #3E6B4A;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.cert-2-type {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: #1B3D2A;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  line-height: 1.1;
+}
+
+.cert-2-recipient-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 9px;
+  color: #3E6B4A;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.cert-2-recipient {
+  font-family: 'EB Garamond', serif;
+  font-size: 20px;
+  font-style: italic;
+  color: #0D2218;
+  border-bottom: 1.5px solid #1B3D2A;
+  padding-bottom: 3px;
+  margin-bottom: 8px;
+  display: inline-block;
+}
+
+.cert-2-desc {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  color: #4A6355;
+  line-height: 1.6;
+  max-width: 380px;
+  margin-bottom: 8px;
+}
+
+.cert-2-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.cert-2-badge {
+  background: #EBF5EC;
+  border: 1px solid #7BC47F;
+  border-radius: 2px;
+  padding: 3px 8px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #1B3D2A;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cert-2-footer {
+  border-top: 1.5px solid #1B3D2A;
+  margin-top: auto;
+  padding-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.cert-2-date-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 8.5px;
+  color: #3E6B4A;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.cert-2-date-val {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1B3D2A;
+}
+
+.cert-2-sig {
+  font-family: 'EB Garamond', serif;
+  font-size: 13px;
+  font-style: italic;
+  color: #0D2218;
+}
+
+.cert-2-sig-under {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 8.5px;
+  color: #3E6B4A;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cert-2-accent-bar {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 7px;
+  background: #1B3D2A;
+}
+
+/* ============================================================
+   TEMPLATE 3  —  Maritime Safety Training Certificate
+   Deep red #8B2525 · Warm ivory #FEFCF8 · Tan #D4B483
+   ============================================================ */
+.cert-3 {
+  background: #FEFCF8;
+  border: 2px solid #8B2525;
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 1.414 / 1;
+  box-sizing: border-box;
+}
+
+.cert-3-watermark {
+  position: absolute;
+  font-size: 80px;
+  color: rgba(139, 37, 37, 0.04);
+  font-family: 'Cinzel', serif;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 0;
+  font-weight: 700;
+}
+
+.cert-3-topband {
+  background: #8B2525;
+  padding: 7px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.cert-3-topband-txt {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 8.5px;
+  color: #F5C6C6;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.cert-3-main-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* sidebar */
+.cert-3-sidebar {
+  width: 58px;
+  background: #FBF5EC;
+  border-right: 1.5px solid #D4B483;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 0;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.cert-3-sidebar-icon {
+  font-size: 16px;
+  color: #8B2525;
+}
+
+.cert-3-sidebar-divider {
+  width: 28px;
+  border-top: 1px solid #D4B483;
+}
+
+.cert-3-sidebar-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 7.5px;
+  color: #8B5525;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+}
+
+/* content area */
+.cert-3-content {
+  flex: 1;
+  padding: 16px 20px 14px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.cert-3-eyebrow {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 8.5px;
+  color: #8B2525;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.cert-3-main-title {
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #2A1A1A;
+  line-height: 1.2;
+  margin-bottom: 10px;
+}
+
+.cert-3-divider-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cert-3-divider-line::before,
+.cert-3-divider-line::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #D4B483;
+}
+
+.cert-3-diamond {
+  color: #8B2525;
+  font-size: 7px;
+}
+
+.cert-3-awarded {
+  font-family: 'EB Garamond', serif;
+  font-size: 10px;
+  color: #6B5A4A;
+  text-align: center;
+  margin-bottom: 4px;
+  font-style: italic;
+}
+
+.cert-3-holder {
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  color: #2A1A1A;
+  text-align: center;
+  margin-bottom: 7px;
+  line-height: 1.3;
+}
+
+.cert-3-desc {
+  font-family: 'EB Garamond', serif;
+  font-size: 10px;
+  color: #5A4A3A;
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 8px;
+  flex: 1;
+}
+
+.cert-3-modules {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.cert-3-mod {
+  background: #FBF0E6;
+  border: 1px solid #D4B483;
+  padding: 2px 7px;
+  border-radius: 1px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  color: #5A3A1A;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cert-3-bottom {
+  border-top: 1px solid #D4B483;
+  padding-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.cert-3-sig-area {
+  font-family: 'EB Garamond', serif;
+  font-size: 12px;
+  font-style: italic;
+  color: #2A1A1A;
+}
+
+.cert-3-sig-sub {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 8.5px;
+  color: #8B5525;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cert-3-valid {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 8.5px;
+  color: #8B5525;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.cert-3-qr {
+  width: 40px;
+  height: 40px;
+  background: #F5EBD8;
+  border: 1px solid #D4B483;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: #8B5525;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .cc-two-col {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .cert-1-heading   { font-size: 14px; }
+  .cert-1-name      { font-size: 16px; }
+  .cert-2-type      { font-size: 13px; }
+  .cert-2-recipient { font-size: 15px; }
+  .cert-3-main-title{ font-size: 12px; }
+  .cert-3-holder    { font-size: 13px; }
+}

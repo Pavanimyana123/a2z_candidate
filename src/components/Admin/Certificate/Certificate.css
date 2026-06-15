@@ -1503,3 +1503,27 @@
     font-size: 14px;
   }
 }
+.main-tabs {
+  display: flex;
+  gap: 10px;
+  align-items: center;  /* ADD THIS */
+}
+
+.cert-create-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: white;
+  white-space: nowrap;
+  padding: 8px 16px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  margin-left: auto;  /* pushes it to the right */
+}
+
+.cert-create-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  color: white;
+}

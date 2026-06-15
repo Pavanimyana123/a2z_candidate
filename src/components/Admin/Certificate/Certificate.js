@@ -393,6 +393,14 @@ const Certifications = () => {
                     <FaCertificate className="me-2" />
                     Certifications
                   </button>
+                   {/* ADD THIS */}
+    <button 
+      className="btn cert-create-btn ms-auto"
+      onClick={() => navigate('/create-certificate')}
+    >
+      <FaPlus className="me-2" />
+      Create Certificates
+    </button>
                 </div>
               </div>
 

@@ -14,6 +14,7 @@ const AddCandidate = () => {
   const [error, setError] = useState('');
   const [errors, setErrors] = useState({});
   const [isEditMode, setIsEditMode] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -21,6 +22,8 @@ const AddCandidate = () => {
     gender: 'M',
     phone_number: '',
     email: '',
+    password: '',
+    confirm_password: '',
     address: '',
     city: '',
     state: '',
@@ -61,6 +64,8 @@ const AddCandidate = () => {
           gender: candidateData.gender || 'M',
           phone_number: candidateData.phone_number || '',
           email: candidateData.email || '',
+          password: '',
+          confirm_password: '',
           address: candidateData.address || '',
           city: candidateData.city || '',
           state: candidateData.state || '',
@@ -133,6 +138,30 @@ const AddCandidate = () => {
       newErrors.email = "Please enter a valid email address";
     }
 
+    // Password validation - only for create mode
+    if (!isEditMode) {
+      if (!formData.password) {
+        newErrors.password = "Password is required";
+      } else if (formData.password.length < 6) {
+        newErrors.password = "Password must be at least 6 characters long";
+      }
+
+      if (!formData.confirm_password) {
+        newErrors.confirm_password = "Please confirm your password";
+      } else if (formData.password !== formData.confirm_password) {
+        newErrors.confirm_password = "Passwords do not match";
+      }
+    } else {
+      // For edit mode, password is optional
+      if (formData.password && formData.password.length < 6) {
+        newErrors.password = "Password must be at least 6 characters long";
+      }
+      
+      if (formData.password !== formData.confirm_password) {
+        newErrors.confirm_password = "Passwords do not match";
+      }
+    }
+
     if (!formData.address?.trim()) {
       newErrors.address = "Address is required";
     }
@@ -176,115 +205,128 @@ const AddCandidate = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  if (!validateForm()) {
-    Swal.fire({
-      icon: 'error',
-      title: 'Validation Failed',
-      text: 'Please check all required fields and try again.',
-      timer: 3000,
-      showConfirmButton: true
-    });
-    return;
-  }
-
-  setLoading(true);
-  setError('');
-
-  // Prepare payload
-  const payload = {
-    full_name: formData.full_name,
-    date_of_birth: formData.date_of_birth,
-    gender: formData.gender,
-    phone_number: formData.phone_number,
-    email: formData.email,
-    address: formData.address,
-    city: formData.city,
-    state: formData.state,
-    country: formData.country,
-    pincode: formData.pincode,
-    emergency_contact_name: formData.emergency_contact_name,
-    emergency_contact_phone: formData.emergency_contact_phone,
-    blood_group: formData.blood_group || '',
-    medical_expiry_date: formData.medical_expiry_date || '',
-    safety_induction_status: true,
-  };
-
-  // Add candidate_status for both create and edit
-  if (isEditMode) {
-    payload.candidate_status = formData.candidate_status;
-  } else {
-    // For new candidates, you can set default status
-    payload.candidate_status = 'active'; // or 'pending' based on your requirement
-  }
-
-  // Remove empty values
-  Object.keys(payload).forEach(key => {
-    if (payload[key] === undefined || payload[key] === null || payload[key] === '') {
-      delete payload[key];
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Validation Failed',
+        text: 'Please check all required fields and try again.',
+        timer: 3000,
+        showConfirmButton: true
+      });
+      return;
     }
-  });
 
-  console.log('📦 Payload:', payload);
-  
-  const method = isEditMode ? 'PUT' : 'POST';
-  const url = isEditMode 
-    ? `${BASE_URL}/api/candidate/candidates/${id}/` 
-    : `${BASE_URL}/api/candidate/candidates/`;
+    setLoading(true);
+    setError('');
 
-  try {
-    const response = await fetch(url, {
-      method: method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload)
-    });
+    // Prepare payload
+    const payload = {
+      full_name: formData.full_name,
+      date_of_birth: formData.date_of_birth,
+      gender: formData.gender,
+      phone_number: formData.phone_number,
+      email: formData.email,
+      address: formData.address,
+      city: formData.city,
+      state: formData.state,
+      country: formData.country,
+      pincode: formData.pincode,
+      emergency_contact_name: formData.emergency_contact_name,
+      emergency_contact_phone: formData.emergency_contact_phone,
+      blood_group: formData.blood_group || '',
+      medical_expiry_date: formData.medical_expiry_date || '',
+      safety_induction_status: true,
+    };
 
-    const responseData = await response.json().catch(() => null);
+    // Add password only if provided (required for create, optional for edit)
+    if (!isEditMode) {
+      // For create mode, password is required
+      payload.password = formData.password;
+    } else if (formData.password) {
+      // For edit mode, only include password if user wants to change it
+      payload.password = formData.password;
+    }
 
-    if (!response.ok) {
-      if (responseData && responseData.errors) {
-        const serverErrors = {};
-        Object.keys(responseData.errors).forEach(key => {
-          serverErrors[key] = Array.isArray(responseData.errors[key]) 
-            ? responseData.errors[key][0] 
-            : responseData.errors[key];
-        });
-        setErrors(serverErrors);
-        throw new Error('Please check the form for errors');
+    // Add candidate_status for both create and edit
+    if (isEditMode) {
+      payload.candidate_status = formData.candidate_status;
+    } else {
+      // For new candidates, you can set default status
+      payload.candidate_status = 'active'; // or 'pending' based on your requirement
+    }
+
+    // Remove empty values
+    Object.keys(payload).forEach(key => {
+      if (payload[key] === undefined || payload[key] === null || payload[key] === '') {
+        delete payload[key];
       }
-      throw new Error(responseData?.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate`);
-    }
+    });
 
-    await Swal.fire({
-      icon: 'success',
-      title: isEditMode ? 'Updated!' : 'Created!',
-      text: `Candidate has been ${isEditMode ? 'updated' : 'created'} successfully.`,
-      timer: 2000,
-      showConfirmButton: false
-    });
+    console.log('📦 Payload:', payload);
     
-    navigate('/candidate');
-  } catch (err) {
-    console.error(`❌ Error:`, err);
-    setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`);
-    
-    Swal.fire({
-      icon: 'error',
-      title: isEditMode ? 'Update Failed' : 'Creation Failed',
-      text: err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`,
-      timer: 3000,
-      showConfirmButton: true
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+    const method = isEditMode ? 'PUT' : 'POST';
+    const url = isEditMode 
+      ? `${BASE_URL}/api/candidate/candidates/${id}/` 
+      : `${BASE_URL}/api/candidate/candidates/`;
+
+    try {
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const responseData = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        if (responseData && responseData.errors) {
+          const serverErrors = {};
+          Object.keys(responseData.errors).forEach(key => {
+            serverErrors[key] = Array.isArray(responseData.errors[key]) 
+              ? responseData.errors[key][0] 
+              : responseData.errors[key];
+          });
+          setErrors(serverErrors);
+          throw new Error('Please check the form for errors');
+        }
+        throw new Error(responseData?.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate`);
+      }
+
+      await Swal.fire({
+        icon: 'success',
+        title: isEditMode ? 'Updated!' : 'Created!',
+        text: `Candidate has been ${isEditMode ? 'updated' : 'created'} successfully.`,
+        timer: 2000,
+        showConfirmButton: false
+      });
+      
+      navigate('/candidate');
+    } catch (err) {
+      console.error(`❌ Error:`, err);
+      setError(err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`);
+      
+      Swal.fire({
+        icon: 'error',
+        title: isEditMode ? 'Update Failed' : 'Creation Failed',
+        text: err.message || `Failed to ${isEditMode ? 'update' : 'create'} candidate.`,
+        timer: 3000,
+        showConfirmButton: true
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCancel = () => {
     navigate('/candidate');
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   if (fetchLoading) {
@@ -415,6 +457,60 @@ const AddCandidate = () => {
                     />
                     {errors.email && (
                       <div className="invalid-feedback">{errors.email}</div>
+                    )}
+                  </div>
+
+                  {/* Password - Only show for create mode or show optional in edit */}
+                  <div className="col-md-4 mb-3">
+                    <label className="form-label">
+                      Password {!isEditMode && '*'}
+                      {isEditMode && <small className="text-muted ms-2">(Leave blank to keep current password)</small>}
+                    </label>
+                    <div className="input-group">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+                        name="password"
+                        value={formData.password || ''}
+                        onChange={handleChange}
+                        placeholder={isEditMode ? "Enter new password (optional)" : "Enter password"}
+                        disabled={loading}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        onClick={togglePasswordVisibility}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        {showPassword ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                    {errors.password && (
+                      <div className="invalid-feedback d-block">{errors.password}</div>
+                    )}
+                    {!isEditMode && (
+                      <small className="text-muted">Password must be at least 6 characters</small>
+                    )}
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div className="col-md-4 mb-3">
+                    <label className="form-label">
+                      Confirm Password {!isEditMode && '*'}
+                    </label>
+                    <div className="input-group">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        className={`form-control ${errors.confirm_password ? 'is-invalid' : ''}`}
+                        name="confirm_password"
+                        value={formData.confirm_password || ''}
+                        onChange={handleChange}
+                        placeholder="Confirm password"
+                        disabled={loading}
+                      />
+                    </div>
+                    {errors.confirm_password && (
+                      <div className="invalid-feedback d-block">{errors.confirm_password}</div>
                     )}
                   </div>
 

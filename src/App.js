@@ -104,6 +104,7 @@ import CandidateAddAnnouncement from './components/Candidate/CandidateAnnounceme
 
 import RegisterMentor from "./components/Pages/Login/RegisterMentor"
 import RegisterCandidate from "./components/Pages/Login/RegisterCandidate";
+import CreateCertificate from "./components/Admin/Certificate/CreateCertification";
 
 function App() {
   return (
@@ -142,6 +143,7 @@ function App() {
         <Route path="/compliance/add" element={<AddCompliance />} />
         <Route path="/compliance/edit/:id" element={<AddCompliance />} />
         <Route path="/certificate" element={<Certifications />} />
+         <Route path="/create-certificate" element={<CreateCertificate />} />
         <Route
           path="/certification-categories"
           element={<CertificationCategories />}
